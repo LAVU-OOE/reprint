@@ -494,14 +494,14 @@
                     const authString = btoa(USERNAME + ':' + password);
                     setDebug('Auth header created (length: ' + authString.length + ')');
 
-                    // Send request
+                    // Send request with credentials: 'include'
                     const response = await fetch(API_URL, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': 'Basic ' + authString
                         },
-                        credentials: 'include',
+                        credentials: 'include',  // ← OPTION 1: This is the key
                         body: JSON.stringify(jsonData)
                     });
 
@@ -558,7 +558,7 @@
         setDebug('Ready');
         
         // Add version info
-        console.log('📤 Cloudflare JSON Uploader v2.0');
+        console.log('📤 Cloudflare JSON Uploader v2.0 (Option 1 - credentials: include)');
         console.log('🔗 Endpoint:', API_URL);
         console.log('⌨️  Shortcuts: Ctrl+Enter to upload, Escape to clear password');
     </script>
