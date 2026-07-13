@@ -2,7 +2,7 @@ let a2 = [];
 let a3 = 'select';
 let currentLang = localStorage.getItem('lavu_lang') || 'de';
 let locationData = [];
-const LOCATION_JSON_URL = "https://raw.githubusercontent.com/LAVU-OOE/Etiketten-Druckstudio/refs/heads/main/locations.json";
+const LOCATION_JSON_URL = "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/locations.json";
 
 const sortimentData = [
     { artNr: "1000", bez: "Textilen" },
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupEventListeners();
     let a4 = localStorage.getItem('lavu_sortiment_url');
     if (a4 === null) {
-        a4 = "https://raw.githubusercontent.com/LAVU-OOE/Etiketten-Druckstudio/refs/heads/main/sortiment.json";
+        a4 = "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/sortiment.json";
         localStorage.setItem('lavu_sortiment_url', a4);
     }
     document.getElementById('i4').value = a4;
@@ -718,7 +718,7 @@ function changeFormat(key) {
 }
 
 function f2() {
-    let a4 = localStorage.getItem('lavu_sortiment_url') || "https://raw.githubusercontent.com/LAVU-OOE/Etiketten-Druckstudio/refs/heads/main/sortiment.json";
+    let a4 = localStorage.getItem('lavu_sortiment_url') || "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/sortiment.json";
     const t = i18n[currentLang];
     fetch(a4, { cache: "no-store" })
         .then(function (response) {
@@ -1205,7 +1205,7 @@ window.addEventListener('beforeinstallprompt', function (e) {
 });
 
 window.addEventListener('appinstalled', function () {
-    console.log('LAVU Etiketten-Druckstudio wurde erfolgreich installiert.');
+    console.log('LAVU label-studio wurde erfolgreich installiert.');
     const a63 = document.getElementById('pwaBanner');
     if (a63) a63.style.display = 'none';
 });

@@ -1,4 +1,4 @@
-Etiketten-Druckstudio/
+label-studio/
 ├── app/
 │   ├── assets/
 │   │   └── icons/
