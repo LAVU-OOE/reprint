@@ -2,40 +2,98 @@
 <html>
 <head>
     <title>Upload JSON to Cloudflare</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        input, button { padding: 8px; margin: 5px 0; }
+        button { cursor: pointer; background: #4CAF50; color: white; border: none; padding: 10px 20px; }
+        #result { background: #f4f4f4; padding: 10px; border-radius: 4px; white-space: pre-wrap; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
 </head>
 <body>
-    <h2>Upload sortiment.json</h2>
-    <input type="file" id="fileInput" accept=".json">
-    <button onclick="uploadFile()">Upload</button>
-    <pre id="result"></pre>
+    <h2>📤 Upload sortiment.json</h2>
+    
+    <div>
+        <label><strong>Password:</strong></label>
+        <input type="password" id="passwordInput" placeholder="Enter your admin password" style="width: 100%;">
+    </div>
+    
+    <div>
+        <label><strong>JSON File:</strong></label>
+        <input type="file" id="fileInput" accept=".json">
+    </div>
+    
+    <button onclick="uploadFile()">📤 Upload</button>
+    <pre id="result">Ready to upload...</pre>
 
     <script>
     async function uploadFile() {
+        const password = document.getElementById('passwordInput').value;
         const fileInput = document.getElementById('fileInput');
+        const resultDiv = document.getElementById('result');
+        
+        if (!password) {
+            resultDiv.textContent = '❌ Please enter your password!';
+            resultDiv.className = 'error';
+            return;
+        }
+        
+        if (!fileInput.files || !fileInput.files[0]) {
+            resultDiv.textContent = '❌ Please select a JSON file!';
+            resultDiv.className = 'error';
+            return;
+        }
+
         const file = fileInput.files[0];
-        if (!file) return alert('Select a file first!');
+        if (!file.name.endsWith('.json')) {
+            resultDiv.textContent = '❌ Please select a .json file!';
+            resultDiv.className = 'error';
+            return;
+        }
+
+        resultDiv.textContent = '⏳ Uploading...';
+        resultDiv.className = '';
 
         const reader = new FileReader();
         reader.onload = async function(e) {
             try {
                 const jsonData = JSON.parse(e.target.result);
+                
+                // Validate it's an array
+                if (!Array.isArray(jsonData)) {
+                    resultDiv.textContent = '❌ Invalid JSON: Expected an array!';
+                    resultDiv.className = 'error';
+                    return;
+                }
+
                 const response = await fetch(
                     'https://sortiment-api.lavu-ooe.workers.dev/',
                     {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': 'Basic ' + btoa('admin:YOUR_PASSWORD')
+                            'Authorization': 'Basic ' + btoa('admin:' + password)
                         },
+                        credentials: 'include',
                         body: JSON.stringify(jsonData)
                     }
                 );
+
                 const result = await response.json();
-                document.getElementById('result').textContent = 
-                    JSON.stringify(result, null, 2);
+                
+                if (response.ok) {
+                    resultDiv.textContent = '✅ Success! ' + JSON.stringify(result, null, 2);
+                    resultDiv.className = 'success';
+                    // Clear password for security
+                    document.getElementById('passwordInput').value = '';
+                } else {
+                    resultDiv.textContent = '❌ Error: ' + JSON.stringify(result, null, 2);
+                    resultDiv.className = 'error';
+                }
             } catch(error) {
-                document.getElementById('result').textContent = 
-                    'Error: ' + error.message;
+                resultDiv.textContent = '❌ Error: ' + error.message;
+                resultDiv.className = 'error';
             }
         };
         reader.readAsText(file);
