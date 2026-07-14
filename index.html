@@ -129,45 +129,13 @@
                 <span id="txt-modal1-title">Druck- & Standorteinstellungen</span>
                 <button class="bx" id="modal1CloseBtn" aria-label="Close modal">&times;</button>
             </div>
-            <div class="fv" style="margin-bottom: 15px;">
-                <label for="i1" id="lbl-location">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    Standort (ASZ Niederlassung OÖ):
-                </label>
-                <select id="i1"></select>
-            </div>
-            <div class="fv" style="margin-bottom: 15px;">
-                <label for="labelFormatSelect" id="lbl-format">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                        <line x1="9" y1="3" x2="9" y2="21" />
-                        <line x1="15" y1="3" x2="15" y2="21" />
-                        <line x1="3" y1="9" x2="21" y2="9" />
-                        <line x1="3" y1="15" x2="21" y2="15" />
-                    </svg>
-                    Etiketten-Hersteller & Format:
-                </label>
-                <select id="labelFormatSelect"></select>
-            </div>
-            <div class="fg" style="margin-bottom: 20px;">
-                <div class="fv">
-                    <label for="i2" id="lblCount">Anzahl Etiketten:</label>
-                    <input type="number" id="i2" value="21" min="1" />
-                </div>
-                <div class="fv">
-                    <label for="i3" id="lblStartPos">Start-Position:</label>
-                    <input type="number" id="i3" value="1" min="1" />
-                </div>
-            </div>
+            
+            <!-- Removed: Standort, Etiketten-Hersteller & Format, Anzahl, Start-Position -->
+            <!-- Only kept: Sortiment URL and Database Management -->
+            
             <div class="ms">
                 <div id="t2" class="mt a">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="8" y1="6" x2="21" y2="6" />
                         <line x1="8" y1="12" x2="21" y2="12" />
                         <line x1="8" y1="18" x2="21" y2="18" />
@@ -178,8 +146,7 @@
                     <span id="txt-tab-select">Sortiment wählen</span>
                 </div>
                 <div id="t3" class="mt">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="8" x2="12" y2="16" />
                         <line x1="8" y1="12" x2="16" y2="12" />
@@ -187,15 +154,15 @@
                     <span id="txt-tab-manage">Datenbank verwalten</span>
                 </div>
             </div>
+            
             <div id="s3" class="fs a">
                 <div class="fv" style="margin-bottom: 15px;">
                     <label for="i4" id="lbl-url">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                         </svg>
-                        Zentrale Sortiment-URL (GitHub Raw JSON):
+                        Zentrale Sortiment-URL (Worker-API JSON):
                     </label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="i4" placeholder="https://..." style="flex: 1;" />
@@ -204,6 +171,7 @@
                     <span id="n1" style="font-size: 0.8rem; font-weight: bold; margin-top: 6px; display: block;"></span>
                 </div>
             </div>
+            
             <div id="s4" class="fs">
                 <div class="fg" style="gap: 12px; margin-bottom: 15px;">
                     <input type="hidden" id="e1" value="" />
@@ -222,24 +190,21 @@
                 </div>
                 <div style="display: flex; gap: 8px; margin-bottom: 20px;">
                     <button id="b1" class="bc bsd" style="display: none; background: #e67e22;">💾 Ändern</button>
-                    <button class="bc bsd" style="background: #27ae60; flex: 1;" id="btn-add-new">➕ Neu
-                        hinzufügen</button>
+                    <button class="bc bsd" style="background: #27ae60; flex: 1;" id="btn-add-new">➕ Neu hinzufügen</button>
                     <button class="bc bcn" id="btn-cancel">Abbrechen</button>
                 </div>
                 <div style="margin-bottom: 15px;">
-                    <button class="bc"
-                        style="background: #2c3e50; color: white; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;"
-                        id="btn-download-json"> 📥 Aktuelle Datenbank als JSON herunterladen </button>
+                    <button class="bc" style="background: #2c3e50; color: white; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;" id="btn-download-json">
+                        📥 Aktuelle Datenbank als JSON herunterladen
+                    </button>
                 </div>
                 <label id="lbl-current-entries">Aktuelle Einträge im lokalen Workspace:</label>
-                <div id="c4"
-                    style="max-height: 180px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px;">
-                </div>
+                <div id="c4" style="max-height: 180px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px;"></div>
             </div>
+            
             <div class="mf">
                 <button id="b2" class="bsd">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
@@ -284,8 +249,7 @@
             </div>
             <div class="mf">
                 <button class="bp" id="btn-modal-print">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <polyline points="6 9 6 2 18 2 18 9" />
                         <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                         <rect x="6" y="14" width="12" height="8" />
@@ -310,18 +274,11 @@
             </div>
             <div>
                 <div style="font-weight: bold; font-size: 0.95rem;" id="txt-pwa-title">Als App installieren</div>
-                <div style="font-size: 0.8rem; color: #a5cddd; margin-top: 2px;" id="txt-pwa-sub">Schnellerer Zugriff &
-                    Offline-Nutzung</div>
+                <div style="font-size: 0.8rem; color: #a5cddd; margin-top: 2px;" id="txt-pwa-sub">Schnellerer Zugriff & Offline-Nutzung</div>
             </div>
         </div>
-        <button id="b3"
-            style="background: #27ae60; color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 6px; box-shadow: 0 4px 10px rgba(39,174,96,0.3);">Installieren</button>
+        <button id="b3" style="background: #27ae60; color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 6px; box-shadow: 0 4px 10px rgba(39,174,96,0.3);">Installieren</button>
     </div>
     <script src="assets/js/script.js"></script>
-    <script>
-        // All JavaScript goes here - same as before but with the DEFAULT_LOCATION_VALUE = "106"
-        // [Full JavaScript code from previous response]
-        // Since the full script is very long, I've included it in the complete file below
-    </script>
 </body>
 </html>

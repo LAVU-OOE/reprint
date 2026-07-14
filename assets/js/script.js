@@ -103,7 +103,7 @@ const i18n = {
         lblStartPos: "Start-Position",
         tabSelect: "Sortiment wählen",
         tabManage: "Datenbank verwalten",
-        lblUrl: "Zentrale Sortiment-URL (GitHub Raw JSON):",
+        lblUrl: "Zentrale Sortiment-URL (Worker-API JSON):",
         btnUpdate: "Aktualisieren",
         lblDbSuffix: "Gebinde / Suffix:",
         lblDbBez: "Bezeichnung:",
@@ -150,7 +150,7 @@ const i18n = {
         lblStartPos: "Start Position",
         tabSelect: "Select Assortment",
         tabManage: "Manage Database",
-        lblUrl: "Central Assortment URL (GitHub Raw JSON):",
+        lblUrl: "Central Assortment URL (Worker-API JSON):",
         btnUpdate: "Update",
         lblDbSuffix: "Container / Suffix:",
         lblDbBez: "Description:",
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupEventListeners();
     let a4 = localStorage.getItem('lavu_sortiment_url');
     if (a4 === null) {
-        a4 = "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/sortiment.json";
+        a4 = "https://sortiment-api.lavu-ooe.workers.dev/";
         localStorage.setItem('lavu_sortiment_url', a4);
     }
     document.getElementById('i4').value = a4;
@@ -718,7 +718,7 @@ function changeFormat(key) {
 }
 
 function f2() {
-    let a4 = localStorage.getItem('lavu_sortiment_url') || "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/sortiment.json";
+    let a4 = localStorage.getItem('lavu_sortiment_url') || "https://sortiment-api.lavu-ooe.workers.dev/";
     const t = i18n[currentLang];
     fetch(a4, { cache: "no-store" })
         .then(function (response) {
