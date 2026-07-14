@@ -6,97 +6,79 @@ const ENDPOINTS = {
 
 let selectedEndpoint = 'sortiment';
 
-// ===== DOM Elements =====
-const fileInput = document.getElementById('fileInput');
-const passwordInput = document.getElementById('passwordInput');
-const uploadBtn = document.getElementById('uploadBtn');
-const resultDiv = document.getElementById('result');
-const debugDiv = document.getElementById('debugArea');
-const endpointToggles = document.querySelectorAll('input[name="endpoint"]');
-const selectedEndpointText = document.getElementById('endpointDisplay');
-
-// ===== Helper Functions =====
-function setResult(message, type) {
-    resultDiv.className = 'result ' + type;
-    resultDiv.textContent = message;
+// ===== DOM Elements with null checks =====
+function getElements() {
+    return {
+        fileInput: document.getElementById('fileInput'),
+        passwordInput: document.getElementById('passwordInput'),
+        uploadBtn: document.getElementById('uploadBtn'),
+        resultDiv: document.getElementById('result'),
+        debugDiv: document.getElementById('debugArea'),
+        endpointToggles: document.querySelectorAll('input[name="endpoint"]'),
+        selectedEndpointText: document.getElementById('endpointDisplay'),
+        togglePasswordBtn: document.getElementById('togglePassword'),
+        fileInfo: document.getElementById('fileInfo'),
+        stats: document.getElementById('stats'),
+        itemCount: document.getElementById('itemCount'),
+        fileSize: document.getElementById('fileSize'),
+        debugToggle: document.getElementById('debugToggle')
+    };
 }
 
+// ===== Helper Functions =====
 function setDebug(message) {
-    const timestamp = new Date().toLocaleTimeString();
-    debugDiv.textContent = `[${timestamp}] ${message}`;
+    const elements = getElements();
+    if (elements.debugDiv) {
+        const timestamp = new Date().toLocaleTimeString();
+        elements.debugDiv.textContent = `[${timestamp}] ${message}`;
+    } else {
+        console.log(`[DEBUG] ${message}`);
+    }
+}
+
+function setResult(message, type) {
+    const elements = getElements();
+    if (elements.resultDiv) {
+        elements.resultDiv.className = 'result ' + type;
+        elements.resultDiv.textContent = message;
+    } else {
+        console.log(`[RESULT] ${message}`);
+    }
 }
 
 function clearPassword() {
-    passwordInput.value = '';
-    setResult('Password cleared for security.', '');
+    const elements = getElements();
+    if (elements.passwordInput) {
+        elements.passwordInput.value = '';
+        setResult('Password cleared for security.', '');
+    }
 }
 
 function updateEndpointDisplay() {
+    const elements = getElements();
     const endpointUrl = ENDPOINTS[selectedEndpoint];
-    selectedEndpointText.textContent = endpointUrl;
+    if (elements.selectedEndpointText) {
+        elements.selectedEndpointText.textContent = endpointUrl;
+    }
 }
 
-// ===== Event Listeners =====
-endpointToggles.forEach(toggle => {
-    toggle.addEventListener('change', function(e) {
-        if (e.target.checked) {
-            selectedEndpoint = e.target.value;
-            updateEndpointDisplay();
-            setDebug(`Switched endpoint to: ${selectedEndpoint}`);
-            
-            // Update label styling
-            document.querySelectorAll('.endpoint-selector label').forEach(label => {
-                label.classList.remove('selected');
-            });
-            const labelId = selectedEndpoint === 'sortiment' ? 'labelSortiment' : 'labelLocations';
-            document.getElementById(labelId).classList.add('selected');
+function toggleDebug() {
+    const elements = getElements();
+    if (elements.debugDiv) {
+        elements.debugDiv.classList.toggle('visible');
+        if (elements.debugToggle) {
+            elements.debugToggle.textContent = elements.debugDiv.classList.contains('visible') 
+                ? '🔧 Hide Debug' 
+                : '🔧 Toggle Debug';
         }
-    });
-});
-
-// Password visibility toggle
-document.getElementById('togglePassword').addEventListener('click', function() {
-    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-    passwordInput.setAttribute('type', type);
-    this.textContent = type === 'password' ? '👁️' : '🙈';
-});
-
-// File input change handler
-fileInput.addEventListener('change', function() {
-    const file = this.files[0];
-    if (file) {
-        document.getElementById('fileInfo').textContent = `📎 Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-        setDebug(`File selected: ${file.name}`);
-        
-        // Show stats
-        document.getElementById('stats').style.display = 'flex';
-        document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
-        
-        // Try to count items
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = JSON.parse(e.target.result);
-                if (Array.isArray(data)) {
-                    document.getElementById('itemCount').textContent = data.length;
-                } else if (typeof data === 'object') {
-                    document.getElementById('itemCount').textContent = Object.keys(data).length;
-                }
-            } catch(err) {
-                document.getElementById('itemCount').textContent = '?';
-            }
-        };
-        reader.readAsText(file);
-    } else {
-        document.getElementById('fileInfo').textContent = 'Select a valid JSON file with your data array.';
-        document.getElementById('stats').style.display = 'none';
     }
-});
+}
 
-// ===== Core Upload Logic =====
+// ===== File Upload Logic =====
 async function uploadFile() {
-    const file = fileInput.files[0];
-    const password = passwordInput.value.trim();
+    const elements = getElements();
+    const file = elements.fileInput ? elements.fileInput.files[0] : null;
+    const password = elements.passwordInput ? elements.passwordInput.value.trim() : '';
     const endpointUrl = ENDPOINTS[selectedEndpoint];
     const endpointName = selectedEndpoint.toUpperCase();
 
@@ -107,12 +89,14 @@ async function uploadFile() {
 
     if (!password) {
         setResult('❌ Password is required!', 'error');
-        passwordInput.focus();
+        if (elements.passwordInput) elements.passwordInput.focus();
         return;
     }
 
-    uploadBtn.disabled = true;
-    uploadBtn.textContent = '⏳ Uploading...';
+    if (elements.uploadBtn) {
+        elements.uploadBtn.disabled = true;
+        elements.uploadBtn.textContent = '⏳ Uploading...';
+    }
     setResult('Reading file...', '');
     setDebug(`Starting upload sequence for ${endpointName}...`);
 
@@ -120,7 +104,6 @@ async function uploadFile() {
     
     reader.onload = async function(e) {
         try {
-            // Validate JSON format locally before pushing
             const jsonData = JSON.parse(e.target.result);
             setDebug('JSON parsed successfully. Sending request...');
 
@@ -153,48 +136,125 @@ async function uploadFile() {
             setResult('❌ Invalid JSON file format!', 'error');
             setDebug('Error: ' + error.stack);
         } finally {
-            uploadBtn.disabled = false;
-            uploadBtn.textContent = `📤 Upload ${endpointName} to Cloudflare`;
+            if (elements.uploadBtn) {
+                elements.uploadBtn.disabled = false;
+                elements.uploadBtn.textContent = `📤 Upload ${endpointName} to Cloudflare`;
+            }
         }
     };
 
     reader.onerror = function() {
         setResult('❌ Error reading file!', 'error');
         setDebug('FileReader error');
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = `📤 Upload ${endpointName} to Cloudflare`;
+        if (elements.uploadBtn) {
+            elements.uploadBtn.disabled = false;
+            elements.uploadBtn.textContent = `📤 Upload ${endpointName} to Cloudflare`;
+        }
     };
 
     reader.readAsText(file);
 }
 
-// ===== Debug Toggle =====
-function toggleDebug() {
-    const debugArea = document.getElementById('debugArea');
-    debugArea.classList.toggle('visible');
-    const btn = document.getElementById('debugToggle');
-    btn.textContent = debugArea.classList.contains('visible') ? '🔧 Hide Debug' : '🔧 Toggle Debug';
+// ===== Initialize Event Listeners =====
+function init() {
+    const elements = getElements();
+    
+    // Endpoint toggles
+    if (elements.endpointToggles) {
+        elements.endpointToggles.forEach(toggle => {
+            toggle.addEventListener('change', function(e) {
+                if (e.target.checked) {
+                    selectedEndpoint = e.target.value;
+                    updateEndpointDisplay();
+                    setDebug(`Switched endpoint to: ${selectedEndpoint}`);
+                    
+                    // Update label styling
+                    document.querySelectorAll('.endpoint-selector label').forEach(label => {
+                        label.classList.remove('selected');
+                    });
+                    const labelId = selectedEndpoint === 'sortiment' ? 'labelSortiment' : 'labelLocations';
+                    const label = document.getElementById(labelId);
+                    if (label) label.classList.add('selected');
+                }
+            });
+        });
+    }
+
+    // Password visibility toggle
+    if (elements.togglePasswordBtn && elements.passwordInput) {
+        elements.togglePasswordBtn.addEventListener('click', function() {
+            const type = elements.passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            elements.passwordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+    }
+
+    // File input change handler
+    if (elements.fileInput) {
+        elements.fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file && elements.fileInfo) {
+                elements.fileInfo.textContent = `📎 Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                setDebug(`File selected: ${file.name}`);
+                
+                if (elements.stats) elements.stats.style.display = 'flex';
+                if (elements.fileSize) elements.fileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+                
+                // Try to count items
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (elements.itemCount) {
+                            if (Array.isArray(data)) {
+                                elements.itemCount.textContent = data.length;
+                            } else if (typeof data === 'object') {
+                                elements.itemCount.textContent = Object.keys(data).length;
+                            }
+                        }
+                    } catch(err) {
+                        if (elements.itemCount) elements.itemCount.textContent = '?';
+                    }
+                };
+                reader.readAsText(file);
+            } else if (elements.fileInfo) {
+                elements.fileInfo.textContent = 'Select a valid JSON file with your data array.';
+                if (elements.stats) elements.stats.style.display = 'none';
+            }
+        });
+    }
+
+    // Debug toggle
+    if (elements.debugToggle) {
+        elements.debugToggle.addEventListener('click', toggleDebug);
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            uploadFile();
+        }
+        if (e.key === 'Escape') {
+            clearPassword();
+            setDebug('Password cleared (Escape key)');
+        }
+    });
+
+    // Initial setup
+    updateEndpointDisplay();
+    setDebug('Ready');
+    if (elements.debugDiv) elements.debugDiv.classList.add('visible');
+    
+    console.log('📤 Cloudflare JSON Uploader v2.0 (Sortiment & Locations)');
+    console.log('🔗 Sortiment API:', ENDPOINTS.sortiment);
+    console.log('🔗 Locations API:', ENDPOINTS.locations);
+    console.log('⌨️  Shortcuts: Ctrl+Enter to upload, Escape to clear password');
 }
 
-// ===== Keyboard Shortcuts =====
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        uploadFile();
-    }
-    if (e.key === 'Escape') {
-        clearPassword();
-        setDebug('Password cleared (Escape key)');
-    }
-});
-
-// ===== Init =====
-setResult('Ready to upload. Select a JSON file and enter your password.', '');
-setDebug('Ready');
-updateEndpointDisplay();
-document.getElementById('debugArea').classList.add('visible');
-
-console.log('📤 Cloudflare JSON Uploader v2.0 (Sortiment & Locations)');
-console.log('🔗 Sortiment API:', ENDPOINTS.sortiment);
-console.log('🔗 Locations API:', ENDPOINTS.locations);
-console.log('⌨️  Shortcuts: Ctrl+Enter to upload, Escape to clear password');
+// ===== Initialize when DOM is ready =====
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

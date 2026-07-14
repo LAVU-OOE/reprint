@@ -57,23 +57,6 @@
             font-size: 14px;
         }
         
-        select {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.2s;
-            background: white;
-            cursor: pointer;
-        }
-        
-        select:focus {
-            outline: none;
-            border-color: #4CAF50;
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-        }
-        
         input[type="password"],
         input[type="file"] {
             width: 100%;
@@ -155,12 +138,6 @@
             color: #742a2a;
         }
         
-        .result-area.loading {
-            background: #ebf8ff;
-            border-color: #63b3ed;
-            color: #2a4365;
-        }
-        
         .debug-area {
             margin-top: 12px;
             padding: 10px 14px;
@@ -181,7 +158,7 @@
         }
         
         .stats {
-            display: flex;
+            display: none;
             gap: 15px;
             margin-top: 15px;
             padding: 12px 16px;
@@ -398,9 +375,7 @@
         </div>
 
         <!-- Upload Button -->
-        <button class="btn-upload" id="uploadBtn" onclick="uploadFile()">
-            📤 Upload to Cloudflare
-        </button>
+        <button class="btn-upload" id="uploadBtn">📤 Upload to Cloudflare</button>
 
         <!-- Result Display -->
         <div class="result-area" id="result">Ready to upload...</div>
@@ -408,10 +383,10 @@
         <!-- Debug Area -->
         <div class="debug-area visible" id="debugArea"></div>
         
-        <button class="btn-debug" id="debugToggle" onclick="toggleDebug()">🔧 Hide Debug</button>
+        <button class="btn-debug" id="debugToggle">🔧 Hide Debug</button>
 
         <!-- Stats -->
-        <div class="stats" id="stats" style="display:none;">
+        <div class="stats" id="stats">
             <span>📊 Items: <span class="count" id="itemCount">0</span></span>
             <span>📦 File size: <span class="count" id="fileSize">0 bytes</span></span>
         </div>
