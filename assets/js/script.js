@@ -10,7 +10,7 @@ let currentLang = localStorage.getItem('lavu_lang') || 'de';
 let locationData = [];
 let deferredPrompt = null;
 
-const LOCATION_JSON_URL = 'https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/locations.json';
+const LOCATION_JSON_URL = 'https://sortiment-api.lavu-ooe.workers.dev/';
 const DEFAULT_LOCATION_VALUE = '106';
 
 const fallbackSortiment = [
