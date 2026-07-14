@@ -660,47 +660,73 @@ function changeFormat(key) {
 }
 
 // ----- Fetch Sortiment Data -----
+// ----- Fetch Sortiment Data -----
 function fetchSortimentData() {
     const url = localStorage.getItem('lavu_sortiment_url') || 'https://sortiment-api.lavu-ooe.workers.dev/';
     const statusEl = document.getElementById('statusMessage');
     const t = i18n[currentLang];
+    
     if (statusEl) {
         statusEl.innerHTML = t.netLoading;
         statusEl.style.color = '#f39c12';
     }
+    
+    // WICHTIG: Verwende die Worker-API-URL (nicht sortiment.json)
+    // Die URL wird aus localStorage gelesen
     fetch(url, { cache: 'no-store' })
         .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             return response.json();
         })
         .then(data => {
             if (Array.isArray(data) && data.length > 0) {
+                // WICHTIG: Daten in sortimentData speichern
                 sortimentData = data;
                 localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(sortimentData));
+                
                 if (statusEl) {
-                    statusEl.innerHTML = url === 'sortiment.json' ? t.netSuccessLocal : t.netSuccessRemote;
+                    statusEl.innerHTML = t.netSuccessRemote;
                     statusEl.style.color = '#27ae60';
                 }
+                
+                // Dropdowns neu befüllen
                 updateSortimentDropdowns();
+                renderEntryList();
+                updateUI();
+            } else {
+                throw new Error('Invalid data format - not an array or empty');
             }
         })
         .catch(err => {
             console.warn('Error fetching sortiment data, using cache/fallback:', err);
+            
             if (statusEl) {
-                statusEl.innerHTML = url === 'sortiment.json' ? t.netFallbackLocal : t.netFallbackRemote;
+                statusEl.innerHTML = t.netFallbackRemote;
                 statusEl.style.color = '#e74c3c';
             }
+            
+            // Versuche aus localStorage zu laden
             const cached = localStorage.getItem('lavu_studio_sortiment_v8');
             if (cached) {
                 try {
-                    sortimentData = JSON.parse(cached);
-                } catch (e) {
-                    sortimentData = fallbackSortiment.slice();
-                }
-            } else {
-                sortimentData = fallbackSortiment.slice();
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        sortimentData = parsed;
+                        updateSortimentDropdowns();
+                        renderEntryList();
+                        updateUI();
+                        return;
+                    }
+                } catch (e) { /* ignore */ }
             }
+            
+            // Fallback zu defaultSortimentData
+            sortimentData = defaultSortimentData.slice();
             updateSortimentDropdowns();
+            renderEntryList();
+            updateUI();
         });
 }
 
