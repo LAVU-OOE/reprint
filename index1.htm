@@ -1,0 +1,2527 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LAVU OÖ - Etiketten-Druckstudio v9</title>
+    <link class="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1a4b60" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .crd {
+            background: #ffffff;
+            width: 100%;
+            max-width: 750px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(26, 75, 96, 0.08);
+            padding: 35px;
+            border: 1px solid #eef2f5;
+        }
+
+        .hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eef2f5;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .hdr-l {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .lg {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #1a4b60;
+            box-shadow: 0 2px 8px rgba(26, 75, 96, 0.15);
+        }
+
+        .hdr-ttl {
+            color: #1a4b60;
+            font-size: 1.5rem;
+            font-weight: bold;
+            line-height: 1.1;
+        }
+
+        .hdr-sub {
+            font-size: 0.85rem;
+            color: #6cb4db;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-top: 3px;
+        }
+
+        .hdr-r {
+            color: #27ae60;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #e8f8f5;
+            padding: 4px 12px;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+            box-shadow: 0 2px 6px rgba(39, 174, 96, 0.04);
+            white-space: nowrap;
+        }
+
+        .sel-hdr {
+            background: transparent;
+            border: none;
+            color: #27ae60;
+            font-size: 1.1rem;
+            font-weight: bold;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            padding: 4px 20px 4px 4px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2327ae60' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right center;
+            width: auto;
+        }
+
+        .sel-hdr:focus {
+            box-shadow: none;
+            background-color: transparent;
+        }
+
+        .btn-lang-toggle {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(39, 174, 96, 0.2);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: auto;
+            width: auto;
+        }
+
+        .btn-lang-toggle:hover {
+            background: #219653;
+            transform: scale(1.05);
+        }
+
+        .db {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 35px;
+            align-items: start;
+            margin-bottom: 30px;
+        }
+
+        .ps-wrapper {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ps {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px dashed #cbd5e1;
+            width: 100%;
+        }
+
+        .ps-ttl {
+            font-size: clamp(0.6rem, 1.2vw, 0.8rem);
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            height: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tw {
+            position: relative;
+            width: 168px;
+            height: 238px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s, border-color 0.25s;
+        }
+
+        .tw:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 24px rgba(26, 75, 96, 0.15);
+            border-color: #1a4b60;
+        }
+
+        .sc {
+            transform: scale(0.20);
+            transform-origin: top left;
+            width: 210mm;
+            height: 297mm;
+            pointer-events: none;
+            will-change: transform;
+        }
+
+        .to {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 75, 96, 0.9);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 8px 4px;
+            transition: background 0.2s;
+            backdrop-filter: blur(2px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .tw:hover .to {
+            background: rgba(39, 174, 96, 0.95);
+        }
+
+        .zoom-container {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 12px 8px;
+            border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+            width: 42px;
+        }
+        
+        .zoom-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #1a4b60;
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        .zoom-slider-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            height: 140px;
+        }
+        
+        .zoom-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #cbd5e1;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+            writing-mode: vertical-lr;
+            direction: rtl;
+            width: 6px;
+            height: 100%;
+            padding: 0;
+        }
+        
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #1a4b60;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .zoom-slider::-webkit-slider-thumb:hover {
+            background: #27ae60;
+        }
+        .zoom-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border: none;
+            border-radius: 50%;
+            background: #1a4b60;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .zoom-slider::-moz-range-thumb:hover {
+            background: #27ae60;
+        }
+
+        #mdl .lb {
+            cursor: pointer !important;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+        #mdl .lb:hover {
+            background-color: #e8f8f5 !important;
+            border-color: #27ae60 !important;
+        }
+        #mdl .lb.e:hover {
+            background-color: #f1f5f9 !important;
+            border-color: #1a4b60 !important;
+        }
+
+        .ip {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            height: 100%;
+            width: 100%;
+        }
+
+        .fps {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fps select {
+            padding: 12px 14px;
+            border: 2px solid #6cb4db;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a4b60;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(108, 180, 219, 0.1);
+            transition: all 0.2s;
+            cursor: pointer;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .fps select:focus {
+            outline: none;
+            border-color: #1a4b60;
+            box-shadow: 0 0 0 3px rgba(26, 75, 60, 0.15);
+        }
+
+        .fps select optgroup {
+            font-weight: 800;
+            color: #1a4b60;
+            background: #e8f0f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 1.1rem;
+        }
+
+        .fps select optgroup option {
+            font-weight: 400;
+            color: #2c3e50;
+            background: white;
+            padding: 6px 8px 6px 25px;
+        }
+
+        .fps select optgroup option::before {
+            content: "· ";
+            color: #6cb4db;
+            font-weight: 300;
+        }
+
+        .fps select optgroup option:hover {
+            background: #e8f8f5;
+        }
+
+        .sb {
+            background: #ffffff;
+            border: 1px solid #d8e2ec;
+            padding: 25px 30px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 170px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+        }
+
+        .si {
+            margin-bottom: 8px;
+            font-size: 1rem;
+            color: #334155;
+            word-break: break-word;
+        }
+        .si:last-child {
+            margin-bottom: 0;
+        }
+        .sl {
+            font-weight: 600;
+            color: #1a4b60;
+            width: 110px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .ab {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+        }
+
+        button {
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .bp {
+            background-color: #27ae60;
+            color: white;
+            flex: 2;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+        }
+
+        .bp:hover {
+            background-color: #219653;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(39, 174, 96, 0.25);
+        }
+
+        .bs {
+            background-color: #1a4b60;
+            color: white;
+            flex: 1;
+            box-shadow: 0 4px 12px rgba(26, 75, 96, 0.15);
+        }
+
+        .bs:hover {
+            background-color: #113342;
+            transform: translateY(-1px);
+        }
+
+        .bc {
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .ftr {
+            margin-top: 5px;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            text-align: center;
+            font-weight: 100;
+            width: 100%;
+            max-width: 750px;
+        }
+
+        .ftr span {
+            color: #e74c3c;
+        }
+
+        .mb {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 34, 43, 0.55);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fdin 0.2s ease;
+            padding: 10px;
+        }
+
+        .mc {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 580px;
+            box-shadow: 0 20px 40px rgba(15, 34, 43, 0.2);
+            position: relative;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        .mpc {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            border-radius: 0 !important;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 30px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .mbs {
+            position: relative;
+            overflow: auto;
+            flex: 1;
+            padding: 25px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .mh {
+            font-size: 1.35rem;
+            font-weight: bold;
+            color: #1a4b60;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bx {
+            background: transparent;
+            font-size: 1.8rem;
+            color: #94a3b8;
+            padding: 0;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .bx:hover {
+            color: #ef4444;
+        }
+
+        .ms {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .mt {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mt.a {
+            background: #1a4b60;
+            color: white;
+            box-shadow: 0 2px 6px rgba(26, 75, 96, 0.15);
+        }
+
+        .fs {
+            display: none;
+            animation: fdin 0.25s ease;
+        }
+
+        .fs.a {
+            display: block;
+        }
+
+        @keyframes fdin {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fg {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .fv {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fv.fw {
+            grid-column: span 2;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        input,
+        select {
+            padding: 11px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            color: #334155;
+            background-color: #f8fafc;
+            transition: all 0.2s;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #6cb4db;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(108, 180, 219, 0.15);
+        }
+
+        .mf {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 20px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .bsd {
+            background-color: #3498db;
+            color: white;
+        }
+        .bsd:hover {
+            background-color: #2980b9;
+        }
+
+        .bcn {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+        .bcn:hover {
+            background-color: #e2e8f0;
+        }
+
+        .cir {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.85rem;
+        }
+        .cir:last-child {
+            border-bottom: none;
+        }
+        .cii {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 10px;
+        }
+
+        .sel-modal-hdr {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1a4b60;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 4px 24px 4px 8px;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231a4b60' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: calc(100% - 8px) center;
+            width: auto;
+            max-width: 260px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sel-modal-hdr:focus {
+            border-color: #6cb4db;
+            box-shadow: 0 0 0 2px rgba(108, 180, 219, 0.15);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            .crd {
+                padding: 20px;
+            }
+            .db {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+            .ps-wrapper {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .hdr {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .hdr-r {
+                width: 100%;
+                justify-content: center;
+            }
+            .ab {
+                flex-direction: column;
+            }
+            .fg {
+                grid-template-columns: 1fr;
+            }
+            .fv.fw {
+                grid-column: span 1;
+            }
+            .mc {
+                padding: 20px;
+            }
+            .mf button {
+                width: 100%;
+            }
+        }
+
+        .mpc {
+            max-width: 90vw;
+            width: 600px;
+            max-height: 95vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 30px;
+        }
+
+        .mbs {
+            flex: 1;
+            padding: 25px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+            container-type: inline-size;
+            position: relative;
+            overflow: auto;
+        }
+
+        .pc {
+            background: #ffffff;
+            width: 210mm;
+            height: 297mm;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.12);
+            box-sizing: border-box;
+            flex-shrink: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+        }
+
+        .psh {
+            width: 210mm;
+            height: 297mm;
+            box-sizing: border-box;
+            padding: 5mm 2mm 5mm 2mm;
+            display: grid;
+            gap: 0;
+            background: white;
+        }
+
+        @container (min-width: 794px) {
+            .pc {
+                transform: scale(1);
+            }
+        }
+
+        .lb {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: 2.5mm 3.5mm;
+            border: 1px dashed #cbd5e1;
+            position: relative;
+            background: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .lbt {
+            font-size: 7pt;
+            font-weight: bold;
+            color: #4a5568;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border-bottom: 0.8px solid #cbd5e1;
+            padding-bottom: 1mm;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lbm {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2mm;
+            flex: 1;
+            padding: 1mm 0;
+            overflow: hidden;
+        }
+
+        .lba {
+            font-size: 20pt;
+            font-weight: 900;
+            color: #000000;
+            font-family: 'Arial Black', Impact, sans-serif;
+            line-height: 1;
+            letter-spacing: -0.5px;
+        }
+
+        .lbs {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #4a5568;
+            border: 1.5px solid #000;
+            padding: 0.4mm 1.5mm;
+            border-radius: 3px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transform: rotate(-2deg);
+            box-shadow: 1px 1px 0px #000;
+            background: #fff;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lbb {
+            font-size: 9pt;
+            font-weight: 800;
+            color: #000000;
+            line-height: 1.2;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 2.4em;
+            text-transform: uppercase;
+        }
+
+        .lb.e {
+            border: 1px dashed #e2e8f0;
+            background: #fafafa;
+        }
+        .lb.e * {
+            display: none !important;
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0 !important;
+            }
+            html, body {
+                background: white;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .crd, .mb, #pwaBanner, .ftr {
+                display: none !important;
+            }
+            #hpc {
+                display: block !important;
+            }
+            .pc {
+                box-shadow: none !important;
+                margin: 0 !important;
+                page-break-after: avoid;
+                page-break-before: avoid;
+                transform: none !important;
+            }
+            .lb {
+                border: 1px solid transparent !important;
+            }
+            .bp svg {
+                display: none;
+            }
+        }
+
+        #hpc {
+            display: none;
+        }
+
+        .pwb {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #1a4b60;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 9999;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+            animation: fdin 0.4s ease;
+        }
+
+        .dropdown-loading {
+            color: #94a3b8;
+            font-weight: normal;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <input type="hidden" id="i5" value="" />
+    <input type="hidden" id="i6" value="" />
+    <input type="hidden" id="i7" value="" />
+
+    <div class="crd">
+        <div class="hdr">
+            <div class="hdr-l">
+                <img src="/assets/logo.png" alt="LAVU Logo" class="lg" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%231a4b60\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'10\'/><path d=\'M8 14s1.5 2 4 2 4-2 4-2\'/><line x1=\'9\' y1=\'9\' x2=\'9.01\' y2=\'9\'/><line x1=\'15\' y1=\'9\' x2=\'15.01\' y2=\'9\'/></svg>'">
+                <div>
+                    <div class="hdr-ttl">LAVU OÖ</div>
+                    <div class="hdr-sub" id="txt-studio-v9">Etiketten-Studio v9</div>
+                </div>
+            </div>
+            <div class="hdr-r">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <select id="s1" class="sel-hdr">
+                    <option value="" disabled selected>Loading locations...</option>
+                </select>
+                <button id="langToggleBtn" class="btn-lang-toggle" aria-label="Toggle language">EN</button>
+            </div>
+        </div>
+
+        <div class="db">
+            <div class="ps-wrapper">
+                <div class="ps-ttl" id="fmt-overlay">
+                    Format wird geladen...
+                </div>
+                <div class="ps">
+                    <div class="tw" id="layout-title-attr" title="Klicken für vollständige A4-Großansicht">
+                        <div class="sc" id="previewScaleContainer">
+                            <div class="psh" id="t1"></div>
+                        </div>
+                        <div class="to" id="txt-print-layout">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                            Druck-Layout
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ip">
+                <div class="fps">
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; width: 100%;">
+                        <div>
+                            <span id="txt-art-nr" style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; height: 16px; line-height: 16px;">Art.Nr.</span>
+                            <select id="s2_art"></select>
+                        </div>
+                        <div>
+                            <span id="txt-bezeichnung" style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; height: 16px; line-height: 16px;">Bezeichnung</span>
+                            <select id="s2_name"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sb">
+                    <div class="lbt" id="d0">-</div>
+                    <div class="lbm">
+                        <div class="lba" id="d2">-</div>
+                        <div class="lbs" id="d3">-</div>
+                    </div>
+                    <div class="lbt bbb-fake-fix" style="border-bottom:none; font-size:1px; height:1px; line-height:1px;"></div>
+                    <div class="lbb" id="d1">-</div>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 6px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; visibility: hidden;" id="d4">-</div>
+                </div>
+
+                <div class="ab">
+                    <button class="bp" id="btn-print-now">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        Jetzt Drucken
+                    </button>
+                    <button class="bs" id="btn-options">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        Optionen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ftr" style="display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap;">
+        Built with <span style="color: #e74c3c;">&hearts;</span> by Karli
+        <span style="color: #cbd5e1;">|</span>
+        <a href="https://github.com/7pub" target="_blank" style="display: inline-flex; align-items: center; gap: 5px; color: inherit; text-decoration: none; transition: color 0.2s;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg>
+        </a>
+    </div>
+
+    <div id="m1" class="mb">
+        <div class="mc">
+            <div class="mh">
+                <span id="txt-modal1-title">Druck- & Standorteinstellungen</span>
+                <button class="bx" id="modal1CloseBtn" aria-label="Close modal">&times;</button>
+            </div>
+
+            <div class="fv" style="margin-bottom: 15px;">
+                <label for="i1" id="lbl-location">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Standort (ASZ Niederlassung OÖ):
+                </label>
+                <select id="i1"></select>
+            </div>
+
+            <div class="fv" style="margin-bottom: 15px;">
+                <label for="labelFormatSelect" id="lbl-format">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+                    Etiketten-Hersteller & Format:
+                </label>
+                <select id="labelFormatSelect"></select>
+            </div>
+
+            <div class="fg" style="margin-bottom: 20px;">
+                <div class="fv">
+                    <label for="i2" id="lblCount">Anzahl Etiketten:</label>
+                    <input type="number" id="i2" value="21" min="1" />
+                </div>
+                <div class="fv">
+                    <label for="i3" id="lblStartPos">Start-Position:</label>
+                    <input type="number" id="i3" value="1" min="1" />
+                </div>
+            </div>
+
+            <div class="ms">
+                <div id="t2" class="mt a">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    <span id="txt-tab-select">Sortiment wählen</span>
+                </div>
+                <div id="t3" class="mt">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <span id="txt-tab-manage">Datenbank verwalten</span>
+                </div>
+            </div>
+
+            <div id="s3" class="fs a">
+                <div class="fv" style="margin-bottom: 15px;">
+                    <label for="i4" id="lbl-url">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        Zentrale Sortiment-URL (GitHub Raw JSON):
+                    </label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="i4" placeholder="https://..." style="flex: 1;" />
+                        <button class="bc bsd" style="padding: 11px 16px;" id="btn-update">Aktualisieren</button>
+                    </div>
+                    <span id="n1" style="font-size: 0.8rem; font-weight: bold; margin-top: 6px; display: block;"></span>
+                </div>
+            </div>
+
+            <div id="s4" class="fs">
+                <div class="fg" style="margin-gap: 12px; margin-bottom: 15px;">
+                    <input type="hidden" id="e1" value="" />
+                    <div class="fv">
+                        <label for="c1">Art.Nr.:</label>
+                        <input type="text" id="c1" placeholder="z.B. 4040" />
+                    </div>
+                    <div class="fv">
+                        <label for="c2" id="lbl-db-suffix">Gebinde / Suffix:</label>
+                        <input type="text" id="c2" placeholder="z.B. QR-Box" />
+                    </div>
+                    <div class="fv fw">
+                        <label for="c3" id="lbl-db-bez">Bezeichnung:</label>
+                        <input type="text" id="c3" placeholder="z.B. Elektro-Kleingeräte" />
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                    <button id="b1" class="bc bsd" style="display: none; background: #e67e22;">💾 Ändern</button>
+                    <button class="bc bsd" style="background: #27ae60; flex: 1;" id="btn-add-new">➕ Neu hinzufügen</button>
+                    <button class="bc bcn" id="btn-cancel">Abbrechen</button>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <button class="bc" style="background: #2c3e50; color: white; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;" id="btn-download-json"> 📥 Aktuelle Datenbank als JSON herunterladen </button>
+                </div>
+
+                <label id="lbl-current-entries">Aktuelle Einträge im lokalen Workspace:</label>
+                <div id="c4" style="max-height: 180px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px;"> </div>
+            </div>
+
+            <div class="mf">
+                <button id="b2" class="bsd">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    <span id="btn-save-default">Standard sichern</span>
+                </button>
+                <button class="bcn" id="btn-done">Fertig</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="m2" class="mb">
+        <div class="mc mpc">
+            <div class="mh">
+                <span id="modalTitle" style="display: flex; flex-direction: column; gap: 4px;">
+                    Interaktiver A4-Druckbogen
+                </span>
+                <select id="modalLabelFormatSelect" class="sel-modal-hdr"></select>
+                <button class="bx" id="modal2CloseBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="mbs">
+                <div class="pc" id="p1">
+                    <div class="psh" id="mdl"></div>
+                </div>
+                
+                <div class="zoom-container">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a4b60" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    <div class="zoom-slider-wrapper">
+                        <input type="range" id="zoomSlider" class="zoom-slider" min="50" max="300" value="100" />
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a4b60" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    <div class="zoom-label">
+                        <span id="zoomVal">100%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mf">
+                <button class="bp" id="btn-modal-print">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Drucken
+                </button>
+                <button class="bcn" id="btn-modal-close">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="hpc">
+        <div class="pc" id="d5"></div>
+    </div>
+
+    <div class="pwb" id="pwaBanner">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div>
+                <div style="font-weight: bold; font-size: 0.95rem;" id="txt-pwa-title">Als App installieren</div>
+                <div style="font-size: 0.8rem; color: #a5cddd; margin-top: 2px;" id="txt-pwa-sub">Schnellerer Zugriff & Offline-Nutzung</div>
+            </div>
+        </div>
+        <button id="b3" style="background: #27ae60; color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 6px; box-shadow: 0 4px 10px rgba(39,174,96,0.3);">Installieren</button>
+    </div>
+
+    <script>
+        let a2 = [];
+        let a3 = 'select';
+        let currentLang = localStorage.getItem('lavu_lang') || 'de';
+        
+        // Location data
+        let locationData = [];
+        const LOCATION_JSON_URL = "https://raw.githubusercontent.com/LAVU-OOE/Etiketten-Druckstudio/refs/heads/main/locations.json";
+
+        // Sortiment mit Art.Nr. und Bezeichnung
+        const sortimentData = [
+            { artNr: "1000", bez: "Textilen" },
+            { artNr: "2100", bez: "Kartonagen (ARA-lizenziert)" },
+            { artNr: "2200", bez: "Metallverpackungen" },
+            { artNr: "2210", bez: "Metallverpackungen - geöffnete Gasbehältnisse" },
+            { artNr: "2300", bez: "Glasverpackungen" },
+            { artNr: "2400", bez: "Getränke-Verbundkartons" },
+            { artNr: "2520", bez: "Eimer & Kanister" },
+            { artNr: "2540", bez: "Kunststoff Verpackungsfolien" },
+            { artNr: "2555", bez: "Big-Bags" },
+            { artNr: "2565", bez: "EPS-Styropor" },
+            { artNr: "2580", bez: "Holzverpackungen" },
+            { artNr: "2590", bez: "Keramikverpackungen" },
+            { artNr: "3000", bez: "Altpapier (Deinking-Qualität)" },
+            { artNr: "3005", bez: "Datenschutzpapier" },
+            { artNr: "3210", bez: "Nichteisen-Metalle" },
+            { artNr: "3211", bez: "Armaturen & Messing" },
+            { artNr: "3212", bez: "Alu-Kaffeekapseln" },
+            { artNr: "3220", bez: "Kabelschrott" },
+            { artNr: "3300", bez: "Flachglas" },
+            { artNr: "3310", bez: "Altfenster PVC" },
+            { artNr: "3315", bez: "Altfenste PVC" },
+            { artNr: "3320", bez: "Flachglas" },
+            { artNr: "3400", bez: "Speisefett/-öl (Haushalts-Öl)" },
+            { artNr: "3405", bez: "Speisefett/-öl (Gastro-Öl)" },
+            { artNr: "3410", bez: "Speisefett/-öl (in Kleingebinden)" },
+            { artNr: "3430", bez: "Kerzen" },
+            { artNr: "3500", bez: "Altreifen" },
+            { artNr: "3520", bez: "Hartkunststoffe" },
+            { artNr: "3526", bez: "Kunststoff-Mülltonnen" },
+            { artNr: "3540", bez: "Kunststoff-Sonstige Folien" },
+            { artNr: "3560", bez: "Filmmaterial" },
+            { artNr: "3572", bez: "Compact-Disk (CD)" },
+            { artNr: "3580", bez: "Sonderreifen" },
+            { artNr: "3585", bez: "Reifen m. Felgen" },
+            { artNr: "3600", bez: "Mineralischer Bauschutt" },
+            { artNr: "3610", bez: "Gipskarton" },
+            { artNr: "3700", bez: "Altholz" },
+            { artNr: "3805", bez: "Ersatzbrennstoff" },
+            { artNr: "4010", bez: "Elektro-Großgeräte" },
+            { artNr: "4015", bez: "Nachtspeicheröfen" },
+            { artNr: "4020", bez: "Kühlgeräte" },
+            { artNr: "4030", bez: "Bildschirmgeräte" },
+            { artNr: "4031", bez: "Flachbildschirmgeräte" },
+            { artNr: "4040", bez: "Elektro-Kleingeräte" },
+            { artNr: "4041", bez: "Elektro-Kleingeräte,schadst. f." },
+            { artNr: "4050", bez: "Gasentladungslampen" },
+            { artNr: "4051", bez: "Gasentladungslampen Sonderformen" },
+            { artNr: "4100", bez: "Gerätebatterien" },
+            { artNr: "4110", bez: "Fahrzeugbatterien" },
+            { artNr: "4111", bez: "Lithium-Batterien" },
+            { artNr: "4120", bez: "Ni-Cd Akkumulatoren" },
+            { artNr: "4125", bez: "Traktionsbatterien" },
+            { artNr: "4200", bez: "Altöle" },
+            { artNr: "4221", bez: "Feuerlöscher" },
+            { artNr: "4230", bez: "Gasflaschen" },
+            { artNr: "4250", bez: "Altöl" },
+            { artNr: "4260", bez: "Lösemittel-Wassergemische" },
+            { artNr: "4270", bez: "Säurengemische" },
+            { artNr: "4275", bez: "Laugengemische" },
+            { artNr: "4280", bez: "Ölverunreinigtes Erdmaterial" },
+            { artNr: "4300", bez: "Altlacke & Werkstättenabfälle" },
+            { artNr: "4305", bez: "Lack- & Farbschlamm" },
+            { artNr: "4310", bez: "Kunststoffemballagen (mit schädlichen Restinhalten)" },
+            { artNr: "4320", bez: "Öl-/Wassergemische & Emulsionen" },
+            { artNr: "4325", bez: "Ölschlamm & Ölgatsch" },
+            { artNr: "4330", bez: "Schädlingsbekämpfungs- & Chemikalienreste" },
+            { artNr: "4340", bez: "Altmedikamente (ungsortierte Arzneien)" },
+            { artNr: "4350", bez: "Spraydosen (mit Restinhalt)" },
+            { artNr: "4360", bez: "Spraydosen (mit Restinhalt)" },
+            { artNr: "4380", bez: "Kondensatoren" },
+            { artNr: "4390", bez: "XPS-Dämmplatten" },
+            { artNr: "4395", bez: "Mineralwolle" },
+            { artNr: "4430", bez: "Netze & Schnüre" },
+            { artNr: "4450", bez: "Dispersionsfarben" },
+            { artNr: "4460", bez: "Altmedikamente (vorsortiert)" },
+            { artNr: "4461", bez: "Altmedikamente (vorsortiert/Apotheken)" },
+            { artNr: "4464", bez: "Injektionsnadeln" },
+            { artNr: "4465", bez: "Injektionsnadeln (aus Spitälern)" },
+            { artNr: "5100", bez: "Ungefährliche medizinische Abfälle" },
+            { artNr: "9900", bez: "Hilfsgebinde" }
+        ];
+
+        const i18n = {
+            de: {
+                studioV9: "Etiketten-Studio v9",
+                loadingFormat: "Format wird geladen...",
+                printLayout: "Druck-Layout",
+                artNr: "Art.Nr.",
+                bezeichnung: "Bezeichnung",
+                printNow: "Jetzt Drucken",
+                options: "Optionen",
+                modal1Title: "Druck- & Standorteinstellungen",
+                lblLocation: "Standort (ASZ Niederlassung OÖ):",
+                lblFormat: "Etiketten-Hersteller & Format:",
+                lblCount: "Anzahl Etiketten",
+                lblStartPos: "Start-Position",
+                tabSelect: "Sortiment wählen",
+                tabManage: "Datenbank verwalten",
+                lblUrl: "Zentrale Sortiment-URL (GitHub Raw JSON):",
+                btnUpdate: "Aktualisieren",
+                lblDbSuffix: "Gebinde / Suffix:",
+                lblDbBez: "Bezeichnung:",
+                btnSave: "💾 Ändern",
+                btnAddNew: "➕ Neu hinzufügen",
+                btnCancel: "Abbrechen",
+                btnDownloadJson: "📥 Aktuelle Datenbank als JSON herunterladen",
+                lblCurrentEntries: "Aktuelle Einträge im lokalen Workspace:",
+                btnSaveDefault: "Standard sichern",
+                btnDone: "Fertig",
+                modal2Title: "Interaktiver A4-Druckbogen",
+                btnModalPrint: "Drucken",
+                btnModalClose: "Schließen",
+                txtPwaTitle: "Als App installieren",
+                txtPwaSub: "Schnellerer Zugriff & Offline-Nutzung",
+                btnPwaInstall: "Installieren",
+                layoutTitleAttr: "Klicken für vollständige A4-Großansicht",
+                alertSaved: "Aktuelle Einstellungen wurden als Standard im Browser gespeichert!",
+                confirmDelete: "Möchten Sie diesen Eintrag wirklich löschen?",
+                alertFillForm: "Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.",
+                alertErrorChange: "Fehler beim Ändern.",
+                alertDuplicate: "Diese Artikelnummer existiert bereits!",
+                netLoading: "⏳ Verbinde...",
+                netSuccessLocal: "🟢 Lokale sortiment.json erfolgreich aktiv",
+                netSuccessRemote: "🟢 Verbunden mit externem JSON Repository",
+                netFallbackLocal: "⚠️ Keine lokale sortiment.json gefunden. Cache geladen.",
+                netFallbackRemote: "⚠️ Remote JSON Offline! Lokaler Cache geladen.",
+                txtZoom: "Zoom",
+                locationLoading: "Standorte werden geladen...",
+                locationError: "Fehler beim Laden der Standorte"
+            },
+            en: {
+                studioV9: "Label Studio v9",
+                loadingFormat: "Loading format...",
+                printLayout: "Print Layout",
+                artNr: "Item No.",
+                bezeichnung: "Description",
+                printNow: "Print Now",
+                options: "Options",
+                modal1Title: "Print & Location Settings",
+                lblLocation: "Location (ASZ Branch OÖ):",
+                lblFormat: "Label Manufacturer & Format:",
+                lblCount: "Number of Labels",
+                lblStartPos: "Start Position",
+                tabSelect: "Select Assortment",
+                tabManage: "Manage Database",
+                lblUrl: "Central Assortment URL (GitHub Raw JSON):",
+                btnUpdate: "Update",
+                lblDbSuffix: "Container / Suffix:",
+                lblDbBez: "Description:",
+                btnSave: "💾 Change",
+                btnAddNew: "➕ Add New",
+                btnCancel: "Cancel",
+                btnDownloadJson: "📥 Download Current Database as JSON",
+                lblCurrentEntries: "Current entries in local workspace:",
+                btnSaveDefault: "Save Defaults",
+                btnDone: "Done",
+                modal2Title: "Interactive A4 Print Sheet",
+                btnModalPrint: "Print",
+                btnModalClose: "Close",
+                txtPwaTitle: "Install as App",
+                txtPwaSub: "Faster access & offline usage",
+                btnPwaInstall: "Install",
+                layoutTitleAttr: "Click for full A4 sheet preview",
+                alertSaved: "Current settings saved as defaults in browser!",
+                confirmDelete: "Do you really want to delete this entry?",
+                alertFillForm: "Please fill in at least Item No. and Description.",
+                alertErrorChange: "Error applying changes.",
+                alertDuplicate: "This Article Number already exists!",
+                netLoading: "⏳ Connecting...",
+                netSuccessLocal: "🟢 Local sortiment.json active successfully",
+                netSuccessRemote: "🟢 Connected to remote JSON Repository",
+                netFallbackLocal: "⚠️ No local sortiment.json found. Cache loaded.",
+                netFallbackRemote: "⚠️ Remote JSON Offline! Local cache loaded.",
+                txtZoom: "Zoom",
+                locationLoading: "Loading locations...",
+                locationError: "Error loading locations"
+            }
+        };
+
+        const formats = {
+            "4473": { cols: 3, rows: 8, name: "HERMA 4473 (70 x 36 mm)" },
+            "4273": { cols: 3, rows: 8, name: "HERMA 4273 (70 x 36 mm)" },
+            "4676": { cols: 3, rows: 8, name: "HERMA 4676 (70 x 36 mm)" },
+            "5074": { cols: 3, rows: 8, name: "HERMA 5074 (70 x 36 mm)" },
+            "4428": { cols: 2, rows: 4, name: "HERMA 4428 (105 x 68 mm)" },
+            "4282": { cols: 2, rows: 4, name: "HERMA 4282 (105 x 68 mm)" },
+            "4463": { cols: 2, rows: 4, name: "HERMA 4463 (105 x 68 mm)" },
+            "4276": { cols: 2, rows: 6, name: "HERMA 4276 (99,1 x 42,3 mm)" },
+            "4465": { cols: 2, rows: 6, name: "HERMA 4465 (99,1 x 42,3 mm)" },
+            "5077": { cols: 2, rows: 4, name: "HERMA 5077 (99,1 x 67,7 mm)" },
+            "4269": { cols: 2, rows: 4, name: "HERMA 4269 (99,1 x 67,7 mm)" },
+            "4459": { cols: 3, rows: 17, name: "HERMA 4459 (70 x 16,9 mm)" },
+            "4278": { cols: 3, rows: 5, name: "HERMA 4278 (70 x 50,8 mm)" },
+            "5055": { cols: 3, rows: 5, name: "HERMA 5055 (70 x 50,8 mm)" },
+            "4456": { cols: 3, rows: 10, name: "HERMA 4456 (70 x 29,7 mm)" },
+            "4441": { cols: 3, rows: 7, name: "HERMA 4441 (70 x 42 mm)" },
+            "4623": { cols: 2, rows: 7, name: "HERMA 4623 (97 x 42,3 mm)" },
+            "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" },
+            "5062": { cols: 2, rows: 4, name: "HERMA 5062 (105 x 74 mm)" },
+            "4626": { cols: 2, rows: 4, name: "HERMA 4626 (105 x 74 mm)" },
+            "4470": { cols: 2, rows: 4, name: "HERMA 4470 (105 x 74 mm)" },
+            "4462": { cols: 2, rows: 8, name: "HERMA 4462 (105 x 37 mm)" },
+            "4359": { cols: 2, rows: 4, name: "HERMA 4359 (97 x 67,7 mm)" }
+        };
+        let currentFormatKey = "4473";
+
+        let fallbackSortiment = [
+            { artNr: "4040", bez: "Elektro-Kleingeräte (ohne Akku)", geb: "QR-Box" },
+            { artNr: "4010", bez: "Elektro-Großgeräte", geb: "Gitterbox" },
+            { artNr: "3120", bez: "Altholz thermisch (beschichtet)", geb: "Mulde" },
+            { artNr: "3110", bez: "Altholz stofflich (unbeschichtet)", geb: "Container" },
+            { artNr: "1720", bez: "Altmetall / Schrott", geb: "Mulde" },
+            { artNr: "1610", bez: "Verpackungsholz (Paletten)", geb: "Stapel" },
+            { artNr: "1410", bez: "Altpapier (Kartonagen)", geb: "Presse" },
+            { artNr: "1420", bez: "Altpapier (Mischpapier)", geb: "Umleersystem" },
+            { artNr: "5510", bez: "Bauschutt rein", geb: "Mulde" },
+            { artNr: "5530", bez: "Baustellenabfälle gemischt", geb: "Großcontainer" }
+        ];
+
+        // ===== Location dropdown population =====
+        function populateLocationDropdowns(locations) {
+            const s1 = document.getElementById('s1');
+            const i1 = document.getElementById('i1');
+            
+            if (!s1 || !i1) return;
+            
+            s1.innerHTML = '';
+            i1.innerHTML = '';
+            
+            if (!locations || locations.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = i18n[currentLang].locationError || 'No locations found';
+                option.disabled = true;
+                option.selected = true;
+                s1.appendChild(option);
+                i1.appendChild(option.cloneNode(true));
+                return;
+            }
+            
+            // Group locations by region
+            const grouped = {};
+            locations.forEach(loc => {
+                const region = loc.region || 'Andere';
+                if (!grouped[region]) {
+                    grouped[region] = [];
+                }
+                grouped[region].push(loc);
+            });
+            
+            // Sort region keys
+            const sortedRegions = Object.keys(grouped).sort();
+            
+            sortedRegions.forEach(region => {
+                const optgroupS1 = document.createElement('optgroup');
+                const optgroupI1 = document.createElement('optgroup');
+                optgroupS1.label = region;
+                optgroupI1.label = region;
+                
+                // Sort locations within region by name
+                const sortedLocs = grouped[region].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+                
+                sortedLocs.forEach(loc => {
+                    // Use siteCode as value if available, otherwise use name
+                    const value = loc.siteCode || loc.name;
+                    // Display name with siteCode in parentheses if available
+                    const displayName = loc.siteCode ? `${loc.name} (${loc.siteCode})` : loc.name;
+                    
+                    const optionS1 = document.createElement('option');
+                    optionS1.value = value;
+                    optionS1.textContent = displayName;
+                    optgroupS1.appendChild(optionS1);
+                    
+                    const optionI1 = document.createElement('option');
+                    optionI1.value = value;
+                    optionI1.textContent = displayName;
+                    optgroupI1.appendChild(optionI1);
+                });
+                
+                s1.appendChild(optgroupS1);
+                i1.appendChild(optgroupI1);
+            });
+            
+            // Set default selection if there's a saved value or first option
+            const savedLocation = localStorage.getItem('lavu_location') || '';
+            if (savedLocation && s1.querySelector('option[value="' + savedLocation + '"]')) {
+                s1.value = savedLocation;
+                i1.value = savedLocation;
+            } else if (s1.options.length > 0) {
+                // Select first non-disabled option
+                for (let opt of s1.options) {
+                    if (!opt.disabled && opt.value) {
+                        s1.value = opt.value;
+                        i1.value = opt.value;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // ===== Load locations from external JSON =====
+        function loadLocations() {
+            const s1 = document.getElementById('s1');
+            const i1 = document.getElementById('i1');
+            const t = i18n[currentLang];
+            
+            // Show loading state
+            if (s1) {
+                s1.innerHTML = '';
+                const loadingOpt = document.createElement('option');
+                loadingOpt.value = '';
+                loadingOpt.textContent = t.locationLoading || 'Loading locations...';
+                loadingOpt.disabled = true;
+                loadingOpt.selected = true;
+                s1.appendChild(loadingOpt);
+            }
+            if (i1) {
+                i1.innerHTML = '';
+                const loadingOpt = document.createElement('option');
+                loadingOpt.value = '';
+                loadingOpt.textContent = t.locationLoading || 'Loading locations...';
+                loadingOpt.disabled = true;
+                loadingOpt.selected = true;
+                i1.appendChild(loadingOpt);
+            }
+            
+            // Try to load from cache first for speed
+            const cachedLocations = localStorage.getItem('lavu_locations_cache');
+            if (cachedLocations) {
+                try {
+                    const parsed = JSON.parse(cachedLocations);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        locationData = parsed;
+                        populateLocationDropdowns(locationData);
+                    }
+                } catch (e) {
+                    // Ignore cache parse errors
+                }
+            }
+            
+            // Fetch fresh data
+            fetch(LOCATION_JSON_URL, { cache: "no-store" })
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response was not ok");
+                    return response.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        locationData = data;
+                        localStorage.setItem('lavu_locations_cache', JSON.stringify(locationData));
+                        populateLocationDropdowns(locationData);
+                    } else {
+                        throw new Error("Invalid location data format");
+                    }
+                })
+                .catch(err => {
+                    console.warn("Error loading locations from URL, using fallback:", err);
+                    // Fallback to default locations if fetch fails and no cache
+                    if (!locationData || locationData.length === 0) {
+                        locationData = [
+                            { siteCode: "106", name: "ASZ Asten", zipCode: "4481", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Ansfelden", zipCode: "4053", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Enns", zipCode: "4470", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Hörsching", zipCode: "4063", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Leonding", zipCode: "4060", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Neuhofen", zipCode: "4501", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Pasching", zipCode: "4061", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ St. Florian", zipCode: "4490", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Traun", zipCode: "4050", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Wilhering", zipCode: "4073", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Linz-Nebingerstraße", zipCode: "4020", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Linz-Mostnnystraße", zipCode: "4040", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Linz-Wiener Straße", zipCode: "4030", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Linz-Dornach", zipCode: "4040", region: "Linz-Land & Linz Stadt" },
+                            { siteCode: "N/G", name: "ASZ Wels-Nord", zipCode: "4600", region: "Wels & Wels-Land" },
+                            { siteCode: "N/G", name: "ASZ Wels-Kenten", zipCode: "4600", region: "Wels & Wels-Land" },
+                            { siteCode: "N/G", name: "ASZ Marchtrenk", zipCode: "4614", region: "Wels & Wels-Land" },
+                            { siteCode: "N/G", name: "ASZ Gunskirchen", zipCode: "4623", region: "Wels & Wels-Land" },
+                            { siteCode: "N/G", name: "ASZ Thalheim", zipCode: "4600", region: "Wels & Wels-Land" },
+                            { siteCode: "N/G", name: "ASZ Steyr", zipCode: "4400", region: "Steyr & Steyr-Land" },
+                            { siteCode: "N/G", name: "ASZ Bad Hall", zipCode: "4540", region: "Steyr & Steyr-Land" },
+                            { siteCode: "N/G", name: "ASZ Garsten", zipCode: "4451", region: "Steyr & Steyr-Land" },
+                            { siteCode: "N/G", name: "ASZ Sierning", zipCode: "4522", region: "Steyr & Steyr-Land" }
+                        ];
+                        populateLocationDropdowns(locationData);
+                    }
+                });
+        }
+
+        // Helper: Get first letter, handle special chars (Ä, Ö, Ü, etc.)
+        function getFirstLetter(text) {
+            if (!text) return '';
+            const first = text.charAt(0).toUpperCase();
+            const map = {
+                'Ä': 'A', 'Ö': 'O', 'Ü': 'U', 'ẞ': 'S'
+            };
+            return map[first] || first;
+        }
+
+        // Gruppiere die Sortiment-Daten nach Anfangsbuchstaben
+        function groupByFirstLetter(items) {
+            const groups = {};
+            items.forEach(item => {
+                const letter = getFirstLetter(item.bez);
+                if (!groups[letter]) {
+                    groups[letter] = [];
+                }
+                groups[letter].push(item);
+            });
+            return groups;
+        }
+
+        // NUMERISCHE GRUPPIERUNG: Gruppiere nach Tausender (1, 2, 3, ...)
+        function groupByNumericRange(items) {
+            const groups = {};
+            items.forEach(item => {
+                const num = parseInt(item.artNr) || 0;
+                const groupKey = Math.floor(num / 1000);
+                if (!groups[groupKey]) {
+                    groups[groupKey] = [];
+                }
+                groups[groupKey].push(item);
+            });
+            return groups;
+        }
+
+        // Befülle das Bezeichnung Dropdown mit alphabetischen Gruppen
+        function populateNameDropdownWithGroups(selectElement, items) {
+            if (!selectElement) return;
+            
+            const groups = groupByFirstLetter(items);
+            const sortedLetters = Object.keys(groups).sort();
+            
+            selectElement.innerHTML = '';
+            
+            sortedLetters.forEach((letter) => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = letter;
+                
+                const sortedItems = groups[letter].sort((a, b) => a.bez.localeCompare(b.bez, 'de'));
+                sortedItems.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.artNr;
+                    option.textContent = '· ' + item.bez;
+                    optgroup.appendChild(option);
+                });
+                
+                selectElement.appendChild(optgroup);
+            });
+        }
+
+        // Befülle das Art.Nr. Dropdown - numerisch gruppiert (1, 2, 3, ...)
+        function populateArtDropdownWithGroups(selectElement, items) {
+            if (!selectElement) return;
+            
+            const groups = groupByNumericRange(items);
+            const sortedKeys = Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b));
+            
+            selectElement.innerHTML = '';
+            
+            sortedKeys.forEach((key) => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = key;
+                
+                const sortedItems = groups[key].sort((a, b) => {
+                    return (parseInt(a.artNr) || 0) - (parseInt(b.artNr) || 0);
+                });
+                sortedItems.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.artNr;
+                    option.textContent = '· ' + item.artNr;
+                    optgroup.appendChild(option);
+                });
+                
+                selectElement.appendChild(optgroup);
+            });
+        }
+
+        // Überschreibe die i1() Funktion für Gruppierung
+        function i1() {
+            const selectArt = document.getElementById('s2_art');
+            const selectName = document.getElementById('s2_name');
+            if (!selectArt || !selectName) return;
+
+            const currentSelectedArtNr = selectArt.value;
+
+            populateArtDropdownWithGroups(selectArt, a2);
+            populateNameDropdownWithGroups(selectName, a2);
+
+            if (currentSelectedArtNr !== "") {
+                if (selectArt.querySelector('option[value="' + currentSelectedArtNr + '"]')) {
+                    selectArt.value = currentSelectedArtNr;
+                }
+                if (selectName.querySelector('option[value="' + currentSelectedArtNr + '"]')) {
+                    selectName.value = currentSelectedArtNr;
+                }
+            } else if (a2.length > 0) {
+                const firstItem = a2[0];
+                if (selectArt.querySelector('option[value="' + firstItem.artNr + '"]')) {
+                    selectArt.value = firstItem.artNr;
+                }
+                if (selectName.querySelector('option[value="' + firstItem.artNr + '"]')) {
+                    selectName.value = firstItem.artNr;
+                }
+            }
+
+            r1();
+            p1();
+        }
+
+        // Event Listeners Setup
+        document.addEventListener('DOMContentLoaded', function() {
+            a2 = sortimentData.slice();
+            localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+            
+            // Load locations from external JSON
+            loadLocations();
+            
+            initFormatSelects();
+            initHeaderSelects();
+            applyLanguage();
+            l1();
+            setupEventListeners();
+
+            let a4 = localStorage.getItem('lavu_sortiment_url');
+            if (a4 === null) {
+                a4 = "https://raw.githubusercontent.com/LAVU-OOE/Etiketten-Druckstudio/refs/heads/main/sortiment.json";
+                localStorage.setItem('lavu_sortiment_url', a4);
+            }
+            document.getElementById('i4').value = a4;
+            
+            const t = i18n[currentLang];
+            document.getElementById('n1').innerHTML = t.netLoading;
+            document.getElementById('n1').style.color = '#f39c12';
+            f2();
+            u1();
+            
+            const savedZoom = localStorage.getItem('lavu_preview_zoom') || '100';
+            document.getElementById('zoomSlider').value = savedZoom;
+            applyFastZoom(savedZoom);
+            
+            // Listen for location change events
+            document.getElementById('s1').addEventListener('change', function() {
+                const val = this.value;
+                document.getElementById('i1').value = val;
+                localStorage.setItem('lavu_location', val);
+                u1();
+                s7();
+            });
+            document.getElementById('i1').addEventListener('change', function() {
+                const val = this.value;
+                document.getElementById('s1').value = val;
+                localStorage.setItem('lavu_location', val);
+                u1();
+                s7();
+            });
+        });
+
+        // Setup all event listeners
+        function setupEventListeners() {
+            document.getElementById('langToggleBtn').addEventListener('click', toggleLanguage);
+            
+            document.getElementById('s1').addEventListener('change', function() {
+                x1(this.value);
+                s7();
+            });
+            
+            document.getElementById('i1').addEventListener('change', function() {
+                x2(this.value);
+            });
+            
+            document.getElementById('btn-print-now').addEventListener('click', function() {
+                window.print();
+            });
+            
+            document.getElementById('btn-options').addEventListener('click', o2);
+            
+            document.getElementById('modal1CloseBtn').addEventListener('click', c2);
+            document.getElementById('m1').addEventListener('click', function(e) {
+                if (e.target.id === 'm1') c2();
+            });
+            
+            document.getElementById('modal2CloseBtn').addEventListener('click', c5);
+            document.getElementById('m2').addEventListener('click', function(e) {
+                if (e.target.id === 'm2') c5();
+            });
+            
+            document.getElementById('btn-modal-print').addEventListener('click', function() {
+                window.print();
+            });
+            
+            document.getElementById('btn-modal-close').addEventListener('click', c5);
+            
+            document.getElementById('labelFormatSelect').addEventListener('change', function() {
+                changeFormat(this.value);
+                s7();
+            });
+            
+            document.getElementById('modalLabelFormatSelect').addEventListener('change', function() {
+                changeFormat(this.value);
+            });
+            
+            document.getElementById('layout-title-attr').addEventListener('click', o1);
+            
+            document.getElementById('i2').addEventListener('input', function() {
+                u1();
+                s7();
+            });
+            
+            document.getElementById('i3').addEventListener('input', function() {
+                u1();
+                s7();
+            });
+            
+            document.getElementById('t2').addEventListener('click', function() {
+                m2('select');
+            });
+            
+            document.getElementById('t3').addEventListener('click', function() {
+                m2('input');
+            });
+            
+            document.getElementById('btn-update').addEventListener('click', function() {
+                localStorage.setItem('lavu_sortiment_url', document.getElementById('i4').value.trim());
+                f2();
+            });
+            
+            document.getElementById('btn-add-new').addEventListener('click', s3);
+            document.getElementById('btn-cancel').addEventListener('click', e1);
+            document.getElementById('btn-download-json').addEventListener('click', e2);
+            document.getElementById('b1').addEventListener('click', s4);
+            
+            document.getElementById('b2').addEventListener('click', s6);
+            
+            document.getElementById('btn-done').addEventListener('click', function() {
+                document.getElementById('m1').style.display = 'none';
+            });
+            
+            document.getElementById('zoomSlider').addEventListener('input', function() {
+                applyFastZoom(this.value);
+            });
+            
+            document.getElementById('s2_art').addEventListener('change', function() {
+                syncDropdowns(this.value);
+            });
+            
+            document.getElementById('s2_name').addEventListener('change', function() {
+                syncDropdowns(this.value);
+            });
+            
+            document.getElementById('b3').addEventListener('click', function() {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(function(choiceResult) {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                        }
+                        document.getElementById('pwaBanner').style.display = 'none';
+                        deferredPrompt = null;
+                    });
+                }
+            });
+            
+            window.addEventListener('resize', function() {
+                if (document.getElementById('m2').style.display === 'flex') {
+                    const zoomVal = document.getElementById('zoomSlider').value;
+                    s8(parseFloat(zoomVal) / 100);
+                }
+            });
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'de' ? 'en' : 'de';
+            localStorage.setItem('lavu_lang', currentLang);
+            applyLanguage();
+            u1();
+            r1();
+            
+            // Re-populate locations with new language
+            if (locationData && locationData.length > 0) {
+                populateLocationDropdowns(locationData);
+            } else {
+                loadLocations();
+            }
+        }
+
+        function applyLanguage() {
+            const t = i18n[currentLang];
+            
+            document.getElementById('langToggleBtn').textContent = currentLang === 'de' ? 'EN' : 'DE';
+            
+            document.getElementById('txt-studio-v9').textContent = t.studioV9;
+            const printLayoutEl = document.getElementById('txt-print-layout');
+            printLayoutEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> ${t.printLayout}`;
+            
+            document.getElementById('txt-art-nr').textContent = t.artNr;
+            document.getElementById('txt-bezeichnung').textContent = t.bezeichnung;
+            
+            const printBtn = document.getElementById('btn-print-now');
+            printBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> ${t.printNow}`;
+            
+            const optionsBtn = document.getElementById('btn-options');
+            optionsBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> ${t.options}`;
+            
+            document.getElementById('txt-modal1-title').textContent = t.modal1Title;
+            document.getElementById('lbl-location').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${t.lblLocation}`;
+            document.getElementById('lbl-format').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg> ${t.lblFormat}`;
+            
+            document.getElementById('txt-tab-select').textContent = t.tabSelect;
+            document.getElementById('txt-tab-manage').textContent = t.tabManage;
+            document.getElementById('lbl-url').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> ${t.lblUrl}`;
+            document.getElementById('btn-update').textContent = t.btnUpdate;
+            document.getElementById('lbl-db-suffix').textContent = t.lblDbSuffix;
+            document.getElementById('lbl-db-bez').textContent = t.lblDbBez;
+            document.getElementById('btn-add-new').textContent = t.btnAddNew;
+            document.getElementById('btn-cancel').textContent = t.btnCancel;
+            document.getElementById('btn-download-json').textContent = t.btnDownloadJson;
+            document.getElementById('lbl-current-entries').textContent = t.lblCurrentEntries;
+            
+            document.getElementById('btn-save-default').innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ${t.btnSaveDefault}`;
+            document.getElementById('btn-done').textContent = t.btnDone;
+            
+            document.getElementById('modalTitle').textContent = t.modal2Title;
+            
+            const modalPrintBtn = document.getElementById('btn-modal-print');
+            modalPrintBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> ${t.btnModalPrint}`;
+            document.getElementById('btn-modal-close').textContent = t.btnModalClose;
+            
+            document.getElementById('txt-pwa-title').textContent = t.txtPwaTitle;
+            document.getElementById('txt-pwa-sub').textContent = t.txtPwaSub;
+            document.getElementById('b3').textContent = t.btnPwaInstall;
+            
+            document.getElementById('layout-title-attr').setAttribute('title', t.layoutTitleAttr);
+
+            const f = formats[currentFormatKey];
+            const maxLabels = f.cols * f.rows;
+            document.getElementById('lblCount').textContent = `${t.lblCount} (max. ${maxLabels}):`;
+            document.getElementById('lblStartPos').textContent = `${t.lblStartPos} (1-${maxLabels}):`;
+
+            changeFormat(currentFormatKey);
+        }
+
+        function applyFastZoom(value) {
+            document.getElementById('zoomVal').textContent = value + '%';
+            const element = document.getElementById('p1');
+            if (element) {
+                s8(parseFloat(value) / 100);
+            }
+            localStorage.setItem('lavu_preview_zoom', value);
+        }
+
+        function initFormatSelects() {
+            const selectSettings = document.getElementById('labelFormatSelect');
+            const selectModal = document.getElementById('modalLabelFormatSelect');
+            
+            [selectSettings, selectModal].forEach(function(select) {
+                if (!select) return;
+                select.innerHTML = '';
+                for (const key in formats) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = formats[key].name;
+                    if (key === currentFormatKey) opt.selected = true;
+                    select.appendChild(opt);
+                }
+            });
+        }
+
+        function initHeaderSelects() {
+            // i1 is populated by loadLocations()
+        }
+
+        function changeFormat(key) {
+            currentFormatKey = key;
+            
+            const selectSettings = document.getElementById('labelFormatSelect');
+            const selectModal = document.getElementById('modalLabelFormatSelect');
+            if (selectSettings) selectSettings.value = key;
+            if (selectModal) selectModal.value = key;
+
+            const f = formats[key];
+            const maxLabels = f.cols * f.rows;
+            const i2 = document.getElementById('i2');
+            const i3 = document.getElementById('i3');
+            
+            const t = i18n[currentLang];
+            document.getElementById('lblCount').textContent = `${t.lblCount} (max. ${maxLabels}):`;
+            document.getElementById('lblStartPos').textContent = `${t.lblStartPos} (1-${maxLabels}):`;
+            
+            i2.max = maxLabels;
+            i3.max = maxLabels;
+            if (parseInt(i2.value) > maxLabels) i2.value = maxLabels;
+            if (parseInt(i3.value) > maxLabels) i3.value = 1;
+            u1();
+        }
+
+        function f2() {
+            let a4 = localStorage.getItem('lavu_sortiment_url') || "https://raw.githubusercontent.com/LAVU-OOE/Etiketten-Druckstudio/refs/heads/main/sortiment.json";
+            const t = i18n[currentLang];
+            
+            fetch(a4, { cache: "no-store" })
+                .then(function(response) {
+                    if (!response.ok) throw new Error("Netzwerkantwort war fehlerhaft");
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (Array.isArray(data) && data.length > 0) {
+                        a2 = data;
+                        localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+                        if (a4 === "sortiment.json") {
+                            document.getElementById('n1').innerHTML = t.netSuccessLocal;
+                        } else {
+                            document.getElementById('n1').innerHTML = t.netSuccessRemote;
+                        }
+                        document.getElementById('n1').style.color = '#27ae60';
+                        i1();
+                    }
+                })
+                .catch(function(e) {
+                    console.warn("Fehler beim Abrufen der JSON-Quelle, weiche auf cache / localStorage aus.", e);
+                    if (a4 === "sortiment.json") {
+                        document.getElementById('n1').innerHTML = t.netFallbackLocal;
+                    } else {
+                        document.getElementById('n1').innerHTML = t.netFallbackRemote;
+                    }
+                    document.getElementById('n1').style.color = '#e74c3c';
+                    
+                    const a7 = localStorage.getItem('lavu_studio_sortiment_v8');
+                    if (a7) {
+                        try {
+                            a2 = JSON.parse(a7);
+                        } catch(e) {
+                            a2 = fallbackSortiment.slice();
+                        }
+                    } else {
+                        a2 = fallbackSortiment.slice();
+                    }
+                    i1();
+                });
+        }
+
+        function syncDropdowns(selectedArtNr) {
+            const selectArt = document.getElementById('s2_art');
+            const selectName = document.getElementById('s2_name');
+            
+            if (selectArt && selectArt.querySelector('option[value="' + selectedArtNr + '"]')) {
+                selectArt.value = selectedArtNr;
+            }
+            if (selectName && selectName.querySelector('option[value="' + selectedArtNr + '"]')) {
+                selectName.value = selectedArtNr;
+            }
+            
+            p1();
+            s7();
+        }
+
+        function p1() { 
+            const selectArt = document.getElementById('s2_art');
+            if (!selectArt || selectArt.value === "") return;
+
+            const currentArtNr = selectArt.value;
+            const item = a2.find(function(i) { return i.artNr === currentArtNr; });
+            
+            if (item) {
+                document.getElementById('i5').value = item.artNr;
+                document.getElementById('i6').value = item.geb || "";
+                document.getElementById('i7').value = item.bez;
+                u1();
+            }
+        }
+
+        function x1(a15) {
+            document.getElementById('i1').value = a15;
+            localStorage.setItem('lavu_location', a15);
+            u1();
+            s7();
+        }
+
+        function x2(a15) {
+            document.getElementById('s1').value = a15;
+            localStorage.setItem('lavu_location', a15);
+            u1();
+            s7();
+        }
+
+        function m2(a16) {
+            a3 = a16;
+            document.getElementById('t2').classList.toggle('a', a16 === 'select');
+            document.getElementById('t3').classList.toggle('a', a16 === 'input');
+            document.getElementById('s3').classList.toggle('a', a16 === 'select');
+            document.getElementById('s4').classList.toggle('a', a16 === 'input');
+        }
+
+        function r1() {
+            const a17 = document.getElementById('c4');
+            if (!a17) return;
+            a17.innerHTML = '';
+            a2.forEach(function(a12, a13) {
+                const a18 = document.createElement('div');
+                a18.className = 'cir';
+                a18.innerHTML = `
+                    <div class="cii">
+                        <b>${a12.artNr}</b> - ${a12.bez} <span style="color:#7f8c8d; font-size:0.75rem;">(${a12.geb || '-'})</span>
+                    </div>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="bc" style="padding: 3px 6px; background: #3498db; color: white; font-size: 0.75rem;" data-index="${a13}" data-action="edit">✏️</button>
+                        <button class="bc" style="padding: 3px 6px; background: #e74c3c; color: white; font-size: 0.75rem;" data-index="${a13}" data-action="delete">🗑️</button>
+                    </div>
+                `;
+                a17.appendChild(a18);
+                
+                a18.querySelector('[data-action="edit"]').addEventListener('click', function() {
+                    e3(parseInt(this.dataset.index));
+                });
+                a18.querySelector('[data-action="delete"]').addEventListener('click', function() {
+                    d1(parseInt(this.dataset.index));
+                });
+            });
+        }
+
+        function e3(a13) {
+            const a12 = a2[a13];
+            document.getElementById('e1').value = a13;
+            document.getElementById('c1').value = a12.artNr;
+            document.getElementById('c2').value = a12.geb || "";
+            document.getElementById('c3').value = a12.bez;
+            document.getElementById('b1').style.display = 'inline-block';
+        }
+
+        function d1(a13) {
+            const t = i18n[currentLang];
+            if (confirm(t.confirmDelete)) {
+                a2.splice(a13, 1);
+                localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+                i1();
+                s7();
+            }
+        }
+
+        function e1() {
+            document.getElementById('e1').value = "";
+            document.getElementById('c1').value = "";
+            document.getElementById('c2').value = "";
+            document.getElementById('c3').value = "";
+            document.getElementById('b1').style.display = 'none';
+        }
+
+        function s4() {
+            const index = document.getElementById('e1').value;
+            const c1 = document.getElementById('c1').value.trim();
+            const c2 = document.getElementById('c2').value.trim();
+            const c3 = document.getElementById('c3').value.trim();
+            const t = i18n[currentLang];
+
+            if (index === "" || !c1 || !c3) {
+                alert(t.alertErrorChange);
+                return;
+            }
+
+            a2[index] = { artNr: c1, geb: c2, bez: c3 };
+            localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+            i1();
+            e1();
+            s7();
+        }
+
+        function e2() {
+            try {
+                const a24 = JSON.stringify(a2, null, 2);
+                const a25 = new Blob([a24], { type: "application/json" });
+                const a26 = URL.createObjectURL(a25);
+                const a27 = document.createElement('a');
+                a27.href = a26;
+                a27.download = "sortiment_export.json";
+                document.body.appendChild(a27);
+                a27.click();
+                document.body.removeChild(a27);
+                URL.revokeObjectURL(a26);
+            } catch (a28) {
+                console.error("Fehler beim Exportieren:", a28);
+                alert("Export failed: " + a28.message);
+            }
+        }
+
+        function g1() {
+            const selectArt = document.getElementById('s2_art');
+            return {
+                topText: document.getElementById('i1').value,
+                artNr: document.getElementById('i5').value.trim(),
+                suffix: document.getElementById('i6').value.trim(),
+                bezeichnung: document.getElementById('i7').value.trim(),
+                count: parseInt(document.getElementById('i2').value) || 0,
+                startPos: parseInt(document.getElementById('i3').value) || 1,
+                sortimentIndex: selectArt ? selectArt.value : "0"
+            };
+        }
+
+        function u1() {
+            const a29 = g1();
+            const f = formats[currentFormatKey];
+            document.getElementById('d0').textContent = a29.topText || '-';
+            document.getElementById('d1').textContent = a29.bezeichnung || '-';
+            document.getElementById('d2').textContent = a29.artNr || '-';
+            const badge = document.getElementById('d3');
+            if (a29.suffix) {
+                badge.textContent = a29.suffix;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+            
+            const t = i18n[currentLang];
+            const layoutTranslationText = currentLang === 'de' ? 'ab Position' : 'from position';
+            document.getElementById('d4').textContent = `${t.printLayout}: ${a29.count}x ${layoutTranslationText} ${a29.startPos}`;
+            
+            document.getElementById('s1').value = a29.topText;
+            document.getElementById('i1').value = a29.topText;
+            document.getElementById('fmt-overlay').innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg> ${f.name}
+            `;
+            
+            r2('t1', a29);
+            r2('mdl', a29);
+            r2('d5', a29);
+            if (document.getElementById('m2').style.display === 'flex') {
+                const zoomVal = document.getElementById('zoomSlider').value;
+                s8(parseFloat(zoomVal) / 100);
+            }
+        }
+
+        function r2(a30, a29) {
+            const a31 = document.getElementById(a30);
+            if (!a31) return;
+            a31.innerHTML = '';
+            const f = formats[currentFormatKey];
+            a31.style.gridTemplateColumns = `repeat(${f.cols}, 1fr)`;
+            a31.style.gridTemplateRows = `repeat(${f.rows}, 1fr)`;
+
+            const a32 = f.cols * f.rows;
+            const a33 = a29.startPos;
+            const a34 = a29.count;
+
+            for (let i = 1; i <= a32; i++) {
+                const a35 = document.createElement('div');
+                if (i >= a33 && i < a33 + a34) {
+                    a35.className = 'lb';
+                    a35.innerHTML = `
+                        <div class="lbt">${a29.topText || '&nbsp;'}</div>
+                        <div class="lbm">
+                            <div class="lba">${a29.artNr || '&nbsp;'}</div>
+                            ${a29.suffix ? `<div class="lbs">${a29.suffix}</div>` : ''}
+                        </div>
+                        <div class="lbt bbb-fake-fix" style="border-bottom:none; font-size:1px; height:1px; line-height:1px;"></div>
+                        <div class="lbb">${a29.bezeichnung || '&nbsp;'}</div>
+                    `;
+                } else {
+                    a35.className = 'lb e';
+                }
+                if (a30 === 'mdl') {
+                    a35.setAttribute('data-index', i);
+                    a35.addEventListener('click', function(e) {
+                        const a36 = parseInt(this.getAttribute('data-index'));
+                        let a37 = a36;
+                        let a38 = 'add';
+                        if (this.classList.contains('e')) {
+                            a38 = 'add';
+                        } else {
+                            a38 = 'remove';
+                        }
+                        s5(a37, a38);
+                    });
+                }
+                a31.appendChild(a35);
+            }
+        }
+
+        function s5(a37, a38) {
+            const f = formats[currentFormatKey];
+            const maxLabels = f.cols * f.rows;
+            const a39 = document.getElementById('i2');
+            const a40 = document.getElementById('i3');
+            let a41 = parseInt(a39.value) || 0;
+            let a42 = parseInt(a40.value) || 1;
+            let a43 = a42 + a41 - 1;
+
+            if (a41 === 0) {
+                a42 = a37;
+                a41 = 1;
+            } else {
+                if (a38 === 'add') {
+                    if (a37 < a42) {
+                        a41 = a43 - a37 + 1;
+                        a42 = a37;
+                    } else if (a37 > a43) {
+                        a41 = a37 - a42 + 1;
+                    }
+                } else if (a38 === 'remove') {
+                    if (a37 === a42) {
+                        a42++;
+                        a41--;
+                    } else if (a37 === a43) {
+                        a41--;
+                    } else {
+                        a41 = a37 - a42;
+                    }
+                }
+            }
+            a41 = Math.max(0, Math.min(maxLabels, a41));
+            a42 = Math.max(1, Math.min(maxLabels, a42));
+            a39.value = a41;
+            a40.value = a42;
+            u1();
+            s7();
+        }
+
+        function s8(customZoomFactor) {
+            customZoomFactor = customZoomFactor || 1;
+            const container = document.querySelector('.mbs');
+            const element = document.getElementById('p1');
+            if (!container || !element) return;
+            
+            const containerWidth = container.clientWidth - 80;
+            const containerHeight = container.clientHeight - 40;
+            const elementWidth = element.scrollWidth || 794;
+            const elementHeight = element.scrollHeight || 1123;
+            
+            const scaleX = containerWidth / elementWidth;
+            const scaleY = containerHeight / elementHeight;
+            const baseScale = Math.min(scaleX, scaleY, 1);
+            const finalScale = Math.min(baseScale * customZoomFactor, 2);
+            
+            element.style.position = 'absolute';
+            element.style.top = '50%';
+            element.style.left = '50%';
+            element.style.transformOrigin = 'center center';
+            element.style.transform = 'translate(-50%, -50%) scale(' + finalScale + ')';
+        }
+
+        function o2() {
+            document.getElementById('m1').style.display = 'flex';
+            r1();
+        }
+
+        function c2() {
+            document.getElementById('m1').style.display = 'none';
+        }
+
+        function o1() {
+            u1();
+            document.getElementById('m2').style.display = 'flex';
+            const zoomVal = document.getElementById('zoomSlider').value;
+            setTimeout(function() {
+                s8(parseFloat(zoomVal) / 100);
+            }, 50);
+        }
+
+        function c5() {
+            document.getElementById('m2').style.display = 'none';
+        }
+
+        function s6() {
+            const f = formats[currentFormatKey];
+            const maxLabels = f.cols * f.rows;
+            const i2 = document.getElementById('i2');
+            const i3 = document.getElementById('i3');
+            if (parseInt(i2.value) > maxLabels) i2.value = maxLabels;
+            if (parseInt(i3.value) > maxLabels) i3.value = 1;
+
+            s7();
+            alert(i18n[currentLang].alertSaved);
+        }
+
+        function s7() {
+            const data = g1();
+            const config = {
+                formatKey: currentFormatKey,
+                topText: data.topText,
+                count: data.count,
+                startPos: data.startPos,
+                artNr: data.artNr,
+                suffix: data.suffix,
+                bezeichnung: data.bezeichnung,
+                sortimentIndex: data.sortimentIndex
+            };
+            localStorage.setItem('lavu_studio_defaults_v8', JSON.stringify(config));
+            localStorage.setItem('lavu_location', data.topText);
+        }
+
+        function l1() {
+            const a54Str = localStorage.getItem('lavu_studio_defaults_v8');
+            if (a54Str) {
+                try {
+                    const a54 = JSON.parse(a54Str);
+                    if (a54.formatKey !== undefined && formats[a54.formatKey]) {
+                        currentFormatKey = a54.formatKey;
+                        document.getElementById('labelFormatSelect').value = currentFormatKey;
+                        if (document.getElementById('modalLabelFormatSelect')) {
+                            document.getElementById('modalLabelFormatSelect').value = currentFormatKey;
+                        }
+                    }
+                    const f = formats[currentFormatKey];
+                    const maxLabels = f.cols * f.rows;
+                    
+                    // Use saved location or try to restore from localStorage
+                    const savedLocation = localStorage.getItem('lavu_location') || a54.topText || '';
+                    if (savedLocation) {
+                        document.getElementById('i1').value = savedLocation;
+                        document.getElementById('s1').value = savedLocation;
+                    }
+                    
+                    if (a54.count !== undefined) document.getElementById('i2').value = Math.min(maxLabels, a54.count);
+                    if (a54.startPos !== undefined) document.getElementById('i3').value = Math.min(maxLabels, a54.startPos);
+                    if (a54.artNr !== undefined) document.getElementById('i5').value = a54.artNr;
+                    if (a54.suffix !== undefined) document.getElementById('i6').value = a54.suffix;
+                    if (a54.bezeichnung !== undefined) document.getElementById('i7').value = a54.bezeichnung;
+                    if (a54.sortimentIndex !== undefined) {
+                        setTimeout(function() {
+                            syncDropdowns(a54.sortimentIndex);
+                        }, 100);
+                    }
+                    changeFormat(currentFormatKey);
+                } catch (e) {
+                    console.warn("Fehler beim Verarbeiten lokaler Defaults.", e);
+                }
+            } else {
+                changeFormat(currentFormatKey);
+            }
+        }
+
+        function s3() {
+            const c1 = document.getElementById('c1').value.trim();
+            const c2 = document.getElementById('c2').value.trim();
+            const c3 = document.getElementById('c3').value.trim();
+            const t = i18n[currentLang];
+
+            if (!c1 || !c3) {
+                alert(t.alertFillForm);
+                return;
+            }
+
+            if (a2.some(function(item) { return item.artNr === c1; })) {
+                alert(t.alertDuplicate);
+                return;
+            }
+
+            a2.push({ artNr: c1, geb: c2 || '-', bez: c3 });
+            localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+            i1();
+            e1();
+            s7();
+        }
+
+        let deferredPrompt;
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('LAVU ServiceWorker registered with scope:', registration.scope);
+                    }).catch(function(error) {
+                        console.log('LAVU ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            const a60Str = localStorage.getItem('lavu_studio_defaults_v8');
+            let a61 = true;
+            if (a60Str) {
+                try {
+                    const a62 = JSON.parse(a60Str);
+                    if (a62.count && parseInt(a62.count) > 0) {
+                        a61 = false;
+                    }
+                } catch(err){}
+            }
+            if (a61) {
+                const a63 = document.getElementById('pwaBanner');
+                if (a63) {
+                    a63.style.display = 'flex';
+                    a63.style.opacity = '1';
+                    a63.style.transition = 'opacity 1s ease';
+
+                    setTimeout(function() {
+                        a63.style.opacity = '0';
+                        setTimeout(function() {
+                            a63.style.display = 'none';
+                        }, 1000);
+                    }, 6000);
+                }
+            }
+        });
+
+        window.addEventListener('appinstalled', function() {
+            console.log('LAVU Etiketten-Druckstudio wurde erfolgreich installiert.');
+            const a63 = document.getElementById('pwaBanner');
+            if (a63) a63.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
