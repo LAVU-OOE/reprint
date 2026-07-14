@@ -724,6 +724,7 @@ select:focus {
     top: 50%;
     left: 50%;
     transform-origin: center center;
+    transform: translate(-50%, -50%);
 }
 .psh {
     width: 210mm;
@@ -854,9 +855,15 @@ select:focus {
         page-break-after: avoid;
         page-break-before: avoid;
         transform: none !important;
+        position: static !important;
+    }
+    .psh {
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
     }
     .lb {
-        border: 1px solid transparent !important;
+        border: 1px solid #ccc !important;
     }
     .bp svg {
         display: none;
@@ -888,4 +895,14 @@ select:focus {
     color: #94a3b8;
     font-weight: normal;
     font-style: italic;
+}
+
+/* Wichtig: Fix für Druck-Layout */
+#hpc .pc {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: 210mm !important;
+    height: 297mm !important;
 }
