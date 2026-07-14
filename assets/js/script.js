@@ -420,7 +420,7 @@ function loadTemplates() {
                     </div>
                 </div>
                 <div class="v1-footer">
-                    <span>Etiketten-Druckstudio</span>
+                    <span>label-studio</span>
                     <span id="v1_date"></span>
                 </div>
             </div>
