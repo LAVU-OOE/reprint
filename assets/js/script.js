@@ -2,7 +2,8 @@ let a2 = [];
 let a3 = 'select';
 let currentLang = localStorage.getItem('lavu_lang') || 'de';
 let locationData = [];
-const LOCATION_JSON_URL = "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/locations.json";
+// const LOCATION_JSON_URL = "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/locations.json";
+const LOCATION_JSON_URL = "https://locations-api.lavu-ooe.workers.dev/";
 
 const sortimentData = [
     { artNr: "1000", bez: "Textilen" },
@@ -497,9 +498,14 @@ document.addEventListener('DOMContentLoaded', function () {
     applyLanguage();
     l1();
     setupEventListeners();
+//    let a4 = localStorage.getItem('lavu_sortiment_url');
+//    if (a4 === null) {
+//        a4 = "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/sortiment.json";
+//        localStorage.setItem('lavu_sortiment_url', a4);
+//    }
     let a4 = localStorage.getItem('lavu_sortiment_url');
     if (a4 === null) {
-        a4 = "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/sortiment.json";
+        a4 = "https://sortiment-api.lavu-ooe.workers.dev/";
         localStorage.setItem('lavu_sortiment_url', a4);
     }
     document.getElementById('i4').value = a4;

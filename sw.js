@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'lavu-studio-v9';
+const CACHE_VERSION = 'lavu-studio-v10';
 const CACHE_NAME = `lavu-studio-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
     '.',
@@ -12,9 +12,13 @@ const STATIC_ASSETS = [
     'assets/icons/web-app-manifest-192x192.png',
     'assets/icons/web-app-manifest-512x512.png'
 ];
+// const DYNAMIC_JSON_URLS = [
+//     'https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/assets/js/locations.json',
+//     'https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/assets/js/sortiment.json'
+// ];
 const DYNAMIC_JSON_URLS = [
-    'https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/assets/js/locations.json',
-    'https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/assets/js/sortiment.json'
+    'https://locations-api.lavu-ooe.workers.dev/',
+    'https://sortiment-api.lavu-ooe.workers.dev/'
 ];
 self.addEventListener('install', event => {
     event.waitUntil(
