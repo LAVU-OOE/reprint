@@ -13,9 +13,14 @@
     
 </head>
 <body>
+    <!-- Hidden inputs for data storage -->
     <input type="hidden" id="i5" value="" />
     <input type="hidden" id="i6" value="" />
     <input type="hidden" id="i7" value="" />
+    <input type="hidden" id="locationInput" value="" />
+    <input type="hidden" id="countInput" value="" />
+    <input type="hidden" id="startPosInput" value="" />
+    
     <div class="crd">
         <div class="hdr">
             <div class="hdr-l">
@@ -31,7 +36,7 @@
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                     <circle cx="12" cy="10" r="3" />
                 </svg>
-                <select id="s1" class="sel-hdr">
+                <select id="locationSelect" class="sel-hdr" aria-label="Standort auswählen">
                     <option value="" disabled selected>Loading locations...</option>
                 </select>
                 <button id="langToggleBtn" class="btn-lang-toggle" aria-label="Toggle language">EN</button>
@@ -43,7 +48,7 @@
                     Format wird geladen...
                 </div>
                 <div class="ps">
-                    <div class="tw" id="layout-title-attr" title="Klicken für vollständige A4-Großansicht">
+                    <div class="tw" id="layout-title-attr" title="Klicken für vollständige A4-Großansicht" role="button" tabindex="0">
                         <div class="sc" id="previewScaleContainer">
                             <div class="psh" id="t1"></div>
                         </div>
@@ -66,12 +71,12 @@
                         <div>
                             <span id="txt-art-nr"
                                 style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; height: 16px; line-height: 16px;">Art.Nr.</span>
-                            <select id="s2_art"></select>
+                            <select id="artSelect" aria-label="Artikelnummer auswählen"></select>
                         </div>
                         <div>
                             <span id="txt-bezeichnung"
                                 style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; height: 16px; line-height: 16px;">Bezeichnung</span>
-                            <select id="s2_name"></select>
+                            <select id="nameSelect" aria-label="Bezeichnung auswählen"></select>
                         </div>
                     </div>
                 </div>
@@ -123,18 +128,17 @@
             </svg>
         </a>
     </div>
-    <div id="m1" class="mb">
+    
+    <!-- Modal 1: Settings -->
+    <div id="settingsModal" class="mb">
         <div class="mc">
             <div class="mh">
                 <span id="txt-modal1-title">Druck- & Standorteinstellungen</span>
                 <button class="bx" id="modal1CloseBtn" aria-label="Close modal">&times;</button>
             </div>
             
-            <!-- Removed: Standort, Etiketten-Hersteller & Format, Anzahl, Start-Position -->
-            <!-- Only kept: Sortiment URL and Database Management -->
-            
             <div class="ms">
-                <div id="t2" class="mt a">
+                <div id="tabSelect" class="mt a">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="8" y1="6" x2="21" y2="6" />
                         <line x1="8" y1="12" x2="21" y2="12" />
@@ -145,7 +149,7 @@
                     </svg>
                     <span id="txt-tab-select">Sortiment wählen</span>
                 </div>
-                <div id="t3" class="mt">
+                <div id="tabManage" class="mt">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="8" x2="12" y2="16" />
@@ -155,9 +159,10 @@
                 </div>
             </div>
             
-            <div id="s3" class="fs a">
+            <!-- Tab: Select Assortment -->
+            <div id="panelSelect" class="fs a">
                 <div class="fv" style="margin-bottom: 15px;">
-                    <label for="i4" id="lbl-url">
+                    <label for="urlInput" id="lbl-url">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
@@ -165,31 +170,35 @@
                         Zentrale Sortiment-URL (Worker-API JSON):
                     </label>
                     <div style="display: flex; gap: 8px;">
-                        <input type="text" id="i4" placeholder="https://..." style="flex: 1;" />
+                        <input type="text" id="urlInput" placeholder="https://..." style="flex: 1;" />
                         <button class="bc bsd" style="padding: 11px 16px;" id="btn-update">Aktualisieren</button>
                     </div>
-                    <span id="n1" style="font-size: 0.8rem; font-weight: bold; margin-top: 6px; display: block;"></span>
+                    <span id="statusMessage" style="font-size: 0.8rem; font-weight: bold; margin-top: 6px; display: block;"></span>
                 </div>
+                
+                <!-- Hidden format select for internal use -->
+                <select id="labelFormatSelect" style="display:none;"></select>
             </div>
             
-            <div id="s4" class="fs">
+            <!-- Tab: Manage Database -->
+            <div id="panelManage" class="fs">
                 <div class="fg" style="gap: 12px; margin-bottom: 15px;">
-                    <input type="hidden" id="e1" value="" />
+                    <input type="hidden" id="editIndex" value="" />
                     <div class="fv">
-                        <label for="c1">Art.Nr.:</label>
-                        <input type="text" id="c1" placeholder="z.B. 4040" />
+                        <label for="artInput">Art.Nr.:</label>
+                        <input type="text" id="artInput" placeholder="z.B. 4040" />
                     </div>
                     <div class="fv">
-                        <label for="c2" id="lbl-db-suffix">Gebinde / Suffix:</label>
-                        <input type="text" id="c2" placeholder="z.B. QR-Box" />
+                        <label for="suffixInput" id="lbl-db-suffix">Gebinde / Suffix:</label>
+                        <input type="text" id="suffixInput" placeholder="z.B. QR-Box" />
                     </div>
                     <div class="fv fw">
-                        <label for="c3" id="lbl-db-bez">Bezeichnung:</label>
-                        <input type="text" id="c3" placeholder="z.B. Elektro-Kleingeräte" />
+                        <label for="bezInput" id="lbl-db-bez">Bezeichnung:</label>
+                        <input type="text" id="bezInput" placeholder="z.B. Elektro-Kleingeräte" />
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-                    <button id="b1" class="bc bsd" style="display: none; background: #e67e22;">💾 Ändern</button>
+                    <button id="btn-change" class="bc bsd" style="display: none; background: #e67e22;">💾 Ändern</button>
                     <button class="bc bsd" style="background: #27ae60; flex: 1;" id="btn-add-new">➕ Neu hinzufügen</button>
                     <button class="bc bcn" id="btn-cancel">Abbrechen</button>
                 </div>
@@ -199,33 +208,35 @@
                     </button>
                 </div>
                 <label id="lbl-current-entries">Aktuelle Einträge im lokalen Workspace:</label>
-                <div id="c4" style="max-height: 180px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px;"></div>
+                <div id="entriesContainer" style="max-height: 180px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px;"></div>
             </div>
             
             <div class="mf">
-                <button id="b2" class="bsd">
+                <button id="btn-save-default" class="bsd">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    <span id="btn-save-default">Standard sichern</span>
+                    <span id="btn-save-default-text">Standard sichern</span>
                 </button>
                 <button class="bcn" id="btn-done">Fertig</button>
             </div>
         </div>
     </div>
-    <div id="m2" class="mb">
+    
+    <!-- Modal 2: Full A4 Preview -->
+    <div id="previewModal" class="mb">
         <div class="mc mpc">
             <div class="mh">
                 <span id="modalTitle" style="display: flex; flex-direction: column; gap: 4px;">
                     Interaktiver A4-Druckbogen
                 </span>
-                <select id="modalLabelFormatSelect" class="sel-modal-hdr"></select>
+                <select id="modalLabelFormatSelect" class="sel-modal-hdr" aria-label="Format auswählen"></select>
                 <button class="bx" id="modal2CloseBtn" aria-label="Close modal">&times;</button>
             </div>
             <div class="mbs">
-                <div class="pc" id="p1">
+                <div class="pc" id="previewContainer">
                     <div class="psh" id="mdl"></div>
                 </div>
                 <div class="zoom-container">
@@ -235,7 +246,7 @@
                         <line x1="8" y1="11" x2="14" y2="11" />
                     </svg>
                     <div class="zoom-slider-wrapper">
-                        <input type="range" id="zoomSlider" class="zoom-slider" min="50" max="300" value="100" />
+                        <input type="range" id="zoomSlider" class="zoom-slider" min="50" max="300" value="100" aria-label="Zoom" />
                     </div>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a4b60" stroke-width="2.5">
                         <circle cx="11" cy="11" r="8" />
@@ -260,9 +271,13 @@
             </div>
         </div>
     </div>
-    <div id="hpc">
-        <div class="pc" id="d5"></div>
+    
+    <!-- Hidden print container -->
+    <div id="printContainer">
+        <div class="pc" id="printContent"></div>
     </div>
+    
+    <!-- PWA Banner -->
     <div class="pwb" id="pwaBanner">
         <div style="display: flex; align-items: center; gap: 12px;">
             <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px;">
@@ -277,8 +292,9 @@
                 <div style="font-size: 0.8rem; color: #a5cddd; margin-top: 2px;" id="txt-pwa-sub">Schnellerer Zugriff & Offline-Nutzung</div>
             </div>
         </div>
-        <button id="b3" style="background: #27ae60; color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 6px; box-shadow: 0 4px 10px rgba(39,174,96,0.3);">Installieren</button>
+        <button id="pwaInstallBtn" style="background: #27ae60; color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 6px; box-shadow: 0 4px 10px rgba(39,174,96,0.3);">Installieren</button>
     </div>
+    
     <script src="assets/js/script.js"></script>
 </body>
 </html>
