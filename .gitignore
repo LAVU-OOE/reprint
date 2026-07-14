@@ -12,6 +12,7 @@ desktop.ini
 *.njsproj
 *.sln
 *.code-workspace
+*.bkp/
 
 # Node.js/Python
 node_modules/
