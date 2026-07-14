@@ -1,13 +1,17 @@
 // Globale Variablen für Sortiment und Vorlagen
 let sortiment = [];
 let templates = {};
+let appSettings = {
+    sortimentUrl: 'https://sortiment-api.lavu-ooe.workers.dev/',
+    hasCustomSortiment: false
+};
 
 // Konstanten für LocalStorage-Schlüssel
-const STORAGE_KEY_SORTIMENT = 'lavu_studio_sortiment_v8';
-const STORAGE_KEY_SETTINGS = 'lavu_studio_settings_v8';
+const STORAGE_KEY_SORTIMENT = 'lavu_studio_sortiment_v9';
+const STORAGE_KEY_SETTINGS = 'lavu_studio_settings_v9';
 const STORAGE_KEY_LOCATIONS_CACHE = 'lavu_locations_cache';
 
-// Fallback-Sortiment, falls alles andere fehlschlägt
+// Fallback-Sortiment
 const fallbackSortiment = [
     { artNr: "101", name: "Elektro-Kleingeräte", symbol: "🔌" },
     { artNr: "102", name: "Elektro-Großgeräte", symbol: "📺" },
@@ -21,20 +25,14 @@ const fallbackSortiment = [
     { artNr: "110", name: "Kartonagen", symbol: "📦" }
 ];
 
-// Fallback-Standorte (ASZ Liste), falls das Laden der locations.json fehlschlägt und kein Cache existiert
+// Fallback-Standorte
 const fallbackLocations = [
-    "ASZ Asten", "ASZ Ansfelden", "ASZ Enns", "ASZ Haid", "ASZ Hörsching", 
-    "ASZ Leonding", "ASZ Neuhofen", "ASZ Oftering", "ASZ Pasching", "ASZ Pucking", 
-    "ASZ St. Florian", "ASZ Traun", "ASZ Wilhering", "ASZ Kirchdorf", "ASZ Micheldorf", 
-    "ASZ Pettenbach", "ASZ Windischgarsten", "ASZ Grünburg", "ASZ Kremsmünster", 
+    "ASZ Asten", "ASZ Ansfelden", "ASZ Enns", "ASZ Haid", "ASZ Hörsching",
+    "ASZ Leonding", "ASZ Neuhofen", "ASZ Oftering", "ASZ Pasching", "ASZ Pucking",
+    "ASZ St. Florian", "ASZ Traun", "ASZ Wilhering", "ASZ Kirchdorf", "ASZ Micheldorf",
+    "ASZ Pettenbach", "ASZ Windischgarsten", "ASZ Grünburg", "ASZ Kremsmünster",
     "ASZ Molln", "ASZ Klaus", "ASZ Steyr", "ASZ Garsten"
 ];
-
-// App-Einstellungen
-let appSettings = {
-    sortimentUrl: 'https://sortiment-api.lavu-ooe.workers.dev/', // Aktualisiert auf Cloudflare Worker API
-    hasCustomSortiment: false
-};
 
 // DOM-Elemente
 const s1Select = document.getElementById('s1');
@@ -42,27 +40,9 @@ const i1Input = document.getElementById('i1');
 const s2ArtSelect = document.getElementById('s2_art');
 const s2NameSelect = document.getElementById('s2_name');
 const i2Input = document.getElementById('i2');
-const labelPreview = document.getElementById('labelPreview');
-const printBtn = document.getElementById('printBtn');
-const customTextCheckbox = document.getElementById('customTextCheckbox');
-const customTextFields = document.getElementById('customTextFields');
-const customArtInput = document.getElementById('customArt');
-const customNameInput = document.getElementById('customName');
-
-// Management-UI-Elemente
-const settingsBtn = document.getElementById('settingsBtn');
-const settingsModal = document.getElementById('settingsModal');
-const closeSettings = document.getElementById('closeSettings');
-const settingsUrlInput = document.getElementById('settingsUrl');
-const loadSettingsUrlBtn = document.getElementById('loadSettingsUrlBtn');
-const resetSettingsUrlBtn = document.getElementById('resetSettingsUrlBtn');
-const manageSortimentTable = document.querySelector('#manageSortimentTable tbody');
-const addSortimentForm = document.getElementById('addSortimentForm');
-const resetSortimentBtn = document.getElementById('resetSortimentBtn');
-
-// Template Selector UI
-const templateThumbnails = document.querySelectorAll('.template-thumbnail');
-let activeTemplateId = 'template_v1'; // Standardvorlage
+const i3Input = document.getElementById('i3');
+const labelFormatSelect = document.getElementById('labelFormatSelect');
+const modalLabelFormatSelect = document.getElementById('modalLabelFormatSelect');
 
 // Event-Listener beim Laden der Seite
 document.addEventListener('DOMContentLoaded', () => {
@@ -71,67 +51,333 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSortiment();
     loadTemplates();
     setupEventListeners();
-    initSettingsModal();
+    updatePreview();
 });
 
 // Event-Listener einrichten
 function setupEventListeners() {
-    // Wenn im Dropdown s1 ausgewählt wird, Text in i1 übernehmen
-    s1Select.addEventListener('change', () => {
-        i1Input.value = s1Select.value;
-        updatePreview();
-    });
-
-    // Wenn manuell in i1 getippt wird, Dropdown s1 zurücksetzen (zeigt leere Option oder bleibt unverändert)
-    i1Input.addEventListener('input', () => {
-        updatePreview();
-    });
-
-    // Synchronisation der beiden Sortiment-Dropdowns
-    s2ArtSelect.addEventListener('change', () => {
-        s2NameSelect.value = s2ArtSelect.value;
-        i2Input.value = s2ArtSelect.value;
-        updatePreview();
-    });
-
-    s2NameSelect.addEventListener('change', () => {
-        s2ArtSelect.value = s2NameSelect.value;
-        i2Input.value = s2NameSelect.value;
-        updatePreview();
-    });
-
-    // Manuelle Eingabe in i2 (nicht mehr direkt gekoppelt an dropdowns)
-    i2Input.addEventListener('input', () => {
-        updatePreview();
-    });
-
-    // Checkbox für Freitext
-    customTextCheckbox.addEventListener('change', () => {
-        if (customTextCheckbox.checked) {
-            customTextFields.classList.remove('hidden');
-        } else {
-            customTextFields.classList.add('hidden');
-        }
-        updatePreview();
-    });
-
-    customArtInput.addEventListener('input', updatePreview);
-    customNameInput.addEventListener('input', updatePreview);
-
-    // Drucken-Button
-    printBtn.addEventListener('click', () => {
-        window.print();
-    });
-
-    // Template-Auswahl per Klick auf die Thumbnails
-    templateThumbnails.forEach(thumbnail => {
-        thumbnail.addEventListener('click', () => {
-            templateThumbnails.forEach(t => t.classList.remove('active'));
-            thumbnail.classList.add('active');
-            activeTemplateId = thumbnail.dataset.template;
+    // Standort-Dropdown
+    if (s1Select) {
+        s1Select.addEventListener('change', () => {
+            if (i1Input) i1Input.value = s1Select.value;
             updatePreview();
         });
+    }
+
+    // Manuelle Standort-Eingabe
+    if (i1Input) {
+        i1Input.addEventListener('input', updatePreview);
+    }
+
+    // Sortiment-Dropdowns synchronisieren
+    if (s2ArtSelect) {
+        s2ArtSelect.addEventListener('change', () => {
+            if (s2NameSelect) s2NameSelect.value = s2ArtSelect.value;
+            if (i2Input) i2Input.value = s2ArtSelect.value;
+            updatePreview();
+        });
+    }
+
+    if (s2NameSelect) {
+        s2NameSelect.addEventListener('change', () => {
+            if (s2ArtSelect) s2ArtSelect.value = s2NameSelect.value;
+            if (i2Input) i2Input.value = s2NameSelect.value;
+            updatePreview();
+        });
+    }
+
+    // Manuelle Eingabe
+    if (i2Input) {
+        i2Input.addEventListener('input', updatePreview);
+    }
+
+    // Druck-Button
+    const printBtn = document.getElementById('btn-print-now');
+    if (printBtn) {
+        printBtn.addEventListener('click', () => {
+            printLabels();
+        });
+    }
+
+    // Optionen-Button (Modal öffnen)
+    const optionsBtn = document.getElementById('btn-options');
+    if (optionsBtn) {
+        optionsBtn.addEventListener('click', () => {
+            const modal = document.getElementById('m1');
+            if (modal) modal.style.display = 'flex';
+        });
+    }
+
+    // Modal-Schließen
+    const modal1Close = document.getElementById('modal1CloseBtn');
+    if (modal1Close) {
+        modal1Close.addEventListener('click', () => {
+            const modal = document.getElementById('m1');
+            if (modal) modal.style.display = 'none';
+        });
+    }
+
+    // Modal 1 - Klick außerhalb schließen
+    const modal1 = document.getElementById('m1');
+    if (modal1) {
+        modal1.addEventListener('click', (e) => {
+            if (e.target === modal1) modal1.style.display = 'none';
+        });
+    }
+
+    // Modal 2 - Großansicht
+    const layoutTitle = document.getElementById('layout-title-attr');
+    if (layoutTitle) {
+        layoutTitle.addEventListener('click', () => {
+            openFullPreview();
+        });
+    }
+
+    const modal2Close = document.getElementById('modal2CloseBtn');
+    if (modal2Close) {
+        modal2Close.addEventListener('click', () => {
+            const modal = document.getElementById('m2');
+            if (modal) modal.style.display = 'none';
+        });
+    }
+
+    const modal2 = document.getElementById('m2');
+    if (modal2) {
+        modal2.addEventListener('click', (e) => {
+            if (e.target === modal2) modal2.style.display = 'none';
+        });
+    }
+
+    const modalClose = document.getElementById('btn-modal-close');
+    if (modalClose) {
+        modalClose.addEventListener('click', () => {
+            const modal = document.getElementById('m2');
+            if (modal) modal.style.display = 'none';
+        });
+    }
+
+    // Modal-Drucken
+    const modalPrintBtn = document.getElementById('btn-modal-print');
+    if (modalPrintBtn) {
+        modalPrintBtn.addEventListener('click', () => {
+            printLabels();
+        });
+    }
+
+    // Zoom-Slider
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomVal = document.getElementById('zoomVal');
+    if (zoomSlider && zoomVal) {
+        zoomSlider.addEventListener('input', () => {
+            const val = zoomSlider.value;
+            zoomVal.textContent = val + '%';
+            const pc = document.querySelector('#m2 .pc');
+            if (pc) {
+                const scale = val / 100;
+                pc.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            }
+        });
+    }
+
+    // Tabs im Modal
+    const tabSelect = document.getElementById('t2');
+    const tabManage = document.getElementById('t3');
+    const panelSelect = document.getElementById('s3');
+    const panelManage = document.getElementById('s4');
+
+    if (tabSelect && tabManage && panelSelect && panelManage) {
+        tabSelect.addEventListener('click', () => {
+            tabSelect.classList.add('a');
+            tabManage.classList.remove('a');
+            panelSelect.classList.add('a');
+            panelManage.classList.remove('a');
+        });
+
+        tabManage.addEventListener('click', () => {
+            tabManage.classList.add('a');
+            tabSelect.classList.remove('a');
+            panelManage.classList.add('a');
+            panelSelect.classList.remove('a');
+            renderManagementTable();
+        });
+    }
+
+    // Neu hinzufügen
+    const btnAddNew = document.getElementById('btn-add-new');
+    if (btnAddNew) {
+        btnAddNew.addEventListener('click', () => {
+            const artNr = document.getElementById('c1');
+            const suffix = document.getElementById('c2');
+            const name = document.getElementById('c3');
+
+            if (artNr && artNr.value.trim() && name && name.value.trim()) {
+                const newItem = {
+                    artNr: artNr.value.trim(),
+                    name: name.value.trim(),
+                    symbol: suffix ? suffix.value.trim() || '📦' : '📦'
+                };
+
+                if (sortiment.some(item => item.artNr === newItem.artNr)) {
+                    alert('Diese Artikelnummer existiert bereits!');
+                    return;
+                }
+
+                sortiment.push(newItem);
+                saveSortimentToLocalStorage();
+                populateSortimentDropdowns();
+                renderManagementTable();
+
+                if (artNr) artNr.value = '';
+                if (suffix) suffix.value = '';
+                if (name) name.value = '';
+            } else {
+                alert('Bitte Art.Nr. und Bezeichnung eingeben!');
+            }
+        });
+    }
+
+    // Abbrechen
+    const btnCancel = document.getElementById('btn-cancel');
+    if (btnCancel) {
+        btnCancel.addEventListener('click', () => {
+            const c1 = document.getElementById('c1');
+            const c2 = document.getElementById('c2');
+            const c3 = document.getElementById('c3');
+            if (c1) c1.value = '';
+            if (c2) c2.value = '';
+            if (c3) c3.value = '';
+        });
+    }
+
+    // Update-Button für URL
+    const btnUpdate = document.getElementById('btn-update');
+    if (btnUpdate) {
+        btnUpdate.addEventListener('click', () => {
+            const urlInput = document.getElementById('i4');
+            if (urlInput && urlInput.value.trim()) {
+                appSettings.sortimentUrl = urlInput.value.trim();
+                saveSettings();
+                fetchSortimentFromUrl(appSettings.sortimentUrl);
+            }
+        });
+    }
+
+    // Download JSON
+    const btnDownload = document.getElementById('btn-download-json');
+    if (btnDownload) {
+        btnDownload.addEventListener('click', () => {
+            const dataStr = JSON.stringify(sortiment, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sortiment_backup.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    // Standard sichern
+    const btnSaveDefault = document.getElementById('b2');
+    if (btnSaveDefault) {
+        btnSaveDefault.addEventListener('click', () => {
+            saveSortimentToLocalStorage();
+            appSettings.hasCustomSortiment = true;
+            saveSettings();
+            alert('Sortiment wurde lokal gesichert!');
+        });
+    }
+
+    // Fertig (Modal schließen)
+    const btnDone = document.getElementById('btn-done');
+    if (btnDone) {
+        btnDone.addEventListener('click', () => {
+            const modal = document.getElementById('m1');
+            if (modal) modal.style.display = 'none';
+        });
+    }
+
+    // PWA Installation
+    const pwaBtn = document.getElementById('b3');
+    if (pwaBtn) {
+        pwaBtn.addEventListener('click', () => {
+            if (window.deferredPrompt) {
+                window.deferredPrompt.prompt();
+                window.deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    window.deferredPrompt = null;
+                    const banner = document.getElementById('pwaBanner');
+                    if (banner) banner.style.display = 'none';
+                });
+            }
+        });
+    }
+
+    // Sprachumschalter
+    const langToggle = document.getElementById('langToggleBtn');
+    if (langToggle) {
+        langToggle.addEventListener('click', () => {
+            const current = langToggle.textContent;
+            langToggle.textContent = current === 'EN' ? 'DE' : 'EN';
+            // Hier könnte Sprachumschaltung implementiert werden
+        });
+    }
+}
+
+// Standorte laden
+function loadLocations() {
+    const cachedLocations = localStorage.getItem(STORAGE_KEY_LOCATIONS_CACHE);
+    if (cachedLocations) {
+        try {
+            const locations = JSON.parse(cachedLocations);
+            populateLocationsDropdown(locations);
+        } catch (e) {
+            console.error("Fehler beim Parsen der Standorte", e);
+        }
+    }
+
+    fetch('https://locations-api.lavu-ooe.workers.dev/')
+        .then(response => {
+            if (!response.ok) throw new Error("Netzwerkantwort nicht ok");
+            return response.json();
+        })
+        .then(data => {
+            if (Array.isArray(data) && data.length > 0) {
+                localStorage.setItem(STORAGE_KEY_LOCATIONS_CACHE, JSON.stringify(data));
+                populateLocationsDropdown(data);
+            }
+        })
+        .catch(error => {
+            console.warn("Fehler beim Abrufen der Locations-API. Verwende Cache oder Fallback.", error);
+            if (!localStorage.getItem(STORAGE_KEY_LOCATIONS_CACHE)) {
+                populateLocationsDropdown(fallbackLocations);
+            }
+        });
+}
+
+// Standorte-Dropdown befüllen
+function populateLocationsDropdown(locationsList) {
+    if (!s1Select) return;
+
+    const currentValue = s1Select.value;
+    s1Select.innerHTML = '<option value="" disabled selected>Zentren auswählen...</option>';
+
+    locationsList.forEach(loc => {
+        const option = document.createElement('option');
+        option.value = loc;
+        option.textContent = loc;
+        s1Select.appendChild(option);
     });
+
+    if (currentValue && locationsList.includes(currentValue)) {
+        s1Select.value = currentValue;
+    } else if (locationsList.length > 0) {
+        s1Select.selectedIndex = 1;
+        if (i1Input) i1Input.value = s1Select.value;
+    }
+    updatePreview();
 }
 
 // Einstellungen laden
@@ -144,6 +390,11 @@ function loadSettings() {
             console.error("Fehler beim Laden der Einstellungen", e);
         }
     }
+    // URL ins Input-Feld setzen
+    const urlInput = document.getElementById('i4');
+    if (urlInput && appSettings.sortimentUrl) {
+        urlInput.value = appSettings.sortimentUrl;
+    }
 }
 
 // Einstellungen speichern
@@ -151,175 +402,42 @@ function saveSettings() {
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(appSettings));
 }
 
-// Einstellungen-Modal initialisieren und verwalten
-function initSettingsModal() {
-    settingsBtn.addEventListener('click', () => {
-        settingsUrlInput.value = appSettings.sortimentUrl;
-        renderSortimentManagementTable();
-        settingsModal.classList.remove('hidden');
-    });
-
-    closeSettings.addEventListener('click', () => {
-        settingsModal.classList.add('hidden');
-    });
-
-    // Schließen bei Klick außerhalb des Modals
-    settingsModal.addEventListener('click', (e) => {
-        if (e.target === settingsModal) {
-            settingsModal.classList.add('hidden');
-        }
-    });
-
-    // URL laden
-    loadSettingsUrlBtn.addEventListener('click', () => {
-        const url = settingsUrlInput.value.trim();
-        if (url) {
-            appSettings.sortimentUrl = url;
-            saveSettings();
-            fetchSortimentFromUrl(url);
-        }
-    });
-
-    // URL zurücksetzen auf Werkseinstellung
-    resetSettingsUrlBtn.addEventListener('click', () => {
-        const defaultUrl = 'https://sortiment-api.lavu-ooe.workers.dev/'; // Aktualisiert auf Cloudflare Worker API
-        settingsUrlInput.value = defaultUrl;
-        appSettings.sortimentUrl = defaultUrl;
-        saveSettings();
-        fetchSortimentFromUrl(defaultUrl);
-    });
-
-    // Neues Element im Management hinzufügen
-    addSortimentForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const artNr = document.getElementById('addArtNr').value.trim();
-        const name = document.getElementById('addName').value.trim();
-        const symbol = document.getElementById('addSymbol').value.trim() || '📦';
-
-        if (artNr && name) {
-            // Prüfen, ob ArtNr bereits existiert
-            if (sortiment.some(item => item.artNr === artNr)) {
-                alert("Diese Artikelnummer existiert bereits!");
-                return;
-            }
-
-            sortiment.push({ artNr, name, symbol });
-            appSettings.hasCustomSortiment = true;
-            saveSettings();
-            saveSortimentToLocalStorage();
-            populateSortimentDropdowns();
-            renderSortimentManagementTable();
-            addSortimentForm.reset();
-        }
-    });
-
-    // Sortiment komplett zurücksetzen
-    resetSortimentBtn.addEventListener('click', () => {
-        if (confirm("Möchten Sie das Sortiment wirklich auf die Standardeinstellungen der aktuellen URL zurücksetzen? Alle manuellen Änderungen gehen verloren.")) {
-            localStorage.removeItem(STORAGE_KEY_SORTIMENT);
-            appSettings.hasCustomSortiment = false;
-            saveSettings();
-            fetchSortimentFromUrl(appSettings.sortimentUrl);
-        }
-    });
-}
-
-// Standorte von der Cloudflare Worker API laden (mit Cache & Fallback)
-function loadLocations() {
-    // 1. Zuerst versuchen, aus dem LocalStorage-Cache zu laden (für schnelles Rendering)
-    const cachedLocations = localStorage.getItem(STORAGE_KEY_LOCATIONS_CACHE);
-    if (cachedLocations) {
-        try {
-            const locations = JSON.parse(cachedLocations);
-            populateLocationsDropdown(locations);
-        } catch (e) {
-            console.error("Fehler beim Parsen der gehashten Standorte", e);
-        }
-    }
-
-    // 2. Netzwerk-Request an die aktualisierte API senden
-    fetch('https://locations-api.lavu-ooe.workers.dev/')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Netzwerkantwort war nicht ok");
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (Array.isArray(data) && data.length > 0) {
-                // Im Cache speichern für das nächste Mal
-                localStorage.setItem(STORAGE_KEY_LOCATIONS_CACHE, JSON.stringify(data));
-                // UI aktualisieren mit den frischen Daten
-                populateLocationsDropdown(data);
-            }
-        })
-        .catch(error => {
-            console.warn("Fehler beim Abrufen der Locations-API. Verwende Cache oder Fallback.", error);
-            // Wenn kein Cache existiert, Fallback verwenden
-            if (!localStorage.getItem(STORAGE_KEY_LOCATIONS_CACHE)) {
-                populateLocationsDropdown(fallbackLocations);
-            }
-        });
-}
-
-// Standorte-Dropdown befüllen
-function populateLocationsDropdown(locationsList) {
-    // Aktuellen Wert sichern
-    const currentValue = s1Select.value;
-    
-    // Dropdown leeren und Standardoption hinzufügen
-    s1Select.innerHTML = '<option value="" disabled selected>Zentren auswählen...</option>';
-    
-    locationsList.forEach(loc => {
-        const option = document.createElement('option');
-        option.value = loc;
-        option.textContent = loc;
-        s1Select.appendChild(option);
-    });
-
-    // Wert wiederherstellen, falls er noch in der neuen Liste existiert
-    if (currentValue && locationsList.includes(currentValue)) {
-        s1Select.value = currentValue;
-    } else if (locationsList.length > 0 && !currentValue) {
-        // Standardmäßig den ersten Eintrag auswählen und ins Input-Feld schreiben
-        s1Select.selectedIndex = 1;
-        i1Input.value = s1Select.value;
-    }
-    updatePreview();
-}
-
-// Sortiment laden (Kaskade: LocalStorage -> API/URL -> Fallback)
+// Sortiment laden
 function loadSortiment() {
     const localData = localStorage.getItem(STORAGE_KEY_SORTIMENT);
     if (localData) {
         try {
             sortiment = JSON.parse(localData);
             populateSortimentDropdowns();
+            renderManagementTable();
             return;
         } catch (e) {
             console.error("Fehler beim Parsen des lokalen Sortiments", e);
         }
     }
-
-    // Wenn kein lokales Sortiment vorhanden ist oder dieses zurückgesetzt wurde, von URL laden
     fetchSortimentFromUrl(appSettings.sortimentUrl);
 }
 
 // Sortiment von URL laden
 function fetchSortimentFromUrl(url) {
+    if (!url) {
+        sortiment = fallbackSortiment;
+        populateSortimentDropdowns();
+        renderManagementTable();
+        return;
+    }
+
     fetch(url)
         .then(response => {
-            if (!response.ok) {
-                throw new Error("Server-Fehler beim Laden des Sortiments");
-            }
+            if (!response.ok) throw new Error("Server-Fehler beim Laden des Sortiments");
             return response.json();
         })
         .then(data => {
-            if (Array.isArray(data)) {
+            if (Array.isArray(data) && data.length > 0) {
                 sortiment = data;
                 saveSortimentToLocalStorage();
                 populateSortimentDropdowns();
-                renderSortimentManagementTable();
+                renderManagementTable();
             } else {
                 throw new Error("Ungültiges Datenformat");
             }
@@ -328,7 +446,7 @@ function fetchSortimentFromUrl(url) {
             console.error("Fehler beim Laden des Remote-Sortiments. Verwende Fallback.", error);
             sortiment = fallbackSortiment;
             populateSortimentDropdowns();
-            renderSortimentManagementTable();
+            renderManagementTable();
         });
 }
 
@@ -337,61 +455,57 @@ function saveSortimentToLocalStorage() {
     localStorage.setItem(STORAGE_KEY_SORTIMENT, JSON.stringify(sortiment));
 }
 
-// Sortiment-Dropdowns befüllen (Art.Nr. und Name getrennt, aber synchronisiert)
+// Sortiment-Dropdowns befüllen
 function populateSortimentDropdowns() {
+    if (!s2ArtSelect || !s2NameSelect) return;
+
     const currentSelection = s2ArtSelect.value;
 
     s2ArtSelect.innerHTML = '<option value="" disabled selected>Art.Nr....</option>';
     s2NameSelect.innerHTML = '<option value="" disabled selected>Bezeichnung...</option>';
 
     sortiment.forEach(item => {
-        // Option für Artikelnummer-Dropdown
         const optionArt = document.createElement('option');
         optionArt.value = item.artNr;
         optionArt.textContent = item.artNr;
         s2ArtSelect.appendChild(optionArt);
 
-        // Option für Namen-Dropdown
         const optionName = document.createElement('option');
-        optionName.value = item.artNr; // Gleicher Value zur einfachen Synchronisation
+        optionName.value = item.artNr;
         optionName.textContent = item.name;
         s2NameSelect.appendChild(optionName);
     });
 
-    // Selektion wiederherstellen
     if (currentSelection && sortiment.some(item => item.artNr === currentSelection)) {
         s2ArtSelect.value = currentSelection;
         s2NameSelect.value = currentSelection;
-        i2Input.value = currentSelection;
+        if (i2Input) i2Input.value = currentSelection;
     } else if (sortiment.length > 0) {
         s2ArtSelect.selectedIndex = 1;
         s2NameSelect.selectedIndex = 1;
-        i2Input.value = s2ArtSelect.value;
+        if (i2Input) i2Input.value = s2ArtSelect.value;
     }
     updatePreview();
 }
 
-// Sortiment-Verwaltungstabelle rendern
-function renderSortimentManagementTable() {
-    manageSortimentTable.innerHTML = '';
+// Management-Tabelle rendern
+function renderManagementTable() {
+    const container = document.getElementById('c4');
+    if (!container) return;
+
+    container.innerHTML = '';
     sortiment.forEach((item, index) => {
-        const tr = document.createElement('tr');
-        tr.className = 'border-b hover:bg-gray-50';
-        tr.innerHTML = `
-            <td class="px-4 py-2 font-mono text-sm">${escapeHtml(item.artNr)}</td>
-            <td class="px-4 py-2">${escapeHtml(item.name)}</td>
-            <td class="px-4 py-2 text-center text-lg">${escapeHtml(item.symbol || '📦')}</td>
-            <td class="px-4 py-2 text-right">
-                <button class="text-red-600 hover:text-red-900 focus:outline-none" onclick="deleteSortimentItem(${index})">
-                    Löschen
-                </button>
-            </td>
+        const div = document.createElement('div');
+        div.className = 'cir';
+        div.innerHTML = `
+            <span class="cii"><strong>${escapeHtml(item.artNr)}</strong> - ${escapeHtml(item.name)} ${item.symbol ? escapeHtml(item.symbol) : ''}</span>
+            <button onclick="deleteSortimentItem(${index})" style="color:#ef4444;background:none;border:none;cursor:pointer;font-weight:bold;">✕</button>
         `;
-        manageSortimentTable.appendChild(tr);
+        container.appendChild(div);
     });
 }
 
-// Sortimentselement löschen (wird über globalen Scope aufgerufen)
+// Sortimentselement löschen
 window.deleteSortimentItem = function(index) {
     if (confirm(`Möchten Sie "${sortiment[index].name}" wirklich löschen?`)) {
         sortiment.splice(index, 1);
@@ -399,80 +513,63 @@ window.deleteSortimentItem = function(index) {
         saveSettings();
         saveSortimentToLocalStorage();
         populateSortimentDropdowns();
-        renderSortimentManagementTable();
+        renderManagementTable();
     }
 };
 
-// Vorlagen (Templates) laden
+// Vorlagen laden
 function loadTemplates() {
     templates = {
         template_v1: `
-            <div class="template-v1-container">
-                <div class="v1-header">
-                    <span id="v1_tag">LAVU OÖ</span>
-                    <span id="v1_loc" class="v1-location-text"></span>
+            <div class="lb">
+                <div class="lbt" id="v1_tag">LAVU OÖ</div>
+                <div class="lbm">
+                    <div class="lba" id="v1_symbol">📦</div>
+                    <div class="lbs" id="v1_art">Art.Nr. 101</div>
                 </div>
-                <div class="v1-main">
-                    <div id="v1_symbol" class="v1-symbol"></div>
-                    <div class="v1-content">
-                        <div id="v1_art" class="v1-art"></div>
-                        <div id="v1_name" class="v1-name"></div>
-                    </div>
-                </div>
-                <div class="v1-footer">
-                    <span>Etiketten-Druckstudio</span>
-                    <span id="v1_date"></span>
-                </div>
+                <div class="lbb" id="v1_name">Elektro-Kleingeräte</div>
+                <div class="lbt" id="v1_loc" style="border-bottom:none;padding-top:2px;">ASZ Asten</div>
             </div>
         `,
         template_v2: `
-            <div class="template-v2-container">
-                <div class="v2-top-bar"></div>
-                <div class="v2-body">
-                    <div class="v2-meta">
-                        <span id="v2_loc" class="v2-location"></span>
-                        <span id="v2_art" class="v2-art"></span>
-                    </div>
-                    <div id="v2_name" class="v2-name"></div>
-                    <div id="v2_symbol" class="v2-symbol"></div>
+            <div class="lb" style="background: #f0f7f0; border-color: #27ae60;">
+                <div class="lbt" id="v2_tag" style="color:#27ae60;">LAVU OÖ</div>
+                <div class="lbm">
+                    <div class="lba" id="v2_symbol" style="font-size:28pt;">📦</div>
+                    <div class="lbs" id="v2_art" style="border-color:#27ae60;color:#27ae60;">#101</div>
                 </div>
-                <div class="v2-footer">
-                    <span>LAVU OÖ</span>
-                    <span id="v2_date"></span>
-                </div>
+                <div class="lbb" id="v2_name" style="color:#1a4b60;">Elektro-Kleingeräte</div>
+                <div class="lbt" id="v2_loc" style="border-bottom:none;padding-top:2px;color:#27ae60;">ASZ Asten</div>
             </div>
         `,
         template_v3: `
-            <div class="template-v3-container">
-                <div class="v3-sidebar">
-                    <div class="v3-vertical-text">LAVU OÖ</div>
-                    <div id="v3_art" class="v3-art-vertical"></div>
+            <div class="lb" style="background: #1a4b60; color: white; border-color: #1a4b60;">
+                <div class="lbt" id="v3_tag" style="color: #6cb4db; border-bottom-color: #6cb4db;">LAVU OÖ</div>
+                <div class="lbm">
+                    <div class="lba" id="v3_symbol" style="color: white;">📦</div>
+                    <div class="lbs" id="v3_art" style="border-color: white; color: white; background: #1a4b60;">#101</div>
                 </div>
-                <div class="v3-main-content">
-                    <div id="v3_loc" class="v3-location"></div>
-                    <div class="v3-divider"></div>
-                    <div id="v3_name" class="v3-name"></div>
-                    <div id="v3_symbol" class="v3-symbol"></div>
-                    <div class="v3-footer-date" id="v3_date"></div>
-                </div>
+                <div class="lbb" id="v3_name" style="color: white;">Elektro-Kleingeräte</div>
+                <div class="lbt" id="v3_loc" style="border-bottom:none;padding-top:2px;color:#6cb4db;">ASZ Asten</div>
             </div>
         `
     };
 }
 
-// Vorschau aktualisieren (und für den Druck vorbereiten)
+// Vorschau aktualisieren
 function updatePreview() {
-    // 1. Daten ermitteln
-    const locValue = i1Input.value.trim() || "Kein Standort gewählt";
+    const previewContainer = document.getElementById('t1');
+    const previewContainer2 = document.getElementById('mdl');
+    if (!previewContainer) return;
+
+    // Daten ermitteln
+    const locValue = i1Input ? i1Input.value.trim() || "Kein Standort" : "Kein Standort";
     let artNrValue = "";
     let nameValue = "";
     let symbolValue = "📦";
 
-    if (customTextCheckbox.checked) {
-        artNrValue = customArtInput.value.trim();
-        nameValue = customNameInput.value.trim();
-    } else {
-        const selectedArtNr = i2Input.value.trim();
+    if (s2ArtSelect && s2ArtSelect.value) {
+        const selectedArtNr = s2ArtSelect.value;
         const selectedItem = sortiment.find(item => item.artNr === selectedArtNr);
         if (selectedItem) {
             artNrValue = selectedItem.artNr;
@@ -487,84 +584,257 @@ function updatePreview() {
         year: 'numeric'
     });
 
-    // 2. Aktives Template in die Vorschau laden
-    labelPreview.innerHTML = templates[activeTemplateId] || '';
+    // Standard-Vorlage für Vorschau und Modal
+    const activeTemplate = 'template_v2'; // Standard
 
-    // 3. Werte in die Vorlage injizieren
-    if (activeTemplateId === 'template_v1') {
-        const locEl = document.getElementById('v1_loc');
-        const symbolEl = document.getElementById('v1_symbol');
-        const artEl = document.getElementById('v1_art');
-        const nameEl = document.getElementById('v1_name');
-        const dateEl = document.getElementById('v1_date');
+    // Vorschau in t1
+    let html = templates[activeTemplate] || templates.template_v1;
+    previewContainer.innerHTML = html;
 
-        if (locEl) locEl.textContent = locValue;
-        if (symbolEl) symbolEl.textContent = symbolValue;
-        if (artEl) artEl.textContent = artNrValue ? `Art.Nr. ${artNrValue}` : '';
-        if (nameEl) nameEl.textContent = nameValue || 'Bitte wählen...';
-        if (dateEl) dateEl.textContent = today;
-        
-        adjustFontSize(nameEl, 28, 14);
+    // Werte injizieren - für template_v2 (Standard)
+    const v2Tag = document.getElementById('v2_tag');
+    const v2Loc = document.getElementById('v2_loc');
+    const v2Symbol = document.getElementById('v2_symbol');
+    const v2Art = document.getElementById('v2_art');
+    const v2Name = document.getElementById('v2_name');
 
-    } else if (activeTemplateId === 'template_v2') {
-        const locEl = document.getElementById('v2_loc');
-        const symbolEl = document.getElementById('v2_symbol');
-        const artEl = document.getElementById('v2_art');
-        const nameEl = document.getElementById('v2_name');
-        const dateEl = document.getElementById('v2_date');
-
-        if (locEl) locEl.textContent = locValue;
-        if (symbolEl) symbolEl.textContent = symbolValue;
-        if (artEl) artEl.textContent = artNrValue ? `#${artNrValue}` : '';
-        if (nameEl) nameEl.textContent = nameValue || 'Bitte wählen...';
-        if (dateEl) dateEl.textContent = today;
-        
-        adjustFontSize(nameEl, 32, 16);
-
-    } else if (activeTemplateId === 'template_v3') {
-        const locEl = document.getElementById('v3_loc');
-        const symbolEl = document.getElementById('v3_symbol');
-        const artEl = document.getElementById('v3_art');
-        const nameEl = document.getElementById('v3_name');
-        const dateEl = document.getElementById('v3_date');
-
-        if (locEl) locEl.textContent = locValue;
-        if (symbolEl) symbolEl.textContent = symbolValue;
-        if (artEl) artEl.textContent = artNrValue;
-        if (nameEl) nameEl.textContent = nameValue || 'Bitte wählen...';
-        if (dateEl) dateEl.textContent = today;
-        
-        adjustFontSize(nameEl, 30, 15);
+    if (v2Tag) v2Tag.textContent = 'LAVU OÖ';
+    if (v2Loc) v2Loc.textContent = locValue;
+    if (v2Symbol) v2Symbol.textContent = symbolValue;
+    if (v2Art) v2Art.textContent = artNrValue ? `#${artNrValue}` : '';
+    if (v2Name) {
+        v2Name.textContent = nameValue || 'Bitte wählen...';
+        adjustFontSize(v2Name, 28, 12);
     }
 
-    // 4. Den Druckbereich (Print-Only Container) mit derselben HTML-Struktur aktualisieren
-    const printContainer = document.getElementById('printContainer');
-    if (printContainer) {
-        printContainer.innerHTML = labelPreview.innerHTML;
-        // Gleiche Schriftgrößen-Anpassung auch für den Druck-Container triggern
-        const printedNameEl = printContainer.querySelector('[id$="_name"]');
-        if (printedNameEl) {
-            const max = activeTemplateId === 'template_v2' ? 32 : (activeTemplateId === 'template_v3' ? 30 : 28);
-            const min = activeTemplateId === 'template_v2' ? 16 : (activeTemplateId === 'template_v3' ? 15 : 14);
-            adjustFontSize(printedNameEl, max, min);
+    // D0, D1, D2, D3 für die Sidebar aktualisieren
+    const d0 = document.getElementById('d0');
+    const d1 = document.getElementById('d1');
+    const d2 = document.getElementById('d2');
+    const d3 = document.getElementById('d3');
+
+    if (d0) d0.textContent = 'LAVU OÖ';
+    if (d1) {
+        d1.textContent = nameValue || 'Bitte wählen...';
+        adjustFontSize(d1, 20, 10);
+    }
+    if (d2) d2.textContent = symbolValue;
+    if (d3) d3.textContent = artNrValue ? `#${artNrValue}` : '';
+
+    // Modal-Vorschau aktualisieren
+    if (previewContainer2) {
+        previewContainer2.innerHTML = html;
+        const m2Tag = previewContainer2.querySelector('#v2_tag');
+        const m2Loc = previewContainer2.querySelector('#v2_loc');
+        const m2Symbol = previewContainer2.querySelector('#v2_symbol');
+        const m2Art = previewContainer2.querySelector('#v2_art');
+        const m2Name = previewContainer2.querySelector('#v2_name');
+
+        if (m2Tag) m2Tag.textContent = 'LAVU OÖ';
+        if (m2Loc) m2Loc.textContent = locValue;
+        if (m2Symbol) m2Symbol.textContent = symbolValue;
+        if (m2Art) m2Art.textContent = artNrValue ? `#${artNrValue}` : '';
+        if (m2Name) {
+            m2Name.textContent = nameValue || 'Bitte wählen...';
+            adjustFontSize(m2Name, 28, 12);
         }
+    }
+
+    // Modal-Format-Select befüllen
+    if (modalLabelFormatSelect && modalLabelFormatSelect.options.length === 0) {
+        const formats = [
+            { value: 'template_v1', label: 'Standard' },
+            { value: 'template_v2', label: 'Grün' },
+            { value: 'template_v3', label: 'Dunkel' }
+        ];
+        formats.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f.value;
+            opt.textContent = f.label;
+            modalLabelFormatSelect.appendChild(opt);
+        });
+        modalLabelFormatSelect.value = 'template_v2';
+    }
+
+    // Format-Select für Modal
+    if (modalLabelFormatSelect) {
+        modalLabelFormatSelect.addEventListener('change', (e) => {
+            const selectedTemplate = e.target.value;
+            if (selectedTemplate && templates[selectedTemplate]) {
+                const modalPreview = document.getElementById('mdl');
+                if (modalPreview) {
+                    modalPreview.innerHTML = templates[selectedTemplate];
+                    // Werte neu injizieren
+                    const mTag = modalPreview.querySelector('[id$="_tag"]');
+                    const mLoc = modalPreview.querySelector('[id$="_loc"]');
+                    const mSymbol = modalPreview.querySelector('[id$="_symbol"]');
+                    const mArt = modalPreview.querySelector('[id$="_art"]');
+                    const mName = modalPreview.querySelector('[id$="_name"]');
+
+                    if (mTag) mTag.textContent = 'LAVU OÖ';
+                    if (mLoc) mLoc.textContent = locValue;
+                    if (mSymbol) mSymbol.textContent = symbolValue;
+                    if (mArt) mArt.textContent = artNrValue ? `#${artNrValue}` : '';
+                    if (mName) {
+                        mName.textContent = nameValue || 'Bitte wählen...';
+                        adjustFontSize(mName, 28, 12);
+                    }
+                }
+            }
+        });
     }
 }
 
-// Hilfsfunktion: Automatische Schriftgrößen-Reduzierung bei zu langem Text
+// Schriftgröße automatisch anpassen
 function adjustFontSize(element, maxPx, minPx) {
     if (!element) return;
     let size = maxPx;
     element.style.fontSize = `${size}px`;
-    
-    // Solange das Element scrollt (Überlauf) und wir über der Mindestgröße sind, Schrift verkleinern
+
     while ((element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth) && size > minPx) {
         size -= 1;
         element.style.fontSize = `${size}px`;
     }
 }
 
-// Hilfsfunktion zur Verhinderung von XSS-Injektionen
+// Großansicht öffnen
+function openFullPreview() {
+    const modal = document.getElementById('m2');
+    if (!modal) return;
+
+    // Modal-Vorschau mit aktuellen Daten aktualisieren
+    const locValue = i1Input ? i1Input.value.trim() || "Kein Standort" : "Kein Standort";
+    let artNrValue = "";
+    let nameValue = "";
+    let symbolValue = "📦";
+
+    if (s2ArtSelect && s2ArtSelect.value) {
+        const selectedArtNr = s2ArtSelect.value;
+        const selectedItem = sortiment.find(item => item.artNr === selectedArtNr);
+        if (selectedItem) {
+            artNrValue = selectedItem.artNr;
+            nameValue = selectedItem.name;
+            symbolValue = selectedItem.symbol || "📦";
+        }
+    }
+
+    const previewContainer = document.getElementById('mdl');
+    if (previewContainer) {
+        const activeTemplate = modalLabelFormatSelect ? modalLabelFormatSelect.value : 'template_v2';
+        let html = templates[activeTemplate] || templates.template_v2;
+        previewContainer.innerHTML = html;
+
+        const mTag = previewContainer.querySelector('[id$="_tag"]');
+        const mLoc = previewContainer.querySelector('[id$="_loc"]');
+        const mSymbol = previewContainer.querySelector('[id$="_symbol"]');
+        const mArt = previewContainer.querySelector('[id$="_art"]');
+        const mName = previewContainer.querySelector('[id$="_name"]');
+
+        if (mTag) mTag.textContent = 'LAVU OÖ';
+        if (mLoc) mLoc.textContent = locValue;
+        if (mSymbol) mSymbol.textContent = symbolValue;
+        if (mArt) mArt.textContent = artNrValue ? `#${artNrValue}` : '';
+        if (mName) {
+            mName.textContent = nameValue || 'Bitte wählen...';
+            adjustFontSize(mName, 28, 12);
+        }
+    }
+
+    modal.style.display = 'flex';
+
+    // Zoom zurücksetzen
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomVal = document.getElementById('zoomVal');
+    if (zoomSlider) {
+        zoomSlider.value = 100;
+        if (zoomVal) zoomVal.textContent = '100%';
+        const pc = document.querySelector('#m2 .pc');
+        if (pc) {
+            pc.style.transform = 'translate(-50%, -50%) scale(1)';
+        }
+    }
+}
+
+// Druckfunktion
+function printLabels() {
+    const printContainer = document.getElementById('d5');
+    if (!printContainer) return;
+
+    // Aktuelle Vorschau in den Druck-Container kopieren
+    const preview = document.getElementById('t1');
+    if (preview) {
+        printContainer.innerHTML = preview.innerHTML;
+    }
+
+    // Anzahl der Etiketten
+    let count = parseInt(i2Input ? i2Input.value : 21) || 21;
+    const startPos = parseInt(i3Input ? i3Input.value : 1) || 1;
+
+    // A4-Layout: 3x7 = 21 Etiketten pro Seite
+    const totalLabels = count;
+    const labelsPerPage = 21;
+    const cols = 3;
+    const rows = 7;
+
+    // Alle Labels generieren
+    let allLabels = '';
+    for (let i = 0; i < totalLabels; i++) {
+        allLabels += printContainer.innerHTML;
+    }
+
+    // In Seiten aufteilen
+    const pages = Math.ceil(totalLabels / labelsPerPage);
+    let fullHtml = '';
+
+    for (let p = 0; p < pages; p++) {
+        const start = p * labelsPerPage;
+        const end = Math.min(start + labelsPerPage, totalLabels);
+        let pageLabels = '';
+
+        // Extrahiere Labels für diese Seite
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = allLabels;
+        const labelElements = tempDiv.children;
+
+        for (let i = start; i < end; i++) {
+            if (labelElements[i]) {
+                pageLabels += labelElements[i].outerHTML;
+            }
+        }
+
+        // Leere Zellen für fehlende Labels auffüllen
+        const existingCount = end - start;
+        for (let i = existingCount; i < labelsPerPage; i++) {
+            pageLabels += `<div class="lb e"></div>`;
+        }
+
+        // Grid für diese Seite
+        fullHtml += `
+            <div class="pc" style="page-break-after: always; margin: 0; box-shadow: none; position: relative;">
+                <div class="psh" style="display: grid; grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr); gap: 0; width: 210mm; height: 297mm; padding: 5mm 2mm; box-sizing: border-box;">
+                    ${pageLabels}
+                </div>
+            </div>
+        `;
+    }
+
+    // Druck-Container für den Druck vorbereiten
+    const hpc = document.getElementById('hpc');
+    if (hpc) {
+        hpc.innerHTML = fullHtml;
+        hpc.style.display = 'block';
+    }
+
+    // Drucken
+    window.print();
+
+    // Nach dem Druck wieder ausblenden
+    setTimeout(() => {
+        if (hpc) hpc.style.display = 'none';
+    }, 1000);
+}
+
+// Hilfsfunktion
 function escapeHtml(str) {
     if (!str) return '';
     return str
