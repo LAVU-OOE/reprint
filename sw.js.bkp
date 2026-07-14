@@ -13,8 +13,8 @@ const STATIC_ASSETS = [
     'assets/icons/web-app-manifest-512x512.png'
 ];
 const DYNAMIC_JSON_URLS = [
-    'https://raw.githubusercontent.com/LAVU-OOE/Etiketten-Druckstudio/refs/heads/main/assets/js/locations.json',
-    'https://raw.githubusercontent.com/LAVU-OOE/Etiketten-Druckstudio/refs/heads/main/assets/js/sortiment.json'
+    'https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/assets/js/locations.json',
+    'https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/assets/js/sortiment.json'
 ];
 self.addEventListener('install', event => {
     event.waitUntil(
