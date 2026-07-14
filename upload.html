@@ -57,6 +57,23 @@
             font-size: 14px;
         }
         
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+            background: white;
+            cursor: pointer;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+        
         input[type="password"],
         input[type="file"] {
             width: 100%;
@@ -263,6 +280,45 @@
             color: #2d3748;
         }
         
+        .endpoint-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        .endpoint-selector label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .endpoint-selector label:hover {
+            border-color: #4CAF50;
+            background: #f0fff4;
+        }
+        
+        .endpoint-selector input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #4CAF50;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        .endpoint-selector label.selected {
+            border-color: #4CAF50;
+            background: #f0fff4;
+        }
+        
         @media (max-width: 600px) {
             body {
                 padding: 15px;
@@ -270,6 +326,9 @@
             }
             .container {
                 padding: 20px;
+            }
+            .endpoint-selector {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -281,9 +340,24 @@
             <span class="badge">Secure</span>
         </h2>
 
+        <!-- Endpoint Selection -->
+        <div class="form-group">
+            <label>🎯 Select Endpoint</label>
+            <div class="endpoint-selector">
+                <label id="labelSortiment" class="selected">
+                    <input type="radio" name="endpoint" value="sortiment" checked>
+                    📦 Sortiment
+                </label>
+                <label id="labelLocations">
+                    <input type="radio" name="endpoint" value="locations">
+                    📍 Locations
+                </label>
+            </div>
+        </div>
+
         <div class="url-display">
             <span>🔗 Endpoint:</span>
-            <code>https://sortiment-api.lavu-ooe.workers.dev/</code>
+            <code id="endpointDisplay">https://sortiment-api.lavu-ooe.workers.dev/</code>
         </div>
 
         <!-- Password Input -->
@@ -332,8 +406,13 @@
 
     <script>
         // ===== CONFIGURATION =====
-        const API_URL = 'https://sortiment-api.lavu-ooe.workers.dev/';
+        const ENDPOINTS = {
+            sortiment: 'https://sortiment-api.lavu-ooe.workers.dev/',
+            locations: 'https://locations-api.lavu-ooe.workers.dev/'
+        };
+        
         const USERNAME = 'admin';
+        let currentEndpoint = 'sortiment';
         
         // ===== DOM Elements =====
         const passwordInput = document.getElementById('passwordInput');
@@ -347,6 +426,10 @@
         const itemCount = document.getElementById('itemCount');
         const fileSize = document.getElementById('fileSize');
         const toggleBtn = document.getElementById('togglePassword');
+        const endpointDisplay = document.getElementById('endpointDisplay');
+        const radioButtons = document.querySelectorAll('input[name="endpoint"]');
+        const labelSortiment = document.getElementById('labelSortiment');
+        const labelLocations = document.getElementById('labelLocations');
         
         let debugVisible = false;
         let passwordTimer;
@@ -382,7 +465,7 @@
             passwordTimer = setTimeout(() => {
                 passwordInput.value = '';
                 setDebug('Password auto-cleared (5 min timeout)');
-            }, 300000); // 5 minutes
+            }, 300000);
         }
 
         function formatFileSize(bytes) {
@@ -390,6 +473,34 @@
             if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
             return (bytes / 1048576).toFixed(1) + ' MB';
         }
+
+        function getApiUrl() {
+            return ENDPOINTS[currentEndpoint];
+        }
+
+        function updateEndpointDisplay() {
+            endpointDisplay.textContent = getApiUrl();
+            // Update button text
+            const endpointName = currentEndpoint === 'sortiment' ? 'Sortiment' : 'Locations';
+            uploadBtn.innerHTML = `📤 Upload ${endpointName} to Cloudflare`;
+            // Update label highlight
+            labelSortiment.classList.toggle('selected', currentEndpoint === 'sortiment');
+            labelLocations.classList.toggle('selected', currentEndpoint === 'locations');
+            setDebug('Switched to ' + endpointName + ' endpoint');
+        }
+
+        // ===== Endpoint Selection =====
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    currentEndpoint = this.value;
+                    updateEndpointDisplay();
+                    // Reset result display
+                    setResult('Ready to upload. Select a JSON file and enter your password.', '');
+                    statsDiv.style.display = 'none';
+                }
+            });
+        });
 
         // ===== File Input Handler =====
         fileInput.addEventListener('change', function() {
@@ -408,11 +519,9 @@
             
             fileInfo.textContent = `📎 Selected: ${file.name}`;
             
-            // Show file stats
             statsDiv.style.display = 'flex';
             fileSize.textContent = formatFileSize(file.size);
             
-            // Try to count items if possible
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -443,8 +552,9 @@
         async function uploadFile() {
             const password = passwordInput.value.trim();
             const file = fileInput.files[0];
+            const apiUrl = getApiUrl();
+            const endpointName = currentEndpoint === 'sortiment' ? 'Sortiment' : 'Locations';
             
-            // Validate
             if (!password) {
                 setResult('❌ Please enter your admin password!', 'error');
                 setDebug('No password provided');
@@ -463,25 +573,22 @@
                 return;
             }
 
-            // Disable button during upload
             uploadBtn.disabled = true;
             uploadBtn.textContent = '⏳ Uploading...';
-            setResult('⏳ Reading and uploading file...', 'loading');
-            setDebug('Starting upload...');
+            setResult(`⏳ Reading and uploading ${endpointName} file...`, 'loading');
+            setDebug(`Starting upload to ${endpointName} endpoint...`);
 
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
-                    // Parse JSON
                     const jsonData = JSON.parse(e.target.result);
-                    setDebug('JSON parsed successfully, ' + jsonData.length + ' items');
+                    setDebug(`JSON parsed successfully, ${jsonData.length} items`);
                     
-                    // Validate array
                     if (!Array.isArray(jsonData)) {
                         setResult('❌ Invalid JSON: Expected an array of objects!', 'error');
                         setDebug('JSON is not an array');
                         uploadBtn.disabled = false;
-                        uploadBtn.textContent = '📤 Upload to Cloudflare';
+                        uploadBtn.textContent = `📤 Upload ${endpointName} to Cloudflare`;
                         return;
                     }
 
@@ -490,18 +597,16 @@
                         setDebug('Empty array uploaded');
                     }
 
-                    // Create auth header
                     const authString = btoa(USERNAME + ':' + password);
                     setDebug('Auth header created (length: ' + authString.length + ')');
 
-                    // Send request with credentials: 'include'
-                    const response = await fetch(API_URL, {
+                    const response = await fetch(apiUrl, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': 'Basic ' + authString
                         },
-                        credentials: 'include',  // ← OPTION 1: This is the key
+                        credentials: 'include',
                         body: JSON.stringify(jsonData)
                     });
 
@@ -509,15 +614,13 @@
                     setDebug('Response status: ' + response.status + ' ' + response.statusText);
 
                     if (response.ok) {
-                        setResult('✅ Success! ' + JSON.stringify(result, null, 2), 'success');
+                        setResult(`✅ ${endpointName} upload successful! ` + JSON.stringify(result, null, 2), 'success');
                         setDebug('Upload completed successfully');
-                        // Clear password on success
                         clearPassword();
-                        // Update stats
                         itemCount.textContent = jsonData.length;
                         statsDiv.style.display = 'flex';
                     } else {
-                        setResult('❌ Error (' + response.status + '): ' + JSON.stringify(result, null, 2), 'error');
+                        setResult(`❌ Error (${response.status}): ` + JSON.stringify(result, null, 2), 'error');
                         setDebug('Upload failed with status ' + response.status);
                     }
                 } catch (error) {
@@ -525,7 +628,7 @@
                     setDebug('Exception: ' + error.message + '\nStack: ' + error.stack);
                 } finally {
                     uploadBtn.disabled = false;
-                    uploadBtn.textContent = '📤 Upload to Cloudflare';
+                    uploadBtn.textContent = `📤 Upload ${endpointName} to Cloudflare`;
                 }
             };
 
@@ -533,7 +636,7 @@
                 setResult('❌ Error reading file!', 'error');
                 setDebug('FileReader error');
                 uploadBtn.disabled = false;
-                uploadBtn.textContent = '📤 Upload to Cloudflare';
+                uploadBtn.textContent = `📤 Upload ${endpointName} to Cloudflare`;
             };
 
             reader.readAsText(file);
@@ -541,12 +644,10 @@
 
         // ===== Keyboard Shortcuts =====
         document.addEventListener('keydown', function(e) {
-            // Ctrl+Enter to upload
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 uploadFile();
             }
-            // Escape to clear password
             if (e.key === 'Escape') {
                 clearPassword();
                 setDebug('Password cleared (Escape key)');
@@ -556,10 +657,11 @@
         // ===== Init =====
         setResult('Ready to upload. Select a JSON file and enter your password.', '');
         setDebug('Ready');
+        updateEndpointDisplay();
         
-        // Add version info
-        console.log('📤 Cloudflare JSON Uploader v2.0 (Option 1 - credentials: include)');
-        console.log('🔗 Endpoint:', API_URL);
+        console.log('📤 Cloudflare JSON Uploader v2.0 (Sortiment & Locations)');
+        console.log('🔗 Sortiment API:', ENDPOINTS.sortiment);
+        console.log('🔗 Locations API:', ENDPOINTS.locations);
         console.log('⌨️  Shortcuts: Ctrl+Enter to upload, Escape to clear password');
     </script>
 </body>
