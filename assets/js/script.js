@@ -2,8 +2,7 @@ let a2 = [];
 let a3 = 'select';
 let currentLang = localStorage.getItem('lavu_lang') || 'de';
 let locationData = [];
-// const LOCATION_JSON_URL = "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/locations.json";
-const LOCATION_JSON_URL = "https://locations-api.lavu-ooe.workers.dev/";
+let LOCATION_JSON_URL = localStorage.getItem('lavu_locations_url') || "https://locations-api.lavu-ooe.workers.dev/";
 
 const sortimentData = [
     { artNr: "1000", bez: "Textilen" },
@@ -105,7 +104,9 @@ const i18n = {
         tabSelect: "Sortiment wählen",
         tabManage: "Datenbank verwalten",
         lblUrl: "Zentrale Sortiment-URL (Raw JSON):",
+        lblLocationsUrl: "Zentrale Locations-URL (Raw JSON):",
         btnUpdate: "Aktualisieren",
+        btnUpdateLocations: "Aktualisieren",
         lblDbSuffix: "Gebinde / Suffix:",
         lblDbBez: "Bezeichnung:",
         btnSave: "💾 Ändern",
@@ -134,7 +135,10 @@ const i18n = {
         netFallbackRemote: "⚠️ Remote JSON Offline! Lokaler Cache geladen.",
         txtZoom: "Zoom",
         locationLoading: "Standorte werden geladen...",
-        locationError: "Fehler beim Laden der Standorte"
+        locationError: "Fehler beim Laden der Standorte",
+        locUrlSaved: "📍 Locations-URL gespeichert.",
+        locUrlUpdated: "✅ Locations-URL aktualisiert!",
+        locUrlInvalid: "❌ Bitte gültige URL eingeben."
     },
     en: {
         studioV9: "Label Studio v9",
@@ -152,7 +156,9 @@ const i18n = {
         tabSelect: "Select Assortment",
         tabManage: "Manage Database",
         lblUrl: "Central Assortment URL (Raw JSON):",
+        lblLocationsUrl: "Central Locations URL (Raw JSON):",
         btnUpdate: "Update",
+        btnUpdateLocations: "Update",
         lblDbSuffix: "Container / Suffix:",
         lblDbBez: "Description:",
         btnSave: "💾 Change",
@@ -181,7 +187,10 @@ const i18n = {
         netFallbackRemote: "⚠️ Remote JSON Offline! Local cache loaded.",
         txtZoom: "Zoom",
         locationLoading: "Loading locations...",
-        locationError: "Error loading locations"
+        locationError: "Error loading locations",
+        locUrlSaved: "📍 Locations URL saved.",
+        locUrlUpdated: "✅ Locations URL updated!",
+        locUrlInvalid: "❌ Please enter a valid URL."
     }
 };
 
@@ -225,7 +234,6 @@ let fallbackSortiment = [
     { artNr: "5530", bez: "Baustellenabfälle gemischt", geb: "Großcontainer" }
 ];
 
-// DEFAULT LOCATION: ASZ Asten (106)
 const DEFAULT_LOCATION_VALUE = "106";
 
 function populateLocationDropdowns(locations) {
@@ -275,24 +283,18 @@ function populateLocationDropdowns(locations) {
         i1.appendChild(optgroupI1);
     });
     
-    // Set default to "ASZ Asten (106)" - value "106"
-    // First check if there's a saved location, otherwise use default
     const savedLocation = localStorage.getItem('lavu_location');
     let targetValue = savedLocation || DEFAULT_LOCATION_VALUE;
     
-    // If saved location exists and is valid, use it
     if (savedLocation && s1.querySelector('option[value="' + savedLocation + '"]')) {
         targetValue = savedLocation;
     }
     
-    // If the target value doesn't exist in dropdown, use first available
     if (!s1.querySelector('option[value="' + targetValue + '"]')) {
-        // Try to find by siteCode
         const defaultLoc = locations.find(loc => loc.siteCode === DEFAULT_LOCATION_VALUE);
         if (defaultLoc && s1.querySelector('option[value="' + defaultLoc.siteCode + '"]')) {
             targetValue = defaultLoc.siteCode;
         } else {
-            // Fallback to first option
             for (let opt of s1.options) {
                 if (!opt.disabled && opt.value) {
                     targetValue = opt.value;
@@ -302,11 +304,9 @@ function populateLocationDropdowns(locations) {
         }
     }
     
-    // Apply the selected value
     if (targetValue && s1.querySelector('option[value="' + targetValue + '"]')) {
         s1.value = targetValue;
         i1.value = targetValue;
-        // Save to localStorage
         localStorage.setItem('lavu_location', targetValue);
     }
 }
@@ -315,6 +315,9 @@ function loadLocations() {
     const s1 = document.getElementById('s1');
     const i1 = document.getElementById('i1');
     const t = i18n[currentLang];
+    
+    const locationsUrl = localStorage.getItem('lavu_locations_url') || "https://locations-api.lavu-ooe.workers.dev/";
+    
     if (s1) {
         s1.innerHTML = '';
         const loadingOpt = document.createElement('option');
@@ -333,6 +336,7 @@ function loadLocations() {
         loadingOpt.selected = true;
         i1.appendChild(loadingOpt);
     }
+    
     const cachedLocations = localStorage.getItem('lavu_locations_cache');
     if (cachedLocations) {
         try {
@@ -341,11 +345,14 @@ function loadLocations() {
                 locationData = parsed;
                 populateLocationDropdowns(locationData);
             }
-        } catch (e) {}
+        } catch (e) {
+            console.warn("Cache parsing error:", e);
+        }
     }
-    fetch(LOCATION_JSON_URL, { cache: "no-store" })
+    
+    fetch(locationsUrl, { cache: "no-store" })
         .then(response => {
-            if (!response.ok) throw new Error("Network response was not ok");
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         })
         .then(data => {
@@ -353,12 +360,25 @@ function loadLocations() {
                 locationData = data;
                 localStorage.setItem('lavu_locations_cache', JSON.stringify(locationData));
                 populateLocationDropdowns(locationData);
+                
+                const n2 = document.getElementById('n2');
+                if (n2) {
+                    n2.innerHTML = '✅ Locations geladen (' + locationData.length + ' Einträge)';
+                    n2.style.color = '#27ae60';
+                }
             } else {
                 throw new Error("Invalid location data format");
             }
         })
         .catch(err => {
             console.warn("Error loading locations from URL, using fallback:", err);
+            
+            const n2 = document.getElementById('n2');
+            if (n2) {
+                n2.innerHTML = '⚠️ Fehler beim Laden der Locations. Verwende Fallback-Daten.';
+                n2.style.color = '#e74c3c';
+            }
+            
             if (!locationData || locationData.length === 0) {
                 locationData = [
                     { siteCode: "106", name: "ASZ Asten", zipCode: "4481", region: "Linz-Land & Linz Stadt" },
@@ -498,17 +518,24 @@ document.addEventListener('DOMContentLoaded', function () {
     applyLanguage();
     l1();
     setupEventListeners();
-//    let a4 = localStorage.getItem('lavu_sortiment_url');
-//    if (a4 === null) {
-//        a4 = "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/sortiment.json";
-//        localStorage.setItem('lavu_sortiment_url', a4);
-//    }
+    
     let a4 = localStorage.getItem('lavu_sortiment_url');
     if (a4 === null) {
         a4 = "https://sortiment-api.lavu-ooe.workers.dev/";
         localStorage.setItem('lavu_sortiment_url', a4);
     }
     document.getElementById('i4').value = a4;
+    
+    // Locations-URL initialisieren
+    const savedLocUrl = localStorage.getItem('lavu_locations_url');
+    if (savedLocUrl) {
+        document.getElementById('i8').value = savedLocUrl;
+        document.getElementById('n2').innerHTML = '📍 ' + (i18n[currentLang].locUrlSaved || 'Locations-URL gespeichert.');
+        document.getElementById('n2').style.color = '#27ae60';
+    } else {
+        document.getElementById('i8').value = "https://locations-api.lavu-ooe.workers.dev/";
+    }
+    
     const t = i18n[currentLang];
     document.getElementById('n1').innerHTML = t.netLoading;
     document.getElementById('n1').style.color = '#f39c12';
@@ -584,6 +611,28 @@ function setupEventListeners() {
         localStorage.setItem('lavu_sortiment_url', document.getElementById('i4').value.trim());
         f2();
     });
+    document.getElementById('btn-update-locations').addEventListener('click', function() {
+        const newUrl = document.getElementById('i8').value.trim();
+        const t = i18n[currentLang];
+        const n2 = document.getElementById('n2');
+        
+        if (newUrl) {
+            try {
+                new URL(newUrl);
+                localStorage.setItem('lavu_locations_url', newUrl);
+                LOCATION_JSON_URL = newUrl;
+                n2.innerHTML = '✅ ' + (t.locUrlUpdated || 'Locations-URL aktualisiert!');
+                n2.style.color = '#27ae60';
+                loadLocations();
+            } catch (e) {
+                n2.innerHTML = '❌ ' + (t.locUrlInvalid || 'Bitte gültige URL eingeben.');
+                n2.style.color = '#e74c3c';
+            }
+        } else {
+            n2.innerHTML = '❌ ' + (t.locUrlInvalid || 'Bitte gültige URL eingeben.');
+            n2.style.color = '#e74c3c';
+        }
+    });
     document.getElementById('btn-add-new').addEventListener('click', s3);
     document.getElementById('btn-cancel').addEventListener('click', e1);
     document.getElementById('btn-download-json').addEventListener('click', e2);
@@ -652,7 +701,9 @@ function applyLanguage() {
     document.getElementById('txt-tab-select').textContent = t.tabSelect;
     document.getElementById('txt-tab-manage').textContent = t.tabManage;
     document.getElementById('lbl-url').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> ${t.lblUrl}`;
+    document.getElementById('lbl-locations-url').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${t.lblLocationsUrl}`;
     document.getElementById('btn-update').textContent = t.btnUpdate;
+    document.getElementById('btn-update-locations').textContent = t.btnUpdateLocations;
     document.getElementById('lbl-db-suffix').textContent = t.lblDbSuffix;
     document.getElementById('lbl-db-bez').textContent = t.lblDbBez;
     document.getElementById('btn-add-new').textContent = t.btnAddNew;
@@ -724,7 +775,7 @@ function changeFormat(key) {
 }
 
 function f2() {
-    let a4 = localStorage.getItem('lavu_sortiment_url') || "https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/sortiment.json";
+    let a4 = localStorage.getItem('lavu_sortiment_url') || "https://sortiment-api.lavu-ooe.workers.dev/";
     const t = i18n[currentLang];
     fetch(a4, { cache: "no-store" })
         .then(function (response) {
@@ -1120,7 +1171,6 @@ function l1() {
             }
             const f = formats[currentFormatKey];
             const maxLabels = f.cols * f.rows;
-            // Use saved location or fallback to default (106)
             const savedLocation = localStorage.getItem('lavu_location');
             const locationValue = (savedLocation && savedLocation !== '') ? savedLocation : DEFAULT_LOCATION_VALUE;
             document.getElementById('i1').value = locationValue;
@@ -1140,7 +1190,6 @@ function l1() {
             console.warn("Fehler beim Verarbeiten lokaler Defaults.", e);
         }
     } else {
-        // No saved defaults - set default location
         document.getElementById('i1').value = DEFAULT_LOCATION_VALUE;
         document.getElementById('s1').value = DEFAULT_LOCATION_VALUE;
         localStorage.setItem('lavu_location', DEFAULT_LOCATION_VALUE);
