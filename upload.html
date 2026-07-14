@@ -272,7 +272,7 @@
             border: none;
             cursor: pointer;
             color: #718096;
-            font-size: 14px;
+            font-size: 18px;
             padding: 4px;
         }
         
@@ -299,6 +299,7 @@
             border: 2px solid #e2e8f0;
             border-radius: 8px;
             transition: all 0.2s;
+            margin-bottom: 0;
         }
         
         .endpoint-selector label:hover {
@@ -317,6 +318,23 @@
         .endpoint-selector label.selected {
             border-color: #4CAF50;
             background: #f0fff4;
+        }
+        
+        .shortcuts-info {
+            margin-top: 15px;
+            padding: 10px 14px;
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #78350f;
+        }
+        
+        .shortcuts-info code {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
         }
         
         @media (max-width: 600px) {
@@ -388,9 +406,9 @@
         <div class="result-area" id="result">Ready to upload...</div>
 
         <!-- Debug Area -->
-        <div class="debug-area" id="debugArea"></div>
+        <div class="debug-area visible" id="debugArea"></div>
         
-        <button class="btn-debug" id="debugToggle" onclick="toggleDebug()">🔧 Toggle Debug</button>
+        <button class="btn-debug" id="debugToggle" onclick="toggleDebug()">🔧 Hide Debug</button>
 
         <!-- Stats -->
         <div class="stats" id="stats" style="display:none;">
@@ -402,7 +420,13 @@
         <div style="margin-top: 15px; text-align: right;">
             <button class="clear-btn" onclick="clearPassword()">🧹 Clear Password</button>
         </div>
+
+        <!-- Shortcuts -->
+        <div class="shortcuts-info">
+            ⌨️ <code>Ctrl+Enter</code> to upload &nbsp;|&nbsp; <code>Esc</code> to clear password
+        </div>
     </div>
-<script src="assets/js/upload.js"></script>
+
+    <script src="assets/js/upload.js"></script>
 </body>
 </html>
