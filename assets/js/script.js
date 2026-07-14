@@ -34,7 +34,7 @@ const fallbackLocations = [
     "ASZ Molln", "ASZ Klaus", "ASZ Steyr", "ASZ Garsten"
 ];
 
-// DOM-Elemente
+// DOM-Elemente (mit Fehlerprüfung)
 const s1Select = document.getElementById('s1');
 const i1Input = document.getElementById('i1');
 const s2ArtSelect = document.getElementById('s2_art');
@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSortiment();
     loadTemplates();
     setupEventListeners();
-    updatePreview();
+    // Initiale Vorschau nach kurzer Verzögerung
+    setTimeout(updatePreview, 100);
 });
 
 // Event-Listener einrichten
@@ -94,9 +95,7 @@ function setupEventListeners() {
     // Druck-Button
     const printBtn = document.getElementById('btn-print-now');
     if (printBtn) {
-        printBtn.addEventListener('click', () => {
-            printLabels();
-        });
+        printBtn.addEventListener('click', printLabels);
     }
 
     // Optionen-Button (Modal öffnen)
@@ -128,9 +127,7 @@ function setupEventListeners() {
     // Modal 2 - Großansicht
     const layoutTitle = document.getElementById('layout-title-attr');
     if (layoutTitle) {
-        layoutTitle.addEventListener('click', () => {
-            openFullPreview();
-        });
+        layoutTitle.addEventListener('click', openFullPreview);
     }
 
     const modal2Close = document.getElementById('modal2CloseBtn');
@@ -159,9 +156,7 @@ function setupEventListeners() {
     // Modal-Drucken
     const modalPrintBtn = document.getElementById('btn-modal-print');
     if (modalPrintBtn) {
-        modalPrintBtn.addEventListener('click', () => {
-            printLabels();
-        });
+        modalPrintBtn.addEventListener('click', printLabels);
     }
 
     // Zoom-Slider
@@ -321,7 +316,6 @@ function setupEventListeners() {
         langToggle.addEventListener('click', () => {
             const current = langToggle.textContent;
             langToggle.textContent = current === 'EN' ? 'DE' : 'EN';
-            // Hier könnte Sprachumschaltung implementiert werden
         });
     }
 }
@@ -390,7 +384,6 @@ function loadSettings() {
             console.error("Fehler beim Laden der Einstellungen", e);
         }
     }
-    // URL ins Input-Feld setzen
     const urlInput = document.getElementById('i4');
     if (urlInput && appSettings.sortimentUrl) {
         urlInput.value = appSettings.sortimentUrl;
@@ -559,7 +552,6 @@ function loadTemplates() {
 // Vorschau aktualisieren
 function updatePreview() {
     const previewContainer = document.getElementById('t1');
-    const previewContainer2 = document.getElementById('mdl');
     if (!previewContainer) return;
 
     // Daten ermitteln
@@ -578,20 +570,14 @@ function updatePreview() {
         }
     }
 
-    const today = new Date().toLocaleDateString('de-DE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-
     // Standard-Vorlage für Vorschau und Modal
-    const activeTemplate = 'template_v2'; // Standard
+    const activeTemplate = 'template_v2';
 
     // Vorschau in t1
     let html = templates[activeTemplate] || templates.template_v1;
     previewContainer.innerHTML = html;
 
-    // Werte injizieren - für template_v2 (Standard)
+    // Werte injizieren
     const v2Tag = document.getElementById('v2_tag');
     const v2Loc = document.getElementById('v2_loc');
     const v2Symbol = document.getElementById('v2_symbol');
@@ -607,7 +593,7 @@ function updatePreview() {
         adjustFontSize(v2Name, 28, 12);
     }
 
-    // D0, D1, D2, D3 für die Sidebar aktualisieren
+    // Sidebar aktualisieren
     const d0 = document.getElementById('d0');
     const d1 = document.getElementById('d1');
     const d2 = document.getElementById('d2');
@@ -622,25 +608,34 @@ function updatePreview() {
     if (d3) d3.textContent = artNrValue ? `#${artNrValue}` : '';
 
     // Modal-Vorschau aktualisieren
-    if (previewContainer2) {
-        previewContainer2.innerHTML = html;
-        const m2Tag = previewContainer2.querySelector('#v2_tag');
-        const m2Loc = previewContainer2.querySelector('#v2_loc');
-        const m2Symbol = previewContainer2.querySelector('#v2_symbol');
-        const m2Art = previewContainer2.querySelector('#v2_art');
-        const m2Name = previewContainer2.querySelector('#v2_name');
+    updateModalPreview(locValue, artNrValue, nameValue, symbolValue);
+}
 
-        if (m2Tag) m2Tag.textContent = 'LAVU OÖ';
-        if (m2Loc) m2Loc.textContent = locValue;
-        if (m2Symbol) m2Symbol.textContent = symbolValue;
-        if (m2Art) m2Art.textContent = artNrValue ? `#${artNrValue}` : '';
-        if (m2Name) {
-            m2Name.textContent = nameValue || 'Bitte wählen...';
-            adjustFontSize(m2Name, 28, 12);
-        }
+// Modal-Vorschau aktualisieren
+function updateModalPreview(locValue, artNrValue, nameValue, symbolValue) {
+    const previewContainer = document.getElementById('mdl');
+    if (!previewContainer) return;
+
+    const activeTemplate = modalLabelFormatSelect ? modalLabelFormatSelect.value : 'template_v2';
+    let html = templates[activeTemplate] || templates.template_v2;
+    previewContainer.innerHTML = html;
+
+    const mTag = previewContainer.querySelector('[id$="_tag"]');
+    const mLoc = previewContainer.querySelector('[id$="_loc"]');
+    const mSymbol = previewContainer.querySelector('[id$="_symbol"]');
+    const mArt = previewContainer.querySelector('[id$="_art"]');
+    const mName = previewContainer.querySelector('[id$="_name"]');
+
+    if (mTag) mTag.textContent = 'LAVU OÖ';
+    if (mLoc) mLoc.textContent = locValue || 'Kein Standort';
+    if (mSymbol) mSymbol.textContent = symbolValue || '📦';
+    if (mArt) mArt.textContent = artNrValue ? `#${artNrValue}` : '';
+    if (mName) {
+        mName.textContent = nameValue || 'Bitte wählen...';
+        adjustFontSize(mName, 28, 12);
     }
 
-    // Modal-Format-Select befüllen
+    // Format-Select für Modal initialisieren
     if (modalLabelFormatSelect && modalLabelFormatSelect.options.length === 0) {
         const formats = [
             { value: 'template_v1', label: 'Standard' },
@@ -654,33 +649,9 @@ function updatePreview() {
             modalLabelFormatSelect.appendChild(opt);
         });
         modalLabelFormatSelect.value = 'template_v2';
-    }
 
-    // Format-Select für Modal
-    if (modalLabelFormatSelect) {
-        modalLabelFormatSelect.addEventListener('change', (e) => {
-            const selectedTemplate = e.target.value;
-            if (selectedTemplate && templates[selectedTemplate]) {
-                const modalPreview = document.getElementById('mdl');
-                if (modalPreview) {
-                    modalPreview.innerHTML = templates[selectedTemplate];
-                    // Werte neu injizieren
-                    const mTag = modalPreview.querySelector('[id$="_tag"]');
-                    const mLoc = modalPreview.querySelector('[id$="_loc"]');
-                    const mSymbol = modalPreview.querySelector('[id$="_symbol"]');
-                    const mArt = modalPreview.querySelector('[id$="_art"]');
-                    const mName = modalPreview.querySelector('[id$="_name"]');
-
-                    if (mTag) mTag.textContent = 'LAVU OÖ';
-                    if (mLoc) mLoc.textContent = locValue;
-                    if (mSymbol) mSymbol.textContent = symbolValue;
-                    if (mArt) mArt.textContent = artNrValue ? `#${artNrValue}` : '';
-                    if (mName) {
-                        mName.textContent = nameValue || 'Bitte wählen...';
-                        adjustFontSize(mName, 28, 12);
-                    }
-                }
-            }
+        modalLabelFormatSelect.addEventListener('change', () => {
+            updateModalPreview(locValue, artNrValue, nameValue, symbolValue);
         });
     }
 }
@@ -702,7 +673,7 @@ function openFullPreview() {
     const modal = document.getElementById('m2');
     if (!modal) return;
 
-    // Modal-Vorschau mit aktuellen Daten aktualisieren
+    // Daten neu laden
     const locValue = i1Input ? i1Input.value.trim() || "Kein Standort" : "Kein Standort";
     let artNrValue = "";
     let nameValue = "";
@@ -718,28 +689,7 @@ function openFullPreview() {
         }
     }
 
-    const previewContainer = document.getElementById('mdl');
-    if (previewContainer) {
-        const activeTemplate = modalLabelFormatSelect ? modalLabelFormatSelect.value : 'template_v2';
-        let html = templates[activeTemplate] || templates.template_v2;
-        previewContainer.innerHTML = html;
-
-        const mTag = previewContainer.querySelector('[id$="_tag"]');
-        const mLoc = previewContainer.querySelector('[id$="_loc"]');
-        const mSymbol = previewContainer.querySelector('[id$="_symbol"]');
-        const mArt = previewContainer.querySelector('[id$="_art"]');
-        const mName = previewContainer.querySelector('[id$="_name"]');
-
-        if (mTag) mTag.textContent = 'LAVU OÖ';
-        if (mLoc) mLoc.textContent = locValue;
-        if (mSymbol) mSymbol.textContent = symbolValue;
-        if (mArt) mArt.textContent = artNrValue ? `#${artNrValue}` : '';
-        if (mName) {
-            mName.textContent = nameValue || 'Bitte wählen...';
-            adjustFontSize(mName, 28, 12);
-        }
-    }
-
+    updateModalPreview(locValue, artNrValue, nameValue, symbolValue);
     modal.style.display = 'flex';
 
     // Zoom zurücksetzen
@@ -791,7 +741,6 @@ function printLabels() {
         const end = Math.min(start + labelsPerPage, totalLabels);
         let pageLabels = '';
 
-        // Extrahiere Labels für diese Seite
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = allLabels;
         const labelElements = tempDiv.children;
@@ -808,7 +757,6 @@ function printLabels() {
             pageLabels += `<div class="lb e"></div>`;
         }
 
-        // Grid für diese Seite
         fullHtml += `
             <div class="pc" style="page-break-after: always; margin: 0; box-shadow: none; position: relative;">
                 <div class="psh" style="display: grid; grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr); gap: 0; width: 210mm; height: 297mm; padding: 5mm 2mm; box-sizing: border-box;">
@@ -818,17 +766,14 @@ function printLabels() {
         `;
     }
 
-    // Druck-Container für den Druck vorbereiten
     const hpc = document.getElementById('hpc');
     if (hpc) {
         hpc.innerHTML = fullHtml;
         hpc.style.display = 'block';
     }
 
-    // Drucken
     window.print();
 
-    // Nach dem Druck wieder ausblenden
     setTimeout(() => {
         if (hpc) hpc.style.display = 'none';
     }, 1000);
