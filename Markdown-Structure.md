@@ -1,0 +1,52 @@
+```
+└── 📁label-studio
+    └── 📁.bkp
+        └── 📁assets.bkp
+            └── 📁css
+                ├── styles.css
+            └── 📁icons
+                ├── apple-touch-icon.png
+                ├── favicon copy.svg
+                ├── favicon-96x96.png
+                ├── favicon.ico
+                ├── favicon.svg
+                ├── logo.png
+                ├── web-app-manifest-192x192.png
+                ├── web-app-manifest-512x512.png
+            └── 📁js
+                ├── script.js
+        ├── index.html.bkp
+        ├── locations.json
+        ├── locations.json.bkp
+        ├── locationsbkp.json
+        ├── manifest.json.bkp
+        ├── sortiment.json
+        ├── sortiment.json.bkp
+        ├── sw.js.bkp
+    └── 📁assets
+        └── 📁css
+            ├── styles.css
+        └── 📁icons
+            ├── apple-touch-icon.png
+            ├── favicon copy.svg
+            ├── favicon-96x96.png
+            ├── favicon.ico
+            ├── favicon.svg
+            ├── LAVU_logo.png
+            ├── logo.png
+            ├── web-app-manifest-192x192.png
+            ├── web-app-manifest-512x512.png
+        └── 📁js
+            ├── script.js
+            ├── upload.js
+    ├── .gitignore
+    ├── index.html
+    ├── INFO.md
+    ├── label-studio.code-workspace
+    ├── LICENSE
+    ├── manifest.json
+    ├── Ordnerstruktur.md
+    ├── README.md
+    ├── sw.js
+    └── upload.html
+```
