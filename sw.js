@@ -4,7 +4,6 @@ const STATIC_ASSETS = [
     '.',
     'index.html',
     'manifest.json',
-    'site.webmanifest',
     'assets/icons/favicon.svg',
     'assets/icons/logo.png',
     'assets/icons/favicon-96x96.png',
