@@ -8,7 +8,6 @@
 │ │ ├── 🖼️ favicon-96x96.png
 │ │ ├── 📄 favicon.ico
 │ │ ├── 🖼️ favicon.svg
-│ │ ├── 🖼️ LAVU_logo.png
 │ │ ├── 🖼️ logo.png
 │ │ ├── 🖼️ web-app-manifest-192x192.png
 │ │ ├── 🖼️ web-app-manifest-512x512.png
@@ -23,6 +22,7 @@
 ├── 📜 Ordnerstruktur.md
 ├── 📜 README.md
 ├── 🟨 sw.js
-├── 📄 upload.html
+├── 📁 upload
+│ ├── 📄 index.html
 
 ```

@@ -1,7 +1,8 @@
 // ===== Configuration & Endpoints =====
 const ENDPOINTS = {
     sortiment: 'https://sortiment-api.lavu-ooe.workers.dev/',
-    locations: 'https://locations-api.lavu-ooe.workers.dev/'
+    locations: 'https://locations-api.lavu-ooe.workers.dev/',
+    printLayout: 'https://print-layout-api.lavu-ooe.workers.dev/'
 };
 
 let selectedEndpoint = 'sortiment';
@@ -172,7 +173,12 @@ function init() {
                     document.querySelectorAll('.endpoint-selector label').forEach(label => {
                         label.classList.remove('selected');
                     });
-                    const labelId = selectedEndpoint === 'sortiment' ? 'labelSortiment' : 'labelLocations';
+                    const labelMap = {
+                        'sortiment': 'labelSortiment',
+                        'locations': 'labelLocations',
+                        'printLayout': 'labelPrintLayout'
+                    };
+                    const labelId = labelMap[selectedEndpoint];
                     const label = document.getElementById(labelId);
                     if (label) label.classList.add('selected');
                 }
@@ -246,9 +252,10 @@ function init() {
     setDebug('Ready');
     if (elements.debugDiv) elements.debugDiv.classList.add('visible');
     
-    console.log('📤 Cloudflare JSON Uploader v2.0 (Sortiment & Locations)');
+    console.log('📤 Cloudflare JSON Uploader v2.0 (Sortiment, Locations & Print Layout)');
     console.log('🔗 Sortiment API:', ENDPOINTS.sortiment);
     console.log('🔗 Locations API:', ENDPOINTS.locations);
+    console.log('🔗 Print Layout API:', ENDPOINTS.printLayout);
     console.log('⌨️  Shortcuts: Ctrl+Enter to upload, Escape to clear password');
 }
 
