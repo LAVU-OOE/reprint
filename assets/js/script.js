@@ -668,6 +668,10 @@ function setupEventListeners() {
             s8(parseFloat(zoomVal) / 100);
         }
     });
+    document.getElementById('zoomToggleBtn').addEventListener('click', function() {
+    const container = document.getElementById('zoomContainer');
+    container.classList.toggle('visible');
+});
 }
 
 function toggleLanguage() {
@@ -1118,6 +1122,16 @@ function c2() {
 }
 
 function o1() {
+    // Für das Modal immer alle Etiketten auswählen
+    const f = formats[currentFormatKey];
+    const maxLabels = f.cols * f.rows;
+    document.getElementById('i2').value = maxLabels;
+    document.getElementById('i3').value = 1;
+
+    // Zoom-Container ausblenden (falls durch vorherige Nutzung sichtbar)
+    document.getElementById('zoomContainer').classList.remove('visible');
+
+    // Anzeige aktualisieren und Modal öffnen
     u1();
     document.getElementById('m2').style.display = 'flex';
     const zoomVal = document.getElementById('zoomSlider').value;
@@ -1128,6 +1142,7 @@ function o1() {
 
 function c5() {
     document.getElementById('m2').style.display = 'none';
+    document.getElementById('zoomContainer').classList.remove('visible');
 }
 
 function s6() {

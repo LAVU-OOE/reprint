@@ -1982,3 +1982,61 @@ select:focus {
     font-weight: normal;
     font-style: italic;
 }
+/* Toggle-Button – sehr dezent */
+.zoom-toggle-btn {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(26, 75, 96, 0.15);
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #1a4b60;
+    transition: all 0.2s ease;
+    z-index: 20;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.zoom-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: #1a4b60;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.zoom-toggle-btn svg {
+    stroke: #1a4b60;
+    width: 18px;
+    height: 18px;
+}
+
+/* Zoom-Container standardmäßig ausblenden */
+.zoom-container {
+    display: none; /* bisher war es 'flex' */
+    /* alle anderen Eigenschaften bleiben unverändert */
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 12px 8px;
+    border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(4px);
+    z-index: 10;
+    width: 42px;
+}
+
+/* Sichtbarer Zustand */
+.zoom-container.visible {
+    display: flex;
+}
+
+/* Die übrigen .zoom-* Styles bleiben wie gehabt */
