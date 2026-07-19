@@ -1,27 +1,24 @@
 ```
+├── 🟨 app.js
 ├── 📁 images
-│ ├── 🖼️ apple-touch-icon.png
 │ ├── 🖼️ favicon copy.svg
-│ ├── 🖼️ favicon-96x96.png
-│ ├── 📄 favicon.ico
-│ ├── 🖼️ favicon.svg
-│ ├── 🖼️ logo.png
-│ ├── 🖼️ web-app-manifest-192x192.png
-│ ├── 🖼️ web-app-manifest-512x512.png
 ├── 📄 index.html
+├── 📄 index.htmlbkp
 ├── 📜 INFO.md
 ├── 📄 LICENSE
 ├── 🗂️ manifest.json
 ├── 📜 Ordnerstruktur.md
 ├── 📜 README.md
-├── 🟨 script.js
+├── 📄 script.js.old
 ├── 📁 scripts
 │ ├── 🗂️ formats.json
 │ ├── 🗂️ i18n.json
+│ ├── 🟨 script.js
 │ ├── 🗂️ sortiment.json
 │ ├── 🟨 upload.js
 │ ├── 🟨 worker.js
 ├── 🎨 styles.css
+├── 📄 styles.css.bkp
 ├── 🟨 sw.js
 ├── 📁 upload
 │ ├── 📄 index.html
