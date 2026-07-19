@@ -12,8 +12,8 @@ const STATIC_ASSETS = [
     'assets/icons/web-app-manifest-512x512.png'
 ];
 // const DYNAMIC_JSON_URLS = [
-//     'https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/assets/js/locations.json',
-//     'https://raw.githubusercontent.com/LAVU-OOE/label-studio/refs/heads/main/assets/js/sortiment.json'
+//     'https://raw.githubusercontent.com/LAVU-OOE/reprint/refs/heads/main/assets/js/locations.json',
+//     'https://raw.githubusercontent.com/LAVU-OOE/reprint/refs/heads/main/assets/js/sortiment.json'
 // ];
 const DYNAMIC_JSON_URLS = [
     'https://locations-api.lavu-ooe.workers.dev/',

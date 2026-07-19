@@ -1278,7 +1278,7 @@ window.addEventListener('beforeinstallprompt', function (e) {
 });
 
 window.addEventListener('appinstalled', function () {
-    console.log('LAVU label-studio wurde erfolgreich installiert.');
+    console.log('LAVU reprint wurde erfolgreich installiert.');
     const a63 = document.getElementById('pwaBanner');
     if (a63) a63.style.display = 'none';
 });

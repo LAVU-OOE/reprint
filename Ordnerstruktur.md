@@ -16,7 +16,7 @@
 │ │ ├── 🟨 upload.js
 ├── 📄 index.html
 ├── 📜 INFO.md
-├── 📄 label-studio.code-workspace
+├── 📄 reprint.code-workspace
 ├── 📄 LICENSE
 ├── 🗂️ manifest.json
 ├── 📜 Ordnerstruktur.md
