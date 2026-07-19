@@ -51,11 +51,11 @@ let currentFormatKey = "4473";
 // ====================================================================
 async function loadExternalData() {
     try {
-        const [i18nRes, formatsRes, sortimentRes] = await Promise.all([
-            fetch('i18n.json'),
-            fetch('formats.json'),
-            fetch('sortiment.json')
-        ]);
+const [i18nRes, formatsRes, sortimentRes] = await Promise.all([
+    fetch('scripts/i18n.json'),
+    fetch('scripts/formats.json'),
+    fetch('scripts/sortiment.json')
+]);
         if (!i18nRes.ok || !formatsRes.ok || !sortimentRes.ok) throw new Error('One or more JSON files not found');
         i18n = await i18nRes.json();
         formats = await formatsRes.json();
