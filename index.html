@@ -487,5 +487,31 @@
             style="background: #27ae60; color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 6px; box-shadow: 0 4px 10px rgba(39,174,96,0.3);">Installieren</button>
     </div>
     <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Options modal
+        document.getElementById('btn-options').addEventListener('click', function() {
+            document.getElementById('m1').style.display = 'flex';
+        });
+        // Print preview modal
+        document.getElementById('layout-title-attr').addEventListener('click', function() {
+            document.getElementById('m2').style.display = 'flex';
+        });
+        // Close buttons
+        document.getElementById('modal1CloseBtn').addEventListener('click', function() {
+            document.getElementById('m1').style.display = 'none';
+        });
+        document.getElementById('modal2CloseBtn').addEventListener('click', function() {
+            document.getElementById('m2').style.display = 'none';
+        });
+        // Also close on background click (optional)
+        document.getElementById('m1').addEventListener('click', function(e) {
+            if (e.target === this) this.style.display = 'none';
+        });
+        document.getElementById('m2').addEventListener('click', function(e) {
+            if (e.target === this) this.style.display = 'none';
+        });
+    });
+</script>
 </body>
 </html>

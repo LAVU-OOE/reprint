@@ -653,7 +653,7 @@ function r2(a30, a29) {
                 </div>
                 <div class="lbt bbb-fake-fix" style="border-bottom:none; font-size:1px; height:1px; line-height:1px;"></div>
                 <div class="lbb">${a29.bezeichnung || '&nbsp;'}</div>
-                <div class="lbf">https:
+<div class="lbf">https://lavu-ooe.github.io/reprint</div>
             `;
         } else {
             a35.className = 'lb e';
@@ -917,6 +917,9 @@ function f2() {
 function toggleLanguage() {
     currentLang = currentLang === 'de' ? 'en' : 'de';
     localStorage.setItem('lavu_lang', currentLang);
+    function setupEventListeners() {
+    console.log('setupEventListeners called');
+}
     applyLanguage();
     u1();
     r1();
