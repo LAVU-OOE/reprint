@@ -978,7 +978,9 @@ function applyFastZoom(value) {
     }
     localStorage.setItem('lavu_preview_zoom', value);
 }
-
+function setupEventListeners() {
+    console.log('setupEventListeners called');
+}
 function setupEventListeners() {
     document.getElementById('langToggleBtn').addEventListener('click', toggleLanguage);
     document.getElementById('s1').addEventListener('change', function () {
