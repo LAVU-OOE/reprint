@@ -3,7 +3,7 @@ const STATIC_ASSETS = [
     '/reprint/',
     '/reprint/index.html',
     '/reprint/styles.css',
-    '/reprint/script.js',
+    '/reprint/app.js',
     '/reprint/manifest.json',
     '/reprint/scripts/i18n.json',
     '/reprint/scripts/formats.json',
