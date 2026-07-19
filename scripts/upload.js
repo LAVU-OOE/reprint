@@ -108,14 +108,16 @@ async function uploadFile() {
             const jsonData = JSON.parse(e.target.result);
             setDebug('JSON parsed successfully. Sending request...');
 
-            const response = await fetch(endpointUrl, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Custom-Auth': password
-                },
-                body: JSON.stringify(jsonData)
-            });
+// Build Basic Auth header
+const auth = btoa(`admin:${password}`);
+const response = await fetch(endpointUrl, {
+    method: 'PUT',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${auth}`
+    },
+    body: JSON.stringify(jsonData)
+});
 
             if (response.ok) {
                 setResult(`✅ Success! ${endpointName} database updated successfully.`, 'success');

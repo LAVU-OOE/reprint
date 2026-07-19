@@ -1,158 +1,86 @@
-const CACHE_VERSION = 'lavu-studio-v10';
-const CACHE_NAME = `lavu-studio-${CACHE_VERSION}`;
+// sw.js – LAVU Label Studio v9
+const CACHE_NAME = 'lavu-studio-v9';
 const STATIC_ASSETS = [
-    '.',
-    'index.html',
-    'manifest.json',
-    'assets/icons/favicon.svg',
-    'assets/icons/logo.png',
-    'assets/icons/favicon-96x96.png',
-    'assets/icons/apple-touch-icon.png',
-    'assets/icons/web-app-manifest-192x192.png',
-    'assets/icons/web-app-manifest-512x512.png'
+    '/reprint/',
+    '/reprint/index.html',
+    '/reprint/styles.css',
+    '/reprint/script.js',
+    '/reprint/manifest.json',
+    // JSON data (optional – fetch from network first anyway)
+    '/reprint/scripts/i18n.json',
+    '/reprint/scripts/formats.json',
+    '/reprint/scripts/sortiment.json',
+    // Icons
+    '/reprint/images/logo.png',
+    '/reprint/images/favicon.svg',
+    '/reprint/images/favicon-96x96.png',
+    '/reprint/images/apple-touch-icon.png',
+    '/reprint/images/web-app-manifest-192x192.png',
+    '/reprint/images/web-app-manifest-512x512.png'
 ];
-// const DYNAMIC_JSON_URLS = [
-//     'https://raw.githubusercontent.com/LAVU-OOE/reprint/refs/heads/main/assets/js/locations.json',
-//     'https://raw.githubusercontent.com/LAVU-OOE/reprint/refs/heads/main/assets/js/sortiment.json'
-// ];
-const DYNAMIC_JSON_URLS = [
-    'https://locations-api.lavu-ooe.workers.dev/',
-    'https://sortiment-api.lavu-ooe.workers.dev/'
-];
+
+// Install event – cache static assets
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
                 console.log('[SW] Caching static assets');
-                return cache.addAll([...STATIC_ASSETS, ...DYNAMIC_JSON_URLS]);
+                // Use addAll – skip any failing requests
+                return cache.addAll(STATIC_ASSETS)
+                    .catch(err => {
+                        console.warn('[SW] Some assets failed to cache, but installation continues', err);
+                        // We still want the SW to install, so we return a resolved promise
+                        return Promise.resolve();
+                    });
             })
-            .then(() => {
-                console.log('[SW] Installation complete');
-                return self.skipWaiting();
-            })
-            .catch(err => {
-                console.error('[SW] Installation failed:', err);
-            })
+            .then(() => self.skipWaiting())
     );
 });
+
+// Activate – clean old caches
 self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys()
-            .then(cacheNames => {
-                return Promise.all(
-                    cacheNames
-                        .filter(name => name.startsWith('lavu-studio-') && name !== CACHE_NAME)
-                        .map(name => {
-                            console.log('[SW] Deleting old cache:', name);
-                            return caches.delete(name);
-                        })
-                );
-            })
-            .then(() => {
-                console.log('[SW] Activation complete');
-                return self.clients.claim();
-            })
+        caches.keys().then(keys => {
+            return Promise.all(
+                keys.filter(key => key !== CACHE_NAME)
+                    .map(key => caches.delete(key))
+            );
+        }).then(() => self.clients.claim())
     );
 });
+
+// Fetch – network-first for API, cache-first for static assets
 self.addEventListener('fetch', event => {
-    const request = event.request;
-    const url = new URL(request.url);
-    if (request.method !== 'GET') return;
-    if (DYNAMIC_JSON_URLS.some(jsonUrl => url.href === jsonUrl)) {
-        event.respondWith(
-            fetch(request, { cache: 'no-store' })
-                .then(response => {
-                    const clonedResponse = response.clone();
-                    caches.open(CACHE_NAME)
-                        .then(cache => {
-                            cache.put(request, clonedResponse);
-                        })
-                        .catch(err => console.warn('[SW] Cache put failed:', err));
-                    return response;
-                })
-                .catch(() => {
-                    return caches.match(request)
-                        .then(cachedResponse => {
-                            if (cachedResponse) {
-                                console.log('[SW] Serving JSON from cache');
-                                return cachedResponse;
-                            }
-                            return new Response(JSON.stringify({ error: 'Offline - Data not available' }), {
-                                status: 503,
-                                headers: { 'Content-Type': 'application/json' }
-                            });
-                        });
-                })
-        );
+    const url = new URL(event.request.url);
+
+    // Skip external APIs (locations, sortiment)
+    if (url.hostname === 'sortiment-api.lavu-ooe.workers.dev' ||
+        url.hostname === 'locations-api.lavu-ooe.workers.dev') {
+        event.respondWith(fetch(event.request));
         return;
     }
-    if (request.mode === 'navigate') {
-        event.respondWith(
-            fetch(request)
-                .then(response => {
-                    const clonedResponse = response.clone();
-                    caches.open(CACHE_NAME)
-                        .then(cache => {
-                            cache.put(request, clonedResponse);
-                        })
-                        .catch(err => console.warn('[SW] Cache put failed:', err));
-                    return response;
-                })
-                .catch(() => {
-                    return caches.match('/index.html')
-                        .then(cachedResponse => {
-                            if (cachedResponse) {
-                                console.log('[SW] Serving offline fallback page');
-                                return cachedResponse;
-                            }
-                            return new Response(
-                                '<html><body><h1>Offline</h1><p>Bitte verbinden Sie sich mit dem Internet, um die App zu nutzen.</p></body></html>',
-                                { headers: { 'Content-Type': 'text/html' } }
-                            );
-                        });
-                })
-        );
-        return;
-    }
+
+    // For static assets: try cache first, fallback to network
     event.respondWith(
-        caches.match(request)
+        caches.match(event.request)
             .then(cachedResponse => {
                 if (cachedResponse) {
-                    // Background cache update
-                    fetch(request)
-                        .then(networkResponse => {
-                            if (networkResponse && networkResponse.ok) {
-                                caches.open(CACHE_NAME)
-                                    .then(cache => {
-                                        cache.put(request, networkResponse);
-                                    })
-                                    .catch(err => console.warn('[SW] Background cache update failed:', err));
-                            }
-                        })
-                        .catch(() => { });
                     return cachedResponse;
                 }
-                return fetch(request)
+                return fetch(event.request)
                     .then(response => {
-                        if (response && response.ok) {
-                            const clonedResponse = response.clone();
-                            caches.open(CACHE_NAME)
-                                .then(cache => {
-                                    cache.put(request, clonedResponse);
-                                })
-                                .catch(err => console.warn('[SW] Cache put failed:', err));
-                        }
+                        // Cache the new response for future
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME)
+                            .then(cache => cache.put(event.request, clone));
                         return response;
                     })
-                    .catch(err => {
-                        console.warn('[SW] Fetch failed:', err);
-                        return new Response('Network error', { status: 503 });
+                    .catch(() => {
+                        // Offline fallback for HTML
+                        if (event.request.headers.get('Accept').includes('text/html')) {
+                            return caches.match('/reprint/index.html');
+                        }
                     });
             })
     );
-});
-self.addEventListener('message', event => {
-    if (event.data && event.data.action === 'skipWaiting') {
-        self.skipWaiting();
-    }
 });
