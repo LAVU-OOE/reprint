@@ -1,528 +1,165 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1a4b60" />
-    <title>LAVU OÖ - Label Studio</title>
-    <base href="/reprint/">
-    <link rel="stylesheet" href="styles.css" />
-<link rel="icon" type="image/x-icon" href="images/favicon.ico" />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="canonical" href="https://lavu-ooe.github.io/reprint/">
-    <style>
-    /* Force modal styles - temporary fix */
-    .mb {
-        display: none !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        background: rgba(15, 34, 43, 0.55) !important;
-        backdrop-filter: blur(5px) !important;
-        z-index: 1000 !important;
-        justify-content: center !important;
-        align-items: center !important;
-        padding: 10px !important;
-        animation: fdin 0.2s ease !important;
-    }
-    .mb[style*="display: flex"] {
-        display: flex !important;
-    }
-    .mc {
-        background: white !important;
-        padding: 30px !important;
-        border-radius: 16px !important;
-        max-width: 580px !important;
-        box-shadow: 0 20px 40px rgba(15,34,43,0.2) !important;
-        max-height: 95vh !important;
-        overflow-y: auto !important;
-        width: 100% !important;
-    }
-    .mpc {
-        max-width: 90vw !important;
-        width: 600px !important;
-        max-height: 95vh !important;
-        display: flex !important;
-        flex-direction: column !important;
-        padding: 20px 30px !important;
-    }
-    .mbs {
-        flex: 1 !important;
-        padding: 25px !important;
-        background: #f1f5f9 !important;
-        border-radius: 12px !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        position: relative !important;
-        overflow: auto !important;
-    }
-    .pc {
-        background: white !important;
-        width: 210mm !important;
-        height: 297mm !important;
-        box-shadow: 0 4px 25px rgba(0,0,0,0.12) !important;
-        box-sizing: border-box !important;
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform-origin: center center !important;
-    }
-    .psh {
-        width: 210mm !important;
-        height: 297mm !important;
-        padding: 5mm 2mm !important;
-        display: grid !important;
-        background: white !important;
-    }
-    .mh {
-        font-size: 1.35rem !important;
-        font-weight: bold !important;
-        color: #1a4b60 !important;
-        margin-bottom: 20px !important;
-        border-bottom: 2px solid #f1f5f9 !important;
-        padding-bottom: 12px !important;
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        gap: 10px !important;
-    }
-    .bx {
-        background: transparent !important;
-        font-size: 1.8rem !important;
-        color: #94a3b8 !important;
-        padding: 0 !important;
-        cursor: pointer !important;
-        line-height: 1 !important;
-    }
-    .bx:hover {
-        color: #ef4444 !important;
-    }
-    .mf {
-        display: flex !important;
-        justify-content: flex-end !important;
-        gap: 12px !important;
-        margin-top: 20px !important;
-        border-top: 1px solid #f1f5f9 !important;
-        padding-top: 15px !important;
-        flex-wrap: wrap !important;
-    }
-    .bp {
-        background-color: #27ae60 !important;
-        color: white !important;
-        flex: 2 !important;
-        box-shadow: 0 4px 12px rgba(39,174,96,0.2) !important;
-    }
-    .bcn {
-        background-color: #f1f5f9 !important;
-        color: #475569 !important;
-    }
-    /* Fix for the small preview scale container */
-    .sc {
-        transform: scale(0.20) !important;
-        transform-origin: top left !important;
-        width: 210mm !important;
-        height: 297mm !important;
-        pointer-events: none !important;
-        will-change: transform !important;
-    }
-    .psh#t1 {
-        width: 210mm !important;
-        height: 297mm !important;
-        padding: 5mm 2mm !important;
-        display: grid !important;
-        background: white !important;
-    }
-    .lb { /* label styles – you may need more, but minimal for now */
-        border: 1px dashed #cbd5e1;
-        background: white;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        padding: 2.5mm 3.5mm;
-        width: 100%;
-        height: 100%;
-        box-sizing: border-box;
-        overflow: hidden;
-    }
-    .lb.e {
-        border: 1px dashed #e2e8f0;
-        background: #fafafa;
-    }
-    .lb.e * { display: none !important; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="studioV9">Etiketten-Studio v9</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e293b">
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
-    <input type="hidden" id="i5" value="" />
-    <input type="hidden" id="i6" value="" />
-    <input type="hidden" id="i7" value="" />
-    <div class="crd">
-        <div class="hdr">
-            <div class="hdr-l">
-                <img src="images/logo.png" alt="LAVU Logo" class="lg"
-                    onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%231a4b60\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'10\'/><path d=\'M8 14s1.5 2 4 2 4-2 4-2\'/><line x1=\'9\' y1=\'9\' x2=\'9.01\' y2=\'9\'/><line x1=\'15\' y1=\'9\' x2=\'15.01\' y2=\'9\'/></svg>'">
-                <div>
-                    <div class="hdr-ttl">LAVU OÖ</div>
-                    <div class="hdr-sub" id="txt-studio-v9">Etiketten-Studio v9</div>
-                </div>
-            </div>
-            <div class="hdr-r">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                </svg>
-                <select id="s1" class="sel-hdr">
-                    <option value="" disabled selected>Loading locations...</option>
-                </select>
-                <button id="langToggleBtn" class="btn-lang-toggle" aria-label="Toggle language">EN</button>
-            </div>
-        </div>
-        <div class="db">
-            <div class="ps-wrapper">
-                <div class="ps-ttl" id="fmt-overlay">
-                    Format wird geladen...
-                </div>
-                <div class="ps">
-                    <div class="tw" id="layout-title-attr" title="Klicken für vollständige A4-Großansicht">
-                        <div class="sc" id="previewScaleContainer">
-                            <div class="psh" id="t1"></div>
-                        </div>
-                        <div class="to" id="txt-print-layout">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                                style="margin-right: 2px;">
-                                <path
-                                    d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                                <rect x="6" y="14" width="12" height="8" />
-                            </svg>
-                            Druck-Layout
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="ip">
-                <div class="fps">
-                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; width: 100%;">
-                        <div>
-                            <span id="txt-art-nr"
-                                style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; height: 16px; line-height: 16px;">Art.Nr.</span>
-                            <select id="s2_art"></select>
-                        </div>
-                        <div>
-                            <span id="txt-bezeichnung"
-                                style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; height: 16px; line-height: 16px;">Bezeichnung</span>
-                            <select id="s2_name"></select>
-                        </div>
-                    </div>
-                </div>
-                <div class="sb">
-                    <div class="lbt" id="d0">-</div>
-                    <div class="lbm">
-                        <div class="lba" id="d2">-</div>
-                        <div class="lbs" id="d3">-</div>
-                    </div>
-                    <div class="lbt bbb-fake-fix"
-                        style="border-bottom:none; font-size:1px; height:1px; line-height:1px;"></div>
-                    <div class="lbb" id="d1">-</div>
-                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 6px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; visibility: hidden;"
-                        id="d4">-</div>
-                </div>
-                <div class="ab">
-                    <button class="bp" id="btn-print-now">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5">
-                            <polyline points="6 9 6 2 18 2 18 9" />
-                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                            <rect x="6" y="14" width="12" height="8" />
-                        </svg>
-                        Jetzt Drucken
-                    </button>
-                    <button class="bs" id="btn-options">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5">
-                            <circle cx="12" cy="12" r="3" />
-                            <path
-                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                        </svg>
-                        Optionen
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="ftr" style="display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap;">
-        Built with <span style="color: #e74c3c;">&hearts;</span> by Karli
-        <span style="color: #cbd5e1;">|</span>
-        <a href="https://github.com/7pub" target="_blank"
-            style="display: inline-flex; align-items: center; gap: 5px; color: inherit; text-decoration: none; transition: color 0.2s;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" style="display: block;">
-                <path
-                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
-                </path>
-            </svg>
-        </a>
-    </div>
-    <div id="m1" class="mb">
-        <div class="mc">
-            <div class="mh">
-                <span id="txt-modal1-title">Druck- & Standorteinstellungen</span>
-                <button class="bx" id="modal1CloseBtn" aria-label="Close modal">&times;</button>
-            </div>
-            <div class="fv" style="margin-bottom: 15px; display:none;">
-                <label for="i1" id="lbl-location">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    Standort (ASZ Niederlassung OÖ):
-                </label>
-                <select id="i1"></select>
-            </div>
-            <div class="fv" style="margin-bottom: 15px; display:none;">
-                <label for="labelFormatSelect" id="lbl-format">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                        <line x1="9" y1="3" x2="9" y2="21" />
-                        <line x1="15" y1="3" x2="15" y2="21" />
-                        <line x1="3" y1="9" x2="21" y2="9" />
-                        <line x1="3" y1="15" x2="21" y2="15" />
-                    </svg>
-                    Etiketten-Hersteller & Format:
-                </label>
-                <select id="labelFormatSelect"></select>
-            </div>
-            <div class="fg" style="margin-bottom: 20px; display:none;">
-                <div class="fv">
-                    <label for="i2" id="lblCount">Anzahl Etiketten:</label>
-                    <input type="number" id="i2" value="21" min="1" />
-                </div>
-                <div class="fv">
-                    <label for="i3" id="lblStartPos">Start-Position:</label>
-                    <input type="number" id="i3" value="1" min="1" />
-                </div>
-            </div>
-            <div class="ms">
-                <div id="t2" class="mt a">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <line x1="8" y1="6" x2="21" y2="6" />
-                        <line x1="8" y1="12" x2="21" y2="12" />
-                        <line x1="8" y1="18" x2="21" y2="18" />
-                        <line x1="3" y1="6" x2="3.01" y2="6" />
-                        <line x1="3" y1="12" x2="3.01" y2="12" />
-                        <line x1="3" y1="18" x2="3.01" y2="18" />
-                    </svg>
-                    <span id="txt-tab-select">Serverless HTTP Endpoints</span>
-                </div>
-                <div id="t3" class="mt">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="16" />
-                        <line x1="8" y1="12" x2="16" y2="12" />
-                    </svg>
-                    <span id="txt-tab-manage">Datenbank verwalten</span>
-                </div>
-            </div>
-            <div id="s3" class="fs a">
-                <div class="fv" style="margin-bottom: 15px;">
-                    <label for="i4" id="lbl-url">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                        </svg>
-                        Sortiment-Worker:
-                    </label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="i4" placeholder="https://..." style="flex: 1;" />
-                        <button class="bc bsd" style="padding: 11px 16px;" id="btn-update">Aktualisieren</button>
-                    </div>
-                    <span id="n1" style="font-size: 0.8rem; font-weight: bold; margin-top: 6px; display: block;"></span>
-                </div>
-                <!-- Locations-URL Konfiguration -->
-                <div class="fv" style="margin-bottom: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
-                    <label for="i8" id="lbl-locations-url">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                        </svg>
-                        Locations-Worker:
-                    </label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="i8" placeholder="https://..." style="flex: 1;" />
-                        <button class="bc bsd" style="padding: 11px 16px;" id="btn-update-locations">Aktualisieren</button>
-                    </div>
-                    <span id="n2" style="font-size: 0.8rem; font-weight: bold; margin-top: 6px; display: block;"></span>
-                </div>
-            </div>
-            <div id="s4" class="fs">
-                <div class="fg" style="gap: 12px; margin-bottom: 15px;">
-                    <input type="hidden" id="e1" value="" />
-                    <div class="fv">
-                        <label for="c1">Art.Nr.:</label>
-                        <input type="text" id="c1" placeholder="z.B. 4040" />
-                    </div>
-                    <div class="fv">
-                        <label for="c2" id="lbl-db-suffix">Gebinde / Suffix:</label>
-                        <input type="text" id="c2" placeholder="z.B. QR-Box" />
-                    </div>
-                    <div class="fv fw">
-                        <label for="c3" id="lbl-db-bez">Bezeichnung:</label>
-                        <input type="text" id="c3" placeholder="z.B. Elektro-Kleingeräte" />
-                    </div>
-                </div>
-                <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-                    <button id="b1" class="bc bsd" style="display: none; background: #e67e22;">💾 Ändern</button>
-                    <button class="bc bsd" style="background: #27ae60; flex: 1;" id="btn-add-new">➕ Neu
-                        hinzufügen</button>
-                    <button class="bc bcn" id="btn-cancel">Abbrechen</button>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <button class="bc"
-                        style="background: #2c3e50; color: white; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;"
-                        id="btn-download-json"> 📥 Aktuelle Datenbank als JSON herunterladen </button>
-                </div>
-                <label id="lbl-current-entries">Aktuelle Einträge im lokalen Workspace:</label>
-                <div id="c4"
-                    style="max-height: 180px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; padding: 5px;">
-                </div>
-            </div>
-            <div class="mf">
-                <button id="b2" class="bsd" style="display: none;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                        <polyline points="17 21 17 13 7 13 7 21" />
-                        <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    <span id="btn-save-default">Standard sichern</span>
-                </button>
-                <button class="bcn" id="btn-done">Fertig</button>
-            </div>
-        </div>
-    </div>
-    <div id="m2" class="mb">
-        <div class="mc mpc">
-            <div class="mh">
-                <span id="modalTitle" style="display: flex; flex-direction: column; gap: 4px;">
-                    Interaktiver A4-Druckbogen
-                </span>
-                <select id="modalLabelFormatSelect" class="sel-modal-hdr"></select>
-                <button class="bx" id="modal2CloseBtn" aria-label="Close modal">&times;</button>
-            </div>
-            <div class="mbs">
-                <!-- Neuer Toggle-Button (Lupe) -->
-                <button id="zoomToggleBtn" class="zoom-toggle-btn" aria-label="Zoom ein-/ausblenden">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                        <line x1="8" y1="11" x2="14" y2="11" />
-                    </svg>
-                </button>
 
-                <div class="pc" id="p1">
-                    <div class="psh" id="mdl"></div>
+    <!-- Header Navigation & Status Bar -->
+    <header class="app-header">
+        <div class="header-container">
+            <h1 data-i18n="studioV9">Etiketten-Studio v9</h1>
+            <div class="header-actions">
+                <span id="network-status-badge" class="status-badge">⏳ Verbinde...</span>
+                <button id="language-toggle" class="btn-secondary">DE / EN</button>
+                <button id="btn-options-modal" class="btn-primary" data-i18n="options">Optionen</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Setup -->
+    <main class="workspace-container">
+        
+        <!-- Selection Form Modifiers -->
+        <section class="selection-panel card">
+            <h2 data-i18n="printLayout">Druck-Layout</h2>
+            <div class="form-group-row">
+                <div class="form-group">
+                    <label for="select-artnr" data-i18n="artNr">Art.Nr.</label>
+                    <select id="select-artnr" class="form-control">
+                        <option data-i18n="netLoading">⏳ Verbinde...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="select-bezeichnung" data-i18n="bezeichnung">Bezeichnung</label>
+                    <select id="select-bezeichnung" class="form-control">
+                        <option data-i18n="netLoading">⏳ Verbinde...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group-row adjustments">
+                <div class="form-group">
+                    <label for="select-format" data-i18n="lblFormat">Etiketten-Hersteller & Format:</label>
+                    <select id="select-format" class="form-control" onchange="renderPrintSheetPreview()">
+                        <option value="4473">HERMA 4473 (70 x 36 mm)</option>
+                        <option value="4428">HERMA 4428 (105 x 68 mm)</option>
+                        <option value="4276">HERMA 4276 (99,1 x 42,3 mm)</option>
+                        <option value="5077">HERMA 5077 (99,1 x 67,7 mm)</option>
+                        <option value="4459">HERMA 4459 (70 x 16,9 mm)</option>
+                        <option value="4456">HERMA 4456 (70 x 29,7 mm)</option>
+                        <option value="8645">HERMA 8645 (105 x 74 mm)</option>
+                    </select>
+                </div>
+                <div class="form-group compact">
+                    <label for="input-count" data-i18n="lblCount">Anzahl Etiketten</label>
+                    <input type="number" id="input-count" class="form-control" value="1" min="1">
+                </div>
+                <div class="form-group compact">
+                    <label for="input-startpos" data-i18n="lblStartPos">Start-Position</label>
+                    <input type="number" id="input-startpos" class="form-control" value="1" min="1">
+                </div>
+            </div>
+
+            <button id="btn-print-trigger" class="btn-success btn-large" data-i18n="printNow">Jetzt Drucken</button>
+        </section>
+
+        <!-- Interactive Visual Layout Workspace Overlay -->
+        <section class="preview-panel card">
+            <div class="panel-header">
+                <h3 data-i18n="modal2Title" data-i18n-attr="title" layoutTitleAttr="Klicken für vollständige A4-Großansicht">Interaktiver A4-Druckbogen</h3>
+                <div class="zoom-controls">
+                    <span data-i18n="txtZoom">Zoom</span>
+                    <input type="range" id="zoom-range" min="0.5" max="1.5" step="0.1" value="1">
+                </div>
+            </div>
+            <div class="sheet-scroller">
+                <!-- Target node used heavily by computational placement loops inside script.js -->
+                <div id="interactive-sheet-preview" class="a4-sheet-container"></div>
+            </div>
+        </section>
+        
+    </main>
+
+    <!-- Configuration Settings Overlay Modal (Modal 1) -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content card animate-fade-in">
+            <div class="modal-header">
+                <h3 data-i18n="modal1Title">Druck- & Standorteinstellungen</h3>
+                <button class="modal-close-trigger">&times;</button>
+            </div>
+            <div class="modal-body">
+                
+                <!-- Tab Switching Navigation -->
+                <div class="tab-navigation">
+                    <button class="tab-btn active" data-target="tab-worker" data-i18n="tabSelect">LAVU Service-Worker</button>
+                    <button class="tab-btn" data-target="tab-database" data-i18n="tabManage">Datenbank verwalten</button>
                 </div>
 
-                <!-- Zoom-Container mit ID -->
-                <div class="zoom-container" id="zoomContainer">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a4b60" stroke-width="2.5">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                        <line x1="8" y1="11" x2="14" y2="11" />
-                    </svg>
-                    <div class="zoom-slider-wrapper">
-                        <input type="range" id="zoomSlider" class="zoom-slider" min="50" max="300" value="100" />
+                <!-- Tab content for worker operations -->
+                <div id="tab-worker" class="tab-content-panel active">
+                    <div class="form-group">
+                        <label for="input-location-api" data-i18n="lblLocationsUrl">Locations API:</label>
+                        <div class="input-append">
+                            <input type="url" id="input-location-api" class="form-control" placeholder="https://...">
+                            <button id="btn-update-locations" class="btn-primary" data-i18n="btnUpdateLocations">Aktualisieren</button>
+                        </div>
                     </div>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a4b60" stroke-width="2.5">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="11" y1="8" x2="11" y2="14" />
-                        <line x1="8" y1="11" x2="14" y2="11" />
-                    </svg>
-                    <div class="zoom-label">
-                        <span id="zoomVal">100%</span>
+                    <div class="form-group">
+                        <label for="input-sortiment-api" data-i18n="lblUrl">Sortiment API:</label>
+                        <div class="input-append">
+                            <input type="url" id="input-sortiment-api" class="form-control" placeholder="https://...">
+                            <button id="btn-update-sortiment" class="btn-primary" data-i18n="btnUpdate">Aktualisieren</button>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Tab content for database changes -->
+                <div id="tab-database" class="tab-content-panel">
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label for="db-input-bez" data-i18n="lblDbBez">Bezeichnung:</label>
+                            <input type="text" id="db-input-bez" class="form-control">
+                        </div>
+                        <div class="form-group compact">
+                            <label for="db-input-suffix" data-i18n="lblDbSuffix">Gebinde / Suffix:</label>
+                            <input type="text" id="db-input-suffix" class="form-control">
+                        </div>
+                    </div>
+                    <div class="modal-action-row">
+                        <button id="btn-db-save" class="btn-success" data-i18n="btnSave">💾 Ändern</button>
+                        <button id="btn-db-add" class="btn-primary" data-i18n="btnAddNew">➕ Neu hinzufügen</button>
+                    </div>
+                    <hr class="divider">
+                    <button id="btn-download-database" class="btn-secondary btn-full" data-i18n="btnDownloadJson">📥 Aktuelle Datenbank als JSON herunterladen</button>
+                </div>
+
             </div>
-            <div class="mf">
-                <button class="bp" id="btn-modal-print">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <polyline points="6 9 6 2 18 2 18 9" />
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                        <rect x="6" y="14" width="12" height="8" />
-                    </svg>
-                    Drucken
-                </button>
-                <button class="bcn" id="btn-modal-close">Schließen</button>
-            </div>
-        </div>
-    </div>
-    <div id="hpc">
-        <div class="pc" id="d5"></div>
-    </div>
-    <div class="pwb" id="pwaBanner">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M21 15v4a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-            </div>
-            <div>
-                <div style="font-weight: bold; font-size: 0.95rem;" id="txt-pwa-title">Als App installieren</div>
-                <div style="font-size: 0.8rem; color: #a5cddd; margin-top: 2px;" id="txt-pwa-sub">Schnellerer Zugriff &
-                    Offline-Nutzung</div>
+            <div class="modal-footer">
+                <button id="btn-settings-save-default" class="btn-secondary" data-i18n="btnSaveDefault">Standard sichern</button>
+                <button id="btn-settings-done" class="btn-success modal-close-trigger" data-i18n="btnDone">Fertig</button>
             </div>
         </div>
-        <button id="b3"
-            style="background: #27ae60; color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 6px; box-shadow: 0 4px 10px rgba(39,174,96,0.3);">Installieren</button>
     </div>
-    <script src="app.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Options modal
-        document.getElementById('btn-options').addEventListener('click', function() {
-            document.getElementById('m1').style.display = 'flex';
-        });
-        // Print preview modal
-        document.getElementById('layout-title-attr').addEventListener('click', function() {
-            document.getElementById('m2').style.display = 'flex';
-        });
-        // Close buttons
-        document.getElementById('modal1CloseBtn').addEventListener('click', function() {
-            document.getElementById('m1').style.display = 'none';
-        });
-        document.getElementById('modal2CloseBtn').addEventListener('click', function() {
-            document.getElementById('m2').style.display = 'none';
-        });
-        // Also close on background click (optional)
-        document.getElementById('m1').addEventListener('click', function(e) {
-            if (e.target === this) this.style.display = 'none';
-        });
-        document.getElementById('m2').addEventListener('click', function(e) {
-            if (e.target === this) this.style.display = 'none';
-        });
-    });
-</script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('btn-options').addEventListener('click', function() {
-            document.getElementById('m1').style.display = 'flex';
-        });
-        document.getElementById('layout-title-attr').addEventListener('click', function() {
-            document.getElementById('m2').style.display = 'flex';
-        });
-        // ... close handlers
-    });
-</script>
+
+    <!-- PWA Smart Banner Bar -->
+    <div id="pwa-install-banner" class="pwa-banner hidden">
+        <div class="banner-text">
+            <strong data-i18n="txtPwaTitle">Als App installieren</strong>
+            <span data-i18n="txtPwaSub">Schnellerer Zugriff & Offline-Nutzung</span>
+        </div>
+        <button id="btn-pwa-install-trigger" class="btn-primary compact" data-i18n="btnPwaInstall">Installieren</button>
+    </div>
+
+    <!-- Application Engine Script Attachments -->
+    <script src="scripts/script.js"></script>
 </body>
 </html>
