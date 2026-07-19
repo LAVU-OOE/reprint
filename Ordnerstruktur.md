@@ -1,7 +1,17 @@
 ```
 ├── 🟨 app.js
 ├── 📁 images
-│ ├── 🖼️ favicon copy.svg
+│ ├── 🖼️ android-chrome-192x192.png
+│ ├── 🖼️ android-chrome-512x512.png
+│ ├── 🖼️ apple-touch-icon.png
+│ ├── 🖼️ favicon-96x96.png
+│ ├── 📄 favicon.ico
+│ ├── 🖼️ favicon.svg
+│ ├── 🖼️ icon.svg
+│ ├── 🖼️ logo.png
+│ ├── 📄 site.webmanifest
+│ ├── 🖼️ web-app-manifest-192x192.png
+│ ├── 🖼️ web-app-manifest-512x512.png
 ├── 📄 index.html
 ├── 📄 index.htmlbkp
 ├── 📜 INFO.md
