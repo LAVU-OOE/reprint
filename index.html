@@ -513,5 +513,16 @@
         });
     });
 </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('btn-options').addEventListener('click', function() {
+            document.getElementById('m1').style.display = 'flex';
+        });
+        document.getElementById('layout-title-attr').addEventListener('click', function() {
+            document.getElementById('m2').style.display = 'flex';
+        });
+        // ... close handlers
+    });
+</script>
 </body>
 </html>
