@@ -368,70 +368,7 @@ function loadLocations() {
         });
 }
 
-// ====================================================================
-//  GROUPING HELPERS FOR DROPDOWNS
-// ====================================================================
-function getFirstLetter(text) {
-    if (!text) return '';
-    const first = text.charAt(0).toUpperCase();
-    const map = { 'Ä': 'A', 'Ö': 'O', 'Ü': 'U', 'ẞ': 'S' };
-    return map[first] || first;
-}
-function groupByFirstLetter(items) {
-    const groups = {};
-    items.forEach(item => {
-        const letter = getFirstLetter(item.bez);
-        if (!groups[letter]) groups[letter] = [];
-        groups[letter].push(item);
-    });
-    return groups;
-}
-function groupByNumericRange(items) {
-    const groups = {};
-    items.forEach(item => {
-        const num = parseInt(item.artNr) || 0;
-        const groupKey = Math.floor(num / 1000);
-        if (!groups[groupKey]) groups[groupKey] = [];
-        groups[groupKey].push(item);
-    });
-    return groups;
-}
-function populateNameDropdownWithGroups(selectElement, items) {
-    if (!selectElement) return;
-    const groups = groupByFirstLetter(items);
-    const sortedLetters = Object.keys(groups).sort();
-    selectElement.innerHTML = '';
-    sortedLetters.forEach((letter) => {
-        const optgroup = document.createElement('optgroup');
-        optgroup.label = letter;
-        const sortedItems = groups[letter].sort((a, b) => a.bez.localeCompare(b.bez, 'de'));
-        sortedItems.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.artNr;
-            option.textContent = '· ' + item.bez;
-            optgroup.appendChild(option);
-        });
-        selectElement.appendChild(optgroup);
-    });
-}
-function populateArtDropdownWithGroups(selectElement, items) {
-    if (!selectElement) return;
-    const groups = groupByNumericRange(items);
-    const sortedKeys = Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b));
-    selectElement.innerHTML = '';
-    sortedKeys.forEach((key) => {
-        const optgroup = document.createElement('optgroup');
-        optgroup.label = key;
-        const sortedItems = groups[key].sort((a, b) => (parseInt(a.artNr) || 0) - (parseInt(b.artNr) || 0));
-        sortedItems.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.artNr;
-            option.textContent = '· ' + item.artNr;
-            optgroup.appendChild(option);
-        });
-        selectElement.appendChild(optgroup);
-    });
-}
+
 
 // ====================================================================
 //  UI UPDATE FUNCTIONS
@@ -759,7 +696,70 @@ function s8(customZoomFactor) {
     element.style.transformOrigin = 'center center';
     element.style.transform = 'translate(-50%, -50%) scale(' + finalScale + ')';
 }
-
+// ====================================================================
+//  GROUPING HELPERS FOR DROPDOWNS
+// ====================================================================
+function getFirstLetter(text) {
+    if (!text) return '';
+    const first = text.charAt(0).toUpperCase();
+    const map = { 'Ä': 'A', 'Ö': 'O', 'Ü': 'U', 'ẞ': 'S' };
+    return map[first] || first;
+}
+function groupByFirstLetter(items) {
+    const groups = {};
+    items.forEach(item => {
+        const letter = getFirstLetter(item.bez);
+        if (!groups[letter]) groups[letter] = [];
+        groups[letter].push(item);
+    });
+    return groups;
+}
+function groupByNumericRange(items) {
+    const groups = {};
+    items.forEach(item => {
+        const num = parseInt(item.artNr) || 0;
+        const groupKey = Math.floor(num / 1000);
+        if (!groups[groupKey]) groups[groupKey] = [];
+        groups[groupKey].push(item);
+    });
+    return groups;
+}
+function populateNameDropdownWithGroups(selectElement, items) {
+    if (!selectElement) return;
+    const groups = groupByFirstLetter(items);
+    const sortedLetters = Object.keys(groups).sort();
+    selectElement.innerHTML = '';
+    sortedLetters.forEach((letter) => {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = letter;
+        const sortedItems = groups[letter].sort((a, b) => a.bez.localeCompare(b.bez, 'de'));
+        sortedItems.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.artNr;
+            option.textContent = '· ' + item.bez;
+            optgroup.appendChild(option);
+        });
+        selectElement.appendChild(optgroup);
+    });
+}
+function populateArtDropdownWithGroups(selectElement, items) {
+    if (!selectElement) return;
+    const groups = groupByNumericRange(items);
+    const sortedKeys = Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b));
+    selectElement.innerHTML = '';
+    sortedKeys.forEach((key) => {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = key;
+        const sortedItems = groups[key].sort((a, b) => (parseInt(a.artNr) || 0) - (parseInt(b.artNr) || 0));
+        sortedItems.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.artNr;
+            option.textContent = '· ' + item.artNr;
+            optgroup.appendChild(option);
+        });
+        selectElement.appendChild(optgroup);
+    });
+}
 // ====================================================================
 //  MODAL & PRINT FUNCTIONS
 // ====================================================================
