@@ -1,3 +1,6 @@
+// ====================================================================
+// script.js – LAVU Label Studio v9 with external data + consensus system
+// ====================================================================
 
 let a2 = [];
 let a3 = 'select';
@@ -5,12 +8,14 @@ let currentLang = localStorage.getItem('lavu_lang') || 'de';
 let locationData = [];
 let LOCATION_JSON_URL = localStorage.getItem('lavu_locations_url') || "https://locations-api.lavu-ooe.workers.dev/";
 
+// Client ID for anonymous consensus
 let clientId = localStorage.getItem('lavu_client_id');
 if (!clientId) {
     clientId = crypto.randomUUID ? crypto.randomUUID() : 'client-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('lavu_client_id', clientId);
 }
 
+// Local overrides for geb
 let localOverrides = {};
 try {
     const stored = localStorage.getItem('lavu_local_geb_overrides');
@@ -20,6 +25,7 @@ function saveLocalOverrides() {
     localStorage.setItem('lavu_local_geb_overrides', JSON.stringify(localOverrides));
 }
 
+// Minimal fallback if JSON files fail to load
 const fallbackSortiment = [
     { artNr: "4040", bez: "Elektro-Kleingeräte (ohne Akku)", geb: "QR-Box" },
     { artNr: "4010", bez: "Elektro-Großgeräte", geb: "Gitterbox" },
@@ -33,19 +39,23 @@ const fallbackSortiment = [
     { artNr: "5530", bez: "Baustellenabfälle gemischt", geb: "Großcontainer" }
 ];
 
+// We'll load i18n and formats externally – declare them empty now, filled later
 let i18n = {};
 let formats = {};
 
 const DEFAULT_LOCATION_VALUE = "106";
 let currentFormatKey = "4473";
 
+// ====================================================================
+//  LOAD EXTERNAL JSON FILES
+// ====================================================================
 async function loadExternalData() {
     try {
-const [i18nRes, formatsRes, sortimentRes] = await Promise.all([
-    fetch('scripts/i18n.json'),
-    fetch('scripts/formats.json'),
-    fetch('scripts/sortiment.json')
-]);
+        const [i18nRes, formatsRes, sortimentRes] = await Promise.all([
+            fetch('scripts/i18n.json'),
+            fetch('scripts/formats.json'),
+            fetch('scripts/sortiment.json')
+        ]);
         if (!i18nRes.ok || !formatsRes.ok || !sortimentRes.ok) throw new Error('One or more JSON files not found');
         i18n = await i18nRes.json();
         formats = await formatsRes.json();
@@ -58,6 +68,7 @@ const [i18nRes, formatsRes, sortimentRes] = await Promise.all([
         }
     } catch (err) {
         console.warn('External data load failed, using fallbacks:', err);
+        // Use hardcoded fallbacks (minimal)
         i18n = {
             de: {
                 studioV9: "Etiketten-Studio v9",
@@ -189,11 +200,15 @@ const [i18nRes, formatsRes, sortimentRes] = await Promise.all([
             "4462": { cols: 2, rows: 8, name: "HERMA 4462 (105 x 37 mm)" },
             "4359": { cols: 2, rows: 4, name: "HERMA 4359 (97 x 67,7 mm)" }
         };
+        // fallback sortiment already in a2? we use fallbackSortiment
         a2 = fallbackSortiment.slice();
         localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
     }
 }
 
+// ====================================================================
+//  LOCATION HANDLING
+// ====================================================================
 function populateLocationDropdowns(locations) {
     const s1 = document.getElementById('s1');
     const i1 = document.getElementById('i1');
@@ -353,6 +368,9 @@ function loadLocations() {
         });
 }
 
+// ====================================================================
+//  GROUPING HELPERS FOR DROPDOWNS
+// ====================================================================
 function getFirstLetter(text) {
     if (!text) return '';
     const first = text.charAt(0).toUpperCase();
@@ -415,6 +433,9 @@ function populateArtDropdownWithGroups(selectElement, items) {
     });
 }
 
+// ====================================================================
+//  UI UPDATE FUNCTIONS
+// ====================================================================
 function i1() {
     const selectArt = document.getElementById('s2_art');
     const selectName = document.getElementById('s2_name');
@@ -579,6 +600,9 @@ function s3() {
     s7();
 }
 
+// ====================================================================
+//  GET LOCATION DISPLAY NAME
+// ====================================================================
 function getLocationDisplayName(locationValue) {
     if (!locationValue || !locationData || locationData.length === 0) return locationValue;
     const found = locationData.find(loc => (loc.siteCode && loc.siteCode === locationValue) || loc.name === locationValue);
@@ -588,6 +612,9 @@ function getLocationDisplayName(locationValue) {
     return locationValue;
 }
 
+// ====================================================================
+//  MAIN UI UPDATE
+// ====================================================================
 function g1() {
     const selectArt = document.getElementById('s2_art');
     const locationValue = document.getElementById('i1').value;
@@ -653,7 +680,7 @@ function r2(a30, a29) {
                 </div>
                 <div class="lbt bbb-fake-fix" style="border-bottom:none; font-size:1px; height:1px; line-height:1px;"></div>
                 <div class="lbb">${a29.bezeichnung || '&nbsp;'}</div>
-<div class="lbf">https://lavu-ooe.github.io/reprint</div>
+                <div class="lbf">https://lavu-ooe.github.io/</div>
             `;
         } else {
             a35.className = 'lb e';
@@ -733,6 +760,9 @@ function s8(customZoomFactor) {
     element.style.transform = 'translate(-50%, -50%) scale(' + finalScale + ')';
 }
 
+// ====================================================================
+//  MODAL & PRINT FUNCTIONS
+// ====================================================================
 function o2() {
     document.getElementById('m1').style.display = 'flex';
     r1();
@@ -870,6 +900,9 @@ function initFormatSelects() {
 }
 function initHeaderSelects() {}
 
+// ====================================================================
+//  FETCH REMOTE SORTIMENT (MERGE WITH LOCAL)
+// ====================================================================
 function f2() {
     let a4 = localStorage.getItem('lavu_sortiment_url') || "https://sortiment-api.lavu-ooe.workers.dev/";
     const t = i18n[currentLang] || { netSuccessRemote: 'Connected', netFallbackRemote: 'Fallback' };
@@ -914,12 +947,12 @@ function f2() {
         });
 }
 
+// ====================================================================
+//  APPLY LANGUAGE (i18n)
+// ====================================================================
 function toggleLanguage() {
     currentLang = currentLang === 'de' ? 'en' : 'de';
     localStorage.setItem('lavu_lang', currentLang);
-    function setupEventListeners() {
-    console.log('setupEventListeners called');
-}
     applyLanguage();
     u1();
     r1();
@@ -981,9 +1014,10 @@ function applyFastZoom(value) {
     }
     localStorage.setItem('lavu_preview_zoom', value);
 }
-function setupEventListeners() {
-    console.log('setupEventListeners called');
-}
+
+// ====================================================================
+//  EVENT LISTENERS
+// ====================================================================
 function setupEventListeners() {
     document.getElementById('langToggleBtn').addEventListener('click', toggleLanguage);
     document.getElementById('s1').addEventListener('change', function () {
@@ -1096,6 +1130,7 @@ function setupEventListeners() {
         container.classList.toggle('visible');
     });
 
+    // --- Consensus: geb blur ---
     document.getElementById('i6').addEventListener('blur', function() {
         const val = this.value.trim();
         const artNr = document.getElementById('s2_art').value;
@@ -1126,6 +1161,9 @@ function setupEventListeners() {
     });
 }
 
+// ====================================================================
+//  SERVICE WORKER & PWA
+// ====================================================================
 let deferredPrompt;
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
@@ -1172,22 +1210,33 @@ window.addEventListener('appinstalled', function () {
     if (a63) a63.style.display = 'none';
 });
 
+// ====================================================================
+//  INIT – DOMContentLoaded
+// ====================================================================
 document.addEventListener('DOMContentLoaded', async function () {
+    // Load external JSON files
     await loadExternalData();
 
+    // Apply placeholder for geb
     document.getElementById('i6').placeholder = 'z.B. Container, Mulde';
 
+    // Load locations
     loadLocations();
 
+    // Init format selects
     initFormatSelects();
     initHeaderSelects();
 
+    // Apply language
     applyLanguage();
 
+    // Load saved defaults
     l1();
 
+    // Setup event listeners
     setupEventListeners();
 
+    // Load remote API URL
     let a4 = localStorage.getItem('lavu_sortiment_url');
     if (a4 === null) {
         a4 = "https://sortiment-api.lavu-ooe.workers.dev/";
@@ -1195,6 +1244,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
     document.getElementById('i4').value = a4;
 
+    // Locations URL input
     const savedLocUrl = localStorage.getItem('lavu_locations_url');
     if (savedLocUrl) {
         document.getElementById('i8').value = savedLocUrl;
@@ -1204,18 +1254,23 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.getElementById('i8').value = "https://locations-api.lavu-ooe.workers.dev/";
     }
 
+    // Status message
     const t = i18n[currentLang] || { netLoading: 'Connecting...' };
     document.getElementById('n1').innerHTML = t.netLoading;
     document.getElementById('n1').style.color = '#f39c12';
 
+    // Initial fetch from remote
     f2();
 
+    // Update UI
     u1();
 
+    // Zoom
     const savedZoom = localStorage.getItem('lavu_preview_zoom') || '100';
     document.getElementById('zoomSlider').value = savedZoom;
     applyFastZoom(savedZoom);
 
+    // Sync selects
     document.getElementById('s1').addEventListener('change', function () {
         const val = this.value;
         document.getElementById('i1').value = val;
@@ -1231,5 +1286,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         s7();
     });
 
+    // Auto-refresh every 5 minutes
     setInterval(f2, 300000);
 });
