@@ -15,7 +15,6 @@ const STATIC_ASSETS = [
     '/reprint/images/web-app-manifest-192x192.png',
     '/reprint/images/web-app-manifest-512x512.png'
 ];
-
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -30,7 +29,6 @@ self.addEventListener('install', event => {
             .then(() => self.skipWaiting())
     );
 });
-
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys => {
@@ -41,16 +39,13 @@ self.addEventListener('activate', event => {
         }).then(() => self.clients.claim())
     );
 });
-
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
-
     if (url.hostname === 'sortiment-api.lavu-ooe.workers.dev' ||
         url.hostname === 'locations-api.lavu-ooe.workers.dev') {
         event.respondWith(fetch(event.request));
         return;
     }
-
     event.respondWith(
         caches.match(event.request)
             .then(cachedResponse => {
