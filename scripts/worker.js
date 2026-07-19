@@ -3,7 +3,6 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // --- CORS preflight (all endpoints) ---
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
@@ -17,9 +16,6 @@ export default {
       });
     }
 
-    // ================================================================
-    // 1. PUBLIC GET – returns official sortiment (no auth)
-    // ================================================================
     if (request.method === "GET" && path === "/") {
       const data = await env.PRODUCT_DATA.get("sortiment");
       const body = data === null ? [] : JSON.parse(data);
@@ -31,9 +27,6 @@ export default {
       });
     }
 
-    // ================================================================
-    // 2. PUBLIC POST /report – consensus reporting (no auth)
-    // ================================================================
     if (request.method === "POST" && path === "/report") {
       try {
         const body = await request.json();
@@ -46,15 +39,12 @@ export default {
           );
         }
 
-        // Build report key: report:artNr:geb
         const reportKey = `report:${artNr}:${geb}`;
 
-        // Get existing client list for this (artNr, geb) pair
         let clients = await env.PRODUCT_DATA.get(reportKey, "json");
         if (!clients) clients = [];
         if (!Array.isArray(clients)) clients = [];
 
-        // If this client already reported, ignore (idempotent)
         if (clients.includes(clientId)) {
           return Response.json(
             { message: "Already reported" },
@@ -62,27 +52,20 @@ export default {
           );
         }
 
-        // Add client
         clients.push(clientId);
         await env.PRODUCT_DATA.put(reportKey, JSON.stringify(clients));
 
-        // If at least 2 distinct clients, update official sortiment
         if (clients.length >= 2) {
-          // Fetch current official
           let official = await env.PRODUCT_DATA.get("sortiment", "json");
           if (!official) official = [];
 
-          // Find existing entry by artNr
           const existing = official.find(item => item.artNr === artNr);
           if (existing) {
-            // Update geb
             existing.geb = geb;
           } else {
-            // Add new entry (we need bez)
             official.push({ artNr, geb, bez: bez || "" });
           }
 
-          // Save official
           await env.PRODUCT_DATA.put("sortiment", JSON.stringify(official));
         }
 
@@ -104,11 +87,7 @@ export default {
       }
     }
 
-    // ================================================================
-    // 3. PRIVATE PUT / POST – admin update (requires Basic Auth)
-    // ================================================================
     if (request.method === "PUT" || request.method === "POST") {
-      // --- Authentication ---
       const BASIC_USER = "admin";
       const BASIC_PASS = env.ADMIN_PASSWORD;
 
@@ -150,7 +129,6 @@ export default {
         });
       }
 
-      // --- Update data ---
       try {
         const newData = await request.json();
         if (!Array.isArray(newData)) {
@@ -183,9 +161,6 @@ export default {
       }
     }
 
-    // ================================================================
-    // Fallback: 404
-    // ================================================================
     return new Response("Not found.", {
       status: 404,
       headers: {

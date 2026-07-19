@@ -1,4 +1,3 @@
-// ===== Configuration & Endpoints =====
 const ENDPOINTS = {
     sortiment: 'https://sortiment-api.lavu-ooe.workers.dev/',
     locations: 'https://locations-api.lavu-ooe.workers.dev/',
@@ -7,7 +6,6 @@ const ENDPOINTS = {
 
 let selectedEndpoint = 'sortiment';
 
-// ===== DOM Elements with null checks =====
 function getElements() {
     return {
         fileInput: document.getElementById('fileInput'),
@@ -26,7 +24,6 @@ function getElements() {
     };
 }
 
-// ===== Helper Functions =====
 function setDebug(message) {
     const elements = getElements();
     if (elements.debugDiv) {
@@ -75,7 +72,6 @@ function toggleDebug() {
     }
 }
 
-// ===== File Upload Logic =====
 async function uploadFile() {
     const elements = getElements();
     const file = elements.fileInput ? elements.fileInput.files[0] : null;
@@ -108,7 +104,6 @@ async function uploadFile() {
             const jsonData = JSON.parse(e.target.result);
             setDebug('JSON parsed successfully. Sending request...');
 
-// Build Basic Auth header
 const auth = btoa(`admin:${password}`);
 const response = await fetch(endpointUrl, {
     method: 'PUT',
@@ -158,11 +153,9 @@ const response = await fetch(endpointUrl, {
     reader.readAsText(file);
 }
 
-// ===== Initialize Event Listeners =====
 function init() {
     const elements = getElements();
     
-    // Endpoint toggles
     if (elements.endpointToggles) {
         elements.endpointToggles.forEach(toggle => {
             toggle.addEventListener('change', function(e) {
@@ -171,7 +164,6 @@ function init() {
                     updateEndpointDisplay();
                     setDebug(`Switched endpoint to: ${selectedEndpoint}`);
                     
-                    // Update label styling
                     document.querySelectorAll('.endpoint-selector label').forEach(label => {
                         label.classList.remove('selected');
                     });
@@ -188,7 +180,6 @@ function init() {
         });
     }
 
-    // Password visibility toggle
     if (elements.togglePasswordBtn && elements.passwordInput) {
         elements.togglePasswordBtn.addEventListener('click', function() {
             const type = elements.passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -197,7 +188,6 @@ function init() {
         });
     }
 
-    // File input change handler
     if (elements.fileInput) {
         elements.fileInput.addEventListener('change', function() {
             const file = this.files[0];
@@ -208,7 +198,6 @@ function init() {
                 if (elements.stats) elements.stats.style.display = 'flex';
                 if (elements.fileSize) elements.fileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
                 
-                // Try to count items
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     try {
@@ -232,12 +221,10 @@ function init() {
         });
     }
 
-    // Debug toggle
     if (elements.debugToggle) {
         elements.debugToggle.addEventListener('click', toggleDebug);
     }
 
-    // Keyboard shortcuts
     document.addEventListener('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault();
@@ -249,7 +236,6 @@ function init() {
         }
     });
 
-    // Initial setup
     updateEndpointDisplay();
     setDebug('Ready');
     if (elements.debugDiv) elements.debugDiv.classList.add('visible');
@@ -261,7 +247,6 @@ function init() {
     console.log('⌨️  Shortcuts: Ctrl+Enter to upload, Escape to clear password');
 }
 
-// ===== Initialize when DOM is ready =====
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {

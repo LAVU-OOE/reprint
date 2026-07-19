@@ -1,5 +1,4 @@
 
-## 📦 Externe Datenquellen (JSON)
 
 Die App bezieht ihre dynamischen Daten aus zwei zentralen JSON-Dateien, die in diesem Repository gepflegt werden:
 
@@ -8,7 +7,6 @@ Die App bezieht ihre dynamischen Daten aus zwei zentralen JSON-Dateien, die in d
 
 Diese Dateien werden über die GitHub-Raw-URLs geladen und können unabhängig von der App selbst aktualisiert werden.
 
-## 🚀 Erste Schritte & Nutzung
 
 1.  **App öffnen:** Rufe die Seite über den bereitgestellten Link auf oder installiere sie als PWA.
 2.  **Standort wählen:** Wähle im Header den gewünschten ASZ-Standort aus der dynamisch geladenen Liste.
@@ -18,7 +16,6 @@ Diese Dateien werden über die GitHub-Raw-URLs geladen und können unabhängig v
     *   Klicke auf beliebige Positionen im Bogen, um Etiketten hinzuzufügen oder zu entfernen.
 5.  **Drucken:** Klicke auf den Haupt-Button **"Jetzt Drucken"**, um den A4-Bogen mit deinen Etiketten zu drucken.
 
-## ⚙️ Anpassung der Datenbank (CRUD)
 
 Über den **"Optionen"**-Button kannst du auf den integrierten Datenbank-Manager zugreifen:
 
@@ -29,7 +26,6 @@ Diese Dateien werden über die GitHub-Raw-URLs geladen und können unabhängig v
     *   Die gesamte Datenbank als JSON-Datei exportieren.
 *   **Standard sichern:** Speichert die aktuellen Einstellungen (Standort, Format, Anzahl, Startposition) als Standard im Browser.
 
-## 🔧 Technische Details & Entwicklung
 
 *   **Sprache:** Reines HTML, CSS und JavaScript (ES6+).
 *   **Speicherung:** Verwendet `localStorage` für benutzerspezifische Einstellungen, den Sortiments-Cache und den Standort-Cache.
@@ -37,7 +33,6 @@ Diese Dateien werden über die GitHub-Raw-URLs geladen und können unabhängig v
 *   **Service Worker:** Der `sw.js` implementiert eine **Network-First-Strategie** für die JSON-Datenbanken und eine **Cache-First-Strategie** für statische Assets, was eine robuste Offline-Nutzung ermöglicht.
 *   **Ordnerstruktur:** Die Hauptanwendung befindet sich im `/`-Ordner, alle Assets (Icons, Bilder) im `/assets/`-Ordner. Eine `index.html` im Root leitet auf die App weiter.
 
-## 🤝 Beitrag leisten
 
 Beiträge sind willkommen! Bitte beachte die folgenden Punkte:
 
@@ -52,6 +47,5 @@ Beiträge sind willkommen! Bitte beachte die folgenden Punkte:
 *   Stelle sicher, dass die JSON-Struktur gültig ist.
 *   Teste die Änderungen lokal, bevor du sie in den Hauptbranch mergst.
 
-## 📄 Lizenz
 
 Dieses Projekt ist Open Source und steht unter der [MIT-Lizenz](LICENSE).
