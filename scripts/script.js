@@ -9,9 +9,9 @@
     let a2 = [];
     let locationsData = [];
     let deferredPrompt;
-    let currentZoom = 1; // #7: persist zoom level
+    let currentZoom = 1;
 
-    const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Hours Cache TTL
+    const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
     function runInitialization() {
         initApiInputValues();
@@ -28,6 +28,10 @@
     async function initApp() {
         updateNetworkStatus('netLoading');
         await loadExternalData();
+        // Ensure we have at least hardcoded data if everything else failed
+        if (!a2 || a2.length === 0) {
+            loadEmbeddedSortimentFallbacks();
+        }
         initUiElements();
         renderSelectionDropdowns();
         renderPrintSheetPreview();
@@ -91,7 +95,7 @@
                 loadEmbeddedFormatsFallbacks();
             }
 
-            // #6: Cache invalidation – remove stale cache if older than TTL
+            // Invalidate stale sortiment cache if older than TTL
             const cacheTimestamp = localStorage.getItem('lavu_studio_sortiment_timestamp');
             if (cacheTimestamp && (Date.now() - parseInt(cacheTimestamp, 10) > CACHE_TTL_MS)) {
                 localStorage.removeItem('lavu_studio_sortiment_v9');
@@ -113,6 +117,10 @@
                     a2 = localCache ? JSON.parse(localCache) : [];
                 } catch (e) {
                     a2 = [];
+                }
+                // If cache is empty, fall back to hardcoded data
+                if (!a2 || a2.length === 0) {
+                    loadEmbeddedSortimentFallbacks();
                 }
             }
 
@@ -141,25 +149,35 @@
                 }
             }
 
+            // Update status badge
             if (sortimentRes.ok || locationsRes.ok || formatsRes.ok) {
                 updateNetworkStatus('netSuccessLocal');
             } else {
-                updateNetworkStatus('netFallbackLocal');
+                // If we are using hardcoded or cache, still show fallback
+                if (a2.length > 0 && !sortimentRes.ok) {
+                    updateNetworkStatus('netFallbackLocal');
+                } else {
+                    updateNetworkStatus('netHardcoded');
+                }
             }
             hideLoadingScreen();
 
         } catch (err) {
-            console.warn('API fetch cycle failed completely, falling back to local storage modifications:', err);
+            console.warn('API fetch cycle failed completely, falling back to local storage or hardcoded data:', err);
             loadEmbeddedI18nFallbacks();
             loadEmbeddedFormatsFallbacks();
 
             const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
             a2 = localCache ? JSON.parse(localCache) : [];
 
+            if (!a2 || a2.length === 0) {
+                loadEmbeddedSortimentFallbacks();
+            }
+
             const localLocCache = localStorage.getItem('lavu_studio_locations_v9');
             locationsData = localLocCache ? JSON.parse(localLocCache) : [];
 
-            updateNetworkStatus('netFallbackLocal');
+            updateNetworkStatus('netHardcoded');
             hideLoadingScreen();
         }
     }
@@ -185,6 +203,20 @@
         if (loader) {
             loader.classList.add('hidden');
         }
+    }
+
+    // --- Hardcoded fallback for sortiment (last resort) ---
+    function loadEmbeddedSortimentFallbacks() {
+        a2 = [
+            { artNr: "1001", bez: "Bürocontainer 240 l", geb: "blau" },
+            { artNr: "1002", bez: "Wertstoffsack 120 l", geb: "gelb" },
+            { artNr: "1003", bez: "Altpapierbehälter 60 l", geb: "grün" },
+            { artNr: "1004", bez: "Glascontainer 1100 l", geb: "weiß" },
+            { artNr: "1005", bez: "Restmülltonne 80 l", geb: "schwarz" }
+        ];
+        // Save this as cache so it persists
+        localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
+        localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
     }
 
     function loadEmbeddedFormatsFallbacks() {
@@ -239,6 +271,7 @@
                 netLoading: "⏳ Verbinde...",
                 netSuccessLocal: "🟢 APIs & Cloudflare Workers aktiv",
                 netFallbackLocal: "⚠️ Offline. Lokaler Gerätespeicher aktiv.",
+                netHardcoded: "⚠️ Fallback-Daten (Hardcoded)",
                 txtZoom: "Zoom"
             },
             en: {
@@ -279,6 +312,7 @@
                 netLoading: "⏳ Connecting...",
                 netSuccessLocal: "🟢 APIs & Cloudflare Workers active",
                 netFallbackLocal: "⚠️ Offline. Local device cache active.",
+                netHardcoded: "⚠️ Fallback data (Hardcoded)",
                 txtZoom: "Zoom"
             }
         };
@@ -294,13 +328,12 @@
     }
 
     function initUiElements() {
-        // #2: Translate UI on startup
         translateUi(document.documentElement.lang || 'de');
 
         const zoomSlider = document.getElementById('zoom-range');
         if (zoomSlider) {
             zoomSlider.addEventListener('input', (e) => {
-                currentZoom = parseFloat(e.target.value) || 1; // #7: persist zoom
+                currentZoom = parseFloat(e.target.value) || 1;
                 const previewSheet = document.getElementById('interactive-sheet-preview') || document.getElementById('previewContainer');
                 if (previewSheet) {
                     previewSheet.style.transform = `scale(${currentZoom})`;
@@ -333,10 +366,8 @@
             });
         }
 
-        // #3: Targeted API update handlers (no wildcards)
         setupApiUpdateHandlers();
 
-        // #8: "Save Defaults" button – save URLs without reloading
         const saveDefaultsBtn = document.getElementById('btn-settings-save-default');
         if (saveDefaultsBtn) {
             saveDefaultsBtn.addEventListener('click', () => {
@@ -430,7 +461,6 @@
         setupPwaHandlers();
     }
 
-    // #3: Targeted API update handlers (no wildcard)
     function setupApiUpdateHandlers() {
         const updateSortiment = document.getElementById('btn-update-sortiment');
         const updateLocations = document.getElementById('btn-update-locations');
@@ -459,7 +489,6 @@
         const dbBez = document.getElementById('db-input-bez');
         const dbSuffix = document.getElementById('db-input-suffix');
 
-        // #5: Download JSON handler
         const downloadBtn = document.getElementById('btn-download-database');
         if (downloadBtn) {
             downloadBtn.addEventListener('click', () => {
@@ -502,7 +531,6 @@
             btnDbAdd.addEventListener('click', () => {
                 if (!validateDbInputs()) return;
                 const newArtNr = dbArtNr.value.trim();
-                // #4: Normalise both sides for duplicate detection
                 if (a2.some(item => String(item.artNr || item.ID).trim() === newArtNr)) {
                     alert(getAlertText('alertDuplicate', 'Diese Artikelnummer existiert bereits!'));
                     return;
@@ -569,6 +597,11 @@
 
         if (!artNrDropdown || !bezDropdown) return;
 
+        // Safety net: if a2 is empty, reload the hardcoded fallback and re-render
+        if (!a2 || a2.length === 0) {
+            loadEmbeddedSortimentFallbacks();
+        }
+
         artNrDropdown.innerHTML = '<option value="">-- Wähle Art.Nr. --</option>';
         bezDropdown.innerHTML = '<option value="">-- Wähle Bezeichnung --</option>';
 
@@ -634,7 +667,6 @@
         targetSheet.style.display = 'grid';
         targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
         targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
-        // #7: Re-apply saved zoom level
         targetSheet.style.transform = `scale(${currentZoom})`;
 
         const lastActivePosition = Math.min(totalCells, (inputStartPos + inputCount) - 1);
@@ -730,4 +762,3 @@
         });
     }
 })();
-// #1: Removed the second conflicting IIFE entirely
