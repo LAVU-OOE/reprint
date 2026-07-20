@@ -427,3 +427,15 @@ select.form-control option {
     cursor: pointer;
     user-select: none;
 }
+/* Style for active label printing zone cells */
+.label-grid-cell:not(:empty) {
+    background-color: #1e3a8a !important; /* Deep blueprint blue */
+    border-color: #3b82f6 !important;     /* Bright border accent */
+    color: #f8fafc !important;             /* White text clarity */
+}
+
+/* Hover preview effect over skipped/empty grid positions */
+.label-grid-cell:empty:hover {
+    background-color: #334155 !important;
+    color: #f8fafc;
+}
