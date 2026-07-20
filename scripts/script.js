@@ -32,8 +32,12 @@
         if (!a2 || a2.length === 0) {
             loadEmbeddedSortimentFallbacks();
         }
+        if (!locationsData || locationsData.length === 0) {
+            loadEmbeddedLocationsFallbacks();
+        }
         initUiElements();
         renderSelectionDropdowns();
+        renderLocationsDropdown();
         renderPrintSheetPreview();
     }
 
@@ -60,10 +64,6 @@
         const rawLocationsApi = localStorage.getItem('locationsApiBase') || 'https://locations-api.lavu-ooe.workers.dev';
         const rawProductApi = localStorage.getItem('productApiBase') || 'https://product-api.lavu-ooe.workers.dev';
 
-        // Build URLs:
-        // - Sortiment: just the base URL
-        // - Locations: just the base URL
-        // - Product: base URL + /formats (because the worker uses path as KV key)
         const sortimentUrl = rawSortimentApi.replace(/\/+$/, '');
         const locationsUrl = rawLocationsApi.replace(/\/+$/, '');
         const productUrl = rawProductApi.replace(/\/+$/, '') + '/formats';
@@ -101,7 +101,7 @@
                 loadEmbeddedFormatsFallbacks();
             }
 
-            // Invalidate stale sortiment cache if older than TTL
+            // Sortiment cache invalidation
             const cacheTimestamp = localStorage.getItem('lavu_studio_sortiment_timestamp');
             if (cacheTimestamp && (Date.now() - parseInt(cacheTimestamp, 10) > CACHE_TTL_MS)) {
                 localStorage.removeItem('lavu_studio_sortiment_v9');
@@ -124,7 +124,6 @@
                 } catch (e) {
                     a2 = [];
                 }
-                // If cache is empty, fall back to hardcoded data
                 if (!a2 || a2.length === 0) {
                     loadEmbeddedSortimentFallbacks();
                 }
@@ -153,6 +152,9 @@
                 } catch (e) {
                     locationsData = [];
                 }
+                if (!locationsData || locationsData.length === 0) {
+                    loadEmbeddedLocationsFallbacks();
+                }
             }
 
             // Update status badge
@@ -174,13 +176,15 @@
 
             const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
             a2 = localCache ? JSON.parse(localCache) : [];
-
             if (!a2 || a2.length === 0) {
                 loadEmbeddedSortimentFallbacks();
             }
 
             const localLocCache = localStorage.getItem('lavu_studio_locations_v9');
             locationsData = localLocCache ? JSON.parse(localLocCache) : [];
+            if (!locationsData || locationsData.length === 0) {
+                loadEmbeddedLocationsFallbacks();
+            }
 
             updateNetworkStatus('netHardcoded');
             hideLoadingScreen();
@@ -223,6 +227,18 @@
         localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
     }
 
+    // --- Hardcoded fallback for locations ---
+    function loadEmbeddedLocationsFallbacks() {
+        locationsData = [
+            { id: "loc1", name: "Linz - Hauptlager" },
+            { id: "loc2", name: "Wels - Nord" },
+            { id: "loc3", name: "Steyr - Ost" },
+            { id: "loc4", name: "Vöcklabruck - Süd" }
+        ];
+        localStorage.setItem('lavu_studio_locations_v9', JSON.stringify(locationsData));
+        localStorage.setItem('lavu_studio_locations_timestamp', Date.now().toString());
+    }
+
     function loadEmbeddedFormatsFallbacks() {
         formats = {
             "4473": { cols: 3, rows: 8, name: "HERMA 4473 (70 x 36 mm)" },
@@ -243,6 +259,7 @@
                 printLayout: "Druck-Layout",
                 artNr: "Art.Nr.",
                 bezeichnung: "Bezeichnung",
+                lblLocation: "Standort",
                 printNow: "Jetzt Drucken",
                 options: "Optionen",
                 modal1Title: "Druck- & Standorteinstellungen",
@@ -284,6 +301,7 @@
                 printLayout: "Print Layout",
                 artNr: "Item No.",
                 bezeichnung: "Description",
+                lblLocation: "Location",
                 printNow: "Print Now",
                 options: "Options",
                 modal1Title: "Print & Location Settings",
@@ -417,7 +435,10 @@
             });
         }
 
-        const syncTriggers = ['select-artnr', 'select-bezeichnung', 'input-count', 'input-startpos', 'select-format'];
+        // Sync location dropdown changes to trigger preview update
+        document.getElementById('select-location')?.addEventListener('change', renderPrintSheetPreview);
+
+        const syncTriggers = ['select-artnr', 'select-bezeichnung', 'input-count', 'input-startpos', 'select-format', 'select-location'];
         syncTriggers.forEach(id => {
             document.getElementById(id)?.addEventListener('change', renderPrintSheetPreview);
         });
@@ -601,7 +622,6 @@
 
         if (!artNrDropdown || !bezDropdown) return;
 
-        // Safety net: if a2 is empty, reload the hardcoded fallback and re-render
         if (!a2 || a2.length === 0) {
             loadEmbeddedSortimentFallbacks();
         }
@@ -625,6 +645,23 @@
             opt2.value = identifier;
             opt2.textContent = `${description} ${suffix}`.trim();
             bezDropdown.appendChild(opt2);
+        });
+    }
+
+    function renderLocationsDropdown() {
+        const locDropdown = document.getElementById('select-location');
+        if (!locDropdown) return;
+
+        if (!locationsData || locationsData.length === 0) {
+            loadEmbeddedLocationsFallbacks();
+        }
+
+        locDropdown.innerHTML = '<option value="">-- Standort wählen --</option>';
+        locationsData.forEach(loc => {
+            const opt = document.createElement('option');
+            opt.value = loc.id || loc.name; // use id if available, else name
+            opt.textContent = loc.name || loc;
+            locDropdown.appendChild(opt);
         });
     }
 
@@ -667,6 +704,10 @@
         const selectedArtNr = artNrDropdown?.value;
         const activeItem = a2.find(item => String(item.artNr || item.ID) === String(selectedArtNr));
 
+        const locDropdown = document.getElementById('select-location');
+        const selectedLocId = locDropdown?.value;
+        const activeLocation = locationsData.find(loc => (loc.id || loc.name) === selectedLocId);
+
         targetSheet.innerHTML = '';
         targetSheet.style.display = 'grid';
         targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
@@ -699,7 +740,13 @@
 
                     const smallEl = document.createElement('small');
                     smallEl.style.cssText = 'font-size: 0.7rem; opacity: 0.8;';
-                    smallEl.textContent = activeItem.geb || '';
+                    // Include location name if selected
+                    let suffixText = activeItem.geb || '';
+                    if (activeLocation) {
+                        suffixText += suffixText ? ' | ' : '';
+                        suffixText += activeLocation.name || '';
+                    }
+                    smallEl.textContent = suffixText;
 
                     innerWrapper.appendChild(strongEl);
                     innerWrapper.appendChild(spanEl);
