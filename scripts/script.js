@@ -312,6 +312,13 @@ function initUiElements() {
             artNrDropdown.selectedIndex = bezDropdown.selectedIndex;
         });
     }
+// --- ADD THIS: Re-trigger layout calculations on value adjustment updates ---
+    const syncTriggers = ['select-artnr', 'select-bezeichnung', 'input-count', 'input-startpos'];
+    syncTriggers.forEach(id => {
+        document.getElementById(id)?.addEventListener('change', renderPrintSheetPreview);
+    });
+    document.getElementById('input-count')?.addEventListener('input', renderPrintSheetPreview);
+    document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
 }
 
 /**
@@ -346,6 +353,9 @@ function renderSelectionDropdowns() {
 /**
  * Computes grid measurements and prints visual overlays inside the interactive target
  */
+/**
+ * Computes grid measurements and prints visual overlays inside the interactive target
+ */
 function renderPrintSheetPreview() {
     const targetSheet = document.getElementById('interactive-sheet-preview');
     if (!targetSheet) return;
@@ -355,18 +365,53 @@ function renderPrintSheetPreview() {
 
     if (!formatConfig) return;
 
+    // --- ADDED: Gather selection values from the DOM ---
+    const artNrDropdown = document.getElementById('select-artnr');
+    const bezDropdown = document.getElementById('select-bezeichnung');
+    const inputCount = parseInt(document.getElementById('input-count')?.value) || 1;
+    const inputStartPos = parseInt(document.getElementById('input-startpos')?.value) || 1;
+
+    // Find the currently active item object matching the selected key
+    const selectedArtNr = artNrDropdown?.value;
+    const activeItem = a2.find(item => String(item.artNr) === String(selectedArtNr));
+
+    // Clear sheet workspace container
     targetSheet.innerHTML = '';
     targetSheet.style.display = 'grid';
     targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
     targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
 
-    const totalLabels = formatConfig.cols * formatConfig.rows;
+    const totalCells = formatConfig.cols * formatConfig.rows;
 
-    for (let i = 0; i < totalLabels; i++) {
+    // Loop through every physical cell slot on the A4 page layout matrix
+    for (let i = 0; i < totalCells; i++) {
         const gridCell = document.createElement('div');
         gridCell.className = 'label-grid-cell';
         gridCell.dataset.index = i;
-        gridCell.textContent = `Label ${i + 1}`;
+
+        // Visual position pointer starts at 1 (1-based index translation mapping)
+        const cellPosition = i + 1;
+
+        // Check if this specific sheet slot falls within our printing parameters window
+        if (cellPosition >= inputStartPos && cellPosition < (inputStartPos + inputCount)) {
+            if (activeItem) {
+                // Transfer data values explicitly from our chosen collection structure
+                gridCell.innerHTML = `
+                    <div class="print-label-content" style="text-align: center; padding: 4px;">
+                        <strong style="display: block; font-size: 1rem;">${activeItem.artNr}</strong>
+                        <span style="display: block; font-size: 0.8rem; margin-top: 2px;">${activeItem.bez}</span>
+                        <small style="font-size: 0.7rem; color: #64748b;">${activeItem.geb || ''}</small>
+                    </div>
+                `;
+            } else {
+                gridCell.textContent = `Bereit (Kein Artikel)`;
+            }
+        } else {
+            // Placeholder indication mapping for skipped layout slots
+            gridCell.textContent = `Leer (${cellPosition})`;
+            gridCell.style.opacity = '0.4';
+        }
+
         targetSheet.appendChild(gridCell);
     }
 }
