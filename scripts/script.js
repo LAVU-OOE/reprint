@@ -44,21 +44,23 @@
     }
 
     /* ==========================================================================
-       External Loader for scripts/sortiment.json & scripts/locations.json
+       Dedicated Cloudflare Worker API Endpoints & Local Fallback Handlers
        ========================================================================== */
     async function loadExternalData() {
-        const rawApiBase = localStorage.getItem('apiBase') || '';
-        const apiBase = rawApiBase.replace(/\/+$/, '');
-        
-        // Target external files in the scripts folder or custom API endpoint
-        const sortimentUrl = apiBase ? `${apiBase}/sortiment.json` : 'scripts/sortiment.json';
-        const locationsUrl = apiBase ? `${apiBase}/locations.json` : 'scripts/locations.json';
+        // Retrieve custom API base endpoints or use the dedicated production workers
+        const rawSortimentApi = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
+        const rawLocationsApi = localStorage.getItem('locationsApiBase') || 'https://locations-api.lavu-ooe.workers.dev';
+        const rawProductApi = localStorage.getItem('productApiBase') || 'https://product-api.lavu-ooe.workers.dev';
+
+        const sortimentUrl = `${rawSortimentApi.replace(/\/+$/, '')}/sortiment.json`;
+        const locationsUrl = `${rawLocationsApi.replace(/\/+$/, '')}/locations.json`;
+        const productUrl = `${rawProductApi.replace(/\/+$/, '')}/formats.json`;
 
         try {
             const [manifestRes, i18nRes, formatsRes, sortimentRes, locationsRes] = await Promise.all([
                 fetch('manifest.json').catch(() => ({ ok: false })),
                 fetch('scripts/i18n.json').catch(() => ({ ok: false })),
-                fetch('scripts/formats.json').catch(() => ({ ok: false })),
+                fetch(productUrl).catch(() => fetch('scripts/formats.json')).catch(() => ({ ok: false })),
                 fetch(sortimentUrl).catch(() => ({ ok: false })),
                 fetch(locationsUrl).catch(() => ({ ok: false }))
             ]);
@@ -73,18 +75,27 @@
                 loadEmbeddedI18nFallbacks();
             }
 
-            if (formatsRes.ok) {
-                formats = await formatsRes.json();
+            // 1. Process Formats (Product API -> Local scripts/formats.json fallback)
+            let formatsData = null;
+            if (formatsRes && formatsRes.ok) {
+                const contentType = formatsRes.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    formatsData = await formatsRes.json().catch(() => null);
+                }
+            }
+
+            if (formatsData && typeof formatsData === 'object' && Object.keys(formatsData).length > 0) {
+                formats = formatsData;
             } else {
                 loadEmbeddedFormatsFallbacks();
             }
 
-            // 1. Process Sortiment JSON (External -> Cache fallback -> Empty safety)
+            // 2. Process Sortiment JSON (Sortiment API -> Cache fallback -> Empty safety)
             let sortimentData = [];
-            if (sortimentRes.ok) {
+            if (sortimentRes && sortimentRes.ok) {
                 const contentType = sortimentRes.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
-                    sortimentData = await sortimentRes.json();
+                    sortimentData = await sortimentRes.json().catch(() => []);
                 } else {
                     sortimentData = await sortimentRes.json().catch(() => []);
                 }
@@ -99,7 +110,7 @@
                 if (localCache) {
                     try {
                         a2 = JSON.parse(localCache);
-                        console.warn('External sortiment.json unreachable. Loaded modifications from device local storage cache.');
+                        console.warn('Sortiment API unreachable. Loaded modifications from device local storage cache.');
                     } catch (e) {
                         a2 = [];
                     }
@@ -108,12 +119,12 @@
                 }
             }
 
-            // 2. Process Locations JSON (External -> Cache fallback -> Empty safety)
+            // 3. Process Locations JSON (Locations API -> Cache fallback -> Empty safety)
             let locData = [];
-            if (locationsRes.ok) {
+            if (locationsRes && locationsRes.ok) {
                 const contentType = locationsRes.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
-                    locData = await locationsRes.json();
+                    locData = await locationsRes.json().catch(() => []);
                 } else {
                     locData = await locationsRes.json().catch(() => []);
                 }
@@ -128,7 +139,7 @@
                 if (localLocCache) {
                     try {
                         locationsData = JSON.parse(localLocCache);
-                        console.warn('External locations.json unreachable. Loaded modifications from device local storage cache.');
+                        console.warn('Locations API unreachable. Loaded modifications from device local storage cache.');
                     } catch (e) {
                         locationsData = [];
                     }
@@ -137,7 +148,7 @@
                 }
             }
 
-            if (sortimentRes.ok || locationsRes.ok) {
+            if (sortimentRes.ok || locationsRes.ok || formatsRes.ok) {
                 updateNetworkStatus('netSuccessLocal');
             } else {
                 updateNetworkStatus('netFallbackLocal');
@@ -145,7 +156,7 @@
             hideLoadingScreen();
 
         } catch (err) {
-            console.warn('External files load failed completely, falling back to local storage modifications:', err);
+            console.warn('API fetch cycle failed completely, falling back to local storage modifications:', err);
             loadEmbeddedI18nFallbacks();
             loadEmbeddedFormatsFallbacks();
 
@@ -217,7 +228,7 @@
                 alertFillForm: "Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.",
                 alertDuplicate: "Diese Artikelnummer existiert bereits!",
                 netLoading: "⏳ Verbinde...",
-                netSuccessLocal: "🟢 Externe JSON-Dateien aktiv",
+                netSuccessLocal: "🟢 APIs & Cloudflare Workers aktiv",
                 netFallbackLocal: "⚠️ Offline. Lokaler Gerätespeicher aktiv.",
                 txtZoom: "Zoom"
             },
@@ -257,7 +268,7 @@
                 alertFillForm: "Please fill in at least Item No. and Description.",
                 alertDuplicate: "This Article Number already exists!",
                 netLoading: "⏳ Connecting...",
-                netSuccessLocal: "🟢 External JSON files active",
+                netSuccessLocal: "🟢 APIs & Cloudflare Workers active",
                 netFallbackLocal: "⚠️ Offline. Local device cache active.",
                 txtZoom: "Zoom"
             }
@@ -430,7 +441,6 @@
                     bez: dbBez.value.trim(), 
                     geb: dbSuffix ? dbSuffix.value.trim() : '' 
                 });
-                // Persist changes directly to device local storage device cache during session/offline changes
                 localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
                 renderSelectionDropdowns();
@@ -449,7 +459,6 @@
                 }
                 a2[index].bez = dbBez.value.trim();
                 if (dbSuffix) a2[index].geb = dbSuffix.value.trim();
-                // Persist updates to device local storage device cache
                 localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
                 renderSelectionDropdowns();
