@@ -373,7 +373,7 @@ label {
    Print Overrides (Calculations Engine Context Mapping for A4 Outputs)
    ========================================================================== */
 @media print {
-    body, .app-header, .selection-panel, .panel-header, .modal-overlay, .pwa-banner, .zoom-controls {
+    .app-header, .selection-panel, .panel-header, .modal-overlay, .pwa-banner, .zoom-controls {
         display: none !important;
     }
     
