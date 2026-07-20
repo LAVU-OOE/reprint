@@ -51,22 +51,23 @@
     }
 
     /* ==========================================================================
-       Dedicated Cloudflare Worker API Endpoints & Local Fallback Handlers
+       Dedicated Cloudflare Worker API Endpoints (Root URLs – no appended filenames)
        ========================================================================== */
     async function loadExternalData() {
         const rawSortimentApi = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
         const rawLocationsApi = localStorage.getItem('locationsApiBase') || 'https://locations-api.lavu-ooe.workers.dev';
         const rawProductApi = localStorage.getItem('productApiBase') || 'https://product-api.lavu-ooe.workers.dev';
 
-        const sortimentUrl = `${rawSortimentApi.replace(/\/+$/, '')}/sortiment.json`;
-        const locationsUrl = `${rawLocationsApi.replace(/\/+$/, '')}/locations.json`;
-        const productUrl = `${rawProductApi.replace(/\/+$/, '')}/formats.json`;
+        // Use the base URLs directly – the worker handles the routing internally
+        const sortimentUrl = rawSortimentApi.replace(/\/+$/, '');
+        const locationsUrl = rawLocationsApi.replace(/\/+$/, '');
+        const productUrl = rawProductApi.replace(/\/+$/, '');
 
         try {
             const [manifestRes, i18nRes, formatsRes, sortimentRes, locationsRes] = await Promise.all([
                 fetch('manifest.json').catch(() => ({ ok: false })),
                 fetch('scripts/i18n.json').catch(() => ({ ok: false })),
-                fetch(productUrl).catch(() => fetch('scripts/formats.json')).catch(() => ({ ok: false })),
+                fetch(productUrl).catch(() => ({ ok: false })),
                 fetch(sortimentUrl).catch(() => ({ ok: false })),
                 fetch(locationsUrl).catch(() => ({ ok: false }))
             ]);
@@ -153,7 +154,6 @@
             if (sortimentRes.ok || locationsRes.ok || formatsRes.ok) {
                 updateNetworkStatus('netSuccessLocal');
             } else {
-                // If we are using hardcoded or cache, still show fallback
                 if (a2.length > 0 && !sortimentRes.ok) {
                     updateNetworkStatus('netFallbackLocal');
                 } else {
@@ -214,7 +214,6 @@
             { artNr: "1004", bez: "Glascontainer 1100 l", geb: "weiß" },
             { artNr: "1005", bez: "Restmülltonne 80 l", geb: "schwarz" }
         ];
-        // Save this as cache so it persists
         localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
         localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
     }
