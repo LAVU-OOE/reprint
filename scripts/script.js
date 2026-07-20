@@ -228,7 +228,7 @@ function updateNetworkStatus(statusKey) {
  * Configures event listeners, sliders, and sets up settings triggers
  */
 function initUiElements() {
-    // --- Existing Zoom Handler Setup ---
+    // 1. Zoom Handler Setup
     const zoomSlider = document.getElementById('zoom-range');
     if (zoomSlider) {
         zoomSlider.addEventListener('input', (e) => {
@@ -239,7 +239,7 @@ function initUiElements() {
         });
     }
 
-    // --- Existing Language Toggle Setup ---
+    // 2. Language Toggle Setup
     const langBtn = document.getElementById('language-toggle');
     if (langBtn) {
         langBtn.addEventListener('click', () => {
@@ -249,7 +249,7 @@ function initUiElements() {
         });
     }
 
-    // --- Modal Open & Close Event Listeners ---
+    // 3. Modal Open & Close Event Listeners
     const optionsBtn = document.getElementById('btn-options-modal');
     const settingsModal = document.getElementById('settings-modal');
     const closeTriggers = document.querySelectorAll('.modal-close-trigger');
@@ -266,7 +266,7 @@ function initUiElements() {
         });
     }
 
-    // --- ADD THIS: Set Default API URL Values ---
+    // 4. Set Default API URL Values
     const sortimentInput = document.getElementById('input-sortiment-api');
     const locationsInput = document.getElementById('input-location-api');
 
@@ -277,21 +277,15 @@ function initUiElements() {
         locationsInput.value = 'https://locations-api.lavu-ooe.workers.dev/';
     }
 
-    // --- ADD THIS: Interactive Tab Navigation Logic ---
+    // 5. Interactive Tab Navigation Logic
     const tabButtons = document.querySelectorAll('.tab-navigation .tab-btn');
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
-            // Remove active status from all tab buttons in this container
             tabButtons.forEach(btn => btn.classList.remove('active'));
-            
-            // Hide all tab content panels
             const contentPanels = document.querySelectorAll('.tab-content-panel');
             contentPanels.forEach(panel => panel.classList.remove('active'));
 
-            // Add active state to clicked button
             button.classList.add('active');
-
-            // Show target content panel
             const targetId = button.getAttribute('data-target');
             const targetPanel = document.getElementById(targetId);
             if (targetPanel) {
@@ -299,7 +293,8 @@ function initUiElements() {
             }
         });
     });
-// --- ADD THIS: Sync Art.Nr. and Bezeichnung Dropdowns ---
+
+    // 6. Sync Art.Nr. and Bezeichnung Dropdowns
     const artNrDropdown = document.getElementById('select-artnr');
     const bezDropdown = document.getElementById('select-bezeichnung');
 
@@ -312,45 +307,77 @@ function initUiElements() {
             artNrDropdown.selectedIndex = bezDropdown.selectedIndex;
         });
     }
-// --- ADD THIS: Re-trigger layout calculations on value adjustment updates ---
+
+    // 7. Re-trigger layout calculations on value adjustment updates
     const syncTriggers = ['select-artnr', 'select-bezeichnung', 'input-count', 'input-startpos'];
     syncTriggers.forEach(id => {
         document.getElementById(id)?.addEventListener('change', renderPrintSheetPreview);
     });
     document.getElementById('input-count')?.addEventListener('input', renderPrintSheetPreview);
     document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
-// --- ADD THIS: Click Grid Cells to Set Start Position & Label Count ---
-// --- Sync Grid Clicks to set Start Position & Total Count ---
-    const targetSheet = document.getElementById('interactive-sheet-preview');
+
+    // 8. Grid Click Synchronization Logic
+    const targetSheetContainer = document.getElementById('interactive-sheet-preview');
     const startPosInput = document.getElementById('input-startpos');
     const countInput = document.getElementById('input-count');
 
-    if (targetSheet && startPosInput && countInput) {
-        targetSheet.addEventListener('click', (e) => {
+    if (targetSheetContainer && startPosInput && countInput) {
+        targetSheetContainer.addEventListener('click', (e) => {
             const cell = e.target.closest('.label-grid-cell');
             if (!cell) return;
 
             const chosenPosition = parseInt(cell.dataset.index, 10) + 1;
             const currentStart = parseInt(startPosInput.value, 10) || 1;
             const currentCount = parseInt(countInput.value, 10) || 1;
-            const currentEnd = currentStart + currentCount - 1;
 
-            // Scenario A: If nothing is selected yet, or user clicks BEFORE the current start position
             if (chosenPosition < currentStart || currentCount <= 1 && chosenPosition === currentStart) {
                 startPosInput.value = chosenPosition;
                 countInput.value = 1;
             } 
-            // Scenario B: User clicks an already selected cell to reset/toggle it
             else if (chosenPosition === currentStart && currentCount > 1) {
                 countInput.value = 1;
             }
-            // Scenario C: User clicks a cell AFTER the start position -> set the print range span
             else {
                 countInput.value = (chosenPosition - currentStart) + 1;
             }
 
-            // Instantly refresh sheet calculations layout view
             renderPrintSheetPreview();
+        });
+    }
+
+
+    // =========================================================================
+    // PLACE IT RIGHT HERE AT THE BOTTOM OF THE FUNCTION
+    // =========================================================================
+
+    // --- ADD THIS: Format Selector Updates Entire Selection Span ---
+    const formatSelect = document.getElementById('select-format');
+    if (formatSelect) {
+        formatSelect.addEventListener('change', () => {
+            const countInput = document.getElementById('input-count');
+            const startPosInput = document.getElementById('input-startpos');
+            
+            if (countInput && startPosInput) {
+                // Remove the manual user marker flag to let it auto-calculate max size
+                delete countInput.dataset.userModified; 
+                
+                // Clear values temporarily to force renderPrintSheetPreview to calculate maximum bounds
+                countInput.value = '';
+                startPosInput.value = 1;
+            }
+            renderPrintSheetPreview();
+        });
+    }
+
+    // --- Adjust Grid Click Handler to Track Manual Changes ---
+    const targetSheet = document.getElementById('interactive-sheet-preview');
+    if (targetSheet) {
+        targetSheet.addEventListener('click', () => {
+            const countInput = document.getElementById('input-count');
+            if (countInput) {
+                // Set a marker flag when the user starts customizing manually
+                countInput.dataset.userModified = "true";
+            }
         });
     }
 }
@@ -390,6 +417,9 @@ function renderSelectionDropdowns() {
 /**
  * Computes grid measurements and prints visual overlays inside the interactive target
  */
+/**
+ * Computes grid measurements and prints visual overlays inside the interactive target
+ */
 function renderPrintSheetPreview() {
     const targetSheet = document.getElementById('interactive-sheet-preview');
     if (!targetSheet) return;
@@ -399,37 +429,42 @@ function renderPrintSheetPreview() {
 
     if (!formatConfig) return;
 
-    // --- ADDED: Gather selection values from the DOM ---
-    const artNrDropdown = document.getElementById('select-artnr');
-    const bezDropdown = document.getElementById('select-bezeichnung');
-    const inputCount = parseInt(document.getElementById('input-count')?.value) || 1;
-    const inputStartPos = parseInt(document.getElementById('input-startpos')?.value) || 1;
+    const totalCells = formatConfig.cols * formatConfig.rows;
 
-    // Find the currently active item object matching the selected key
+    // --- ADDED: Auto-fallback inputs to fill the entire template layout context ---
+    const startPosInput = document.getElementById('input-startpos');
+    const countInput = document.getElementById('input-count');
+
+    if (startPosInput && !startPosInput.value) {
+        startPosInput.value = 1;
+    }
+
+    // Force the label count to the absolute maximum grid allocation if empty or out-of-bounds
+    if (countInput && (!countInput.value || parseInt(countInput.value, 10) === 1 && !countInput.dataset.userModified)) {
+        countInput.value = totalCells;
+    }
+
+    const artNrDropdown = document.getElementById('select-artnr');
+    const inputCount = parseInt(countInput?.value, 10) || totalCells;
+    const inputStartPos = parseInt(startPosInput?.value, 10) || 1;
+
     const selectedArtNr = artNrDropdown?.value;
     const activeItem = a2.find(item => String(item.artNr) === String(selectedArtNr));
 
-    // Clear sheet workspace container
     targetSheet.innerHTML = '';
     targetSheet.style.display = 'grid';
     targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
     targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
 
-    const totalCells = formatConfig.cols * formatConfig.rows;
-
-    // Loop through every physical cell slot on the A4 page layout matrix
     for (let i = 0; i < totalCells; i++) {
         const gridCell = document.createElement('div');
         gridCell.className = 'label-grid-cell';
         gridCell.dataset.index = i;
 
-        // Visual position pointer starts at 1 (1-based index translation mapping)
         const cellPosition = i + 1;
 
-        // Check if this specific sheet slot falls within our printing parameters window
         if (cellPosition >= inputStartPos && cellPosition < (inputStartPos + inputCount)) {
             if (activeItem) {
-                // Transfer data values explicitly from our chosen collection structure
                 gridCell.innerHTML = `
                     <div class="print-label-content" style="text-align: center; padding: 4px;">
                         <strong style="display: block; font-size: 1rem;">${activeItem.artNr}</strong>
@@ -441,7 +476,6 @@ function renderPrintSheetPreview() {
                 gridCell.textContent = `Bereit (Kein Artikel)`;
             }
         } else {
-            // Placeholder indication mapping for skipped layout slots
             gridCell.textContent = `Leer (${cellPosition})`;
             gridCell.style.opacity = '0.4';
         }
