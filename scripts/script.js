@@ -388,7 +388,7 @@ function initUiElements() {
         });
     }
 } // <--- This closes the initUiElements function
-}
+
 
 /**
  * Parses and displays selection dropdown menus alphabetized dynamically
