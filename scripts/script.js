@@ -110,9 +110,7 @@ async function loadExternalData() {
                 locationError: "Fehler beim Laden der Standorte",
                 locUrlSaved: "📍 Locations-URL gespeichert.",
                 locUrlUpdated: "✅ Locations-URL aktualisiert!",
-                locUrlInvalid: "❌ Bitte gültige URL eingeben.",
-                lblReady: "Bereit",
-                lblSelectPrompt: "-- Wähle --"
+                locUrlInvalid: "❌ Bitte gültige URL eingeben."
             },
             en: {
                 studioV9: "Label Studio v9",
@@ -164,9 +162,7 @@ async function loadExternalData() {
                 locationError: "Error loading locations",
                 locUrlSaved: "📍 Locations URL saved.",
                 locUrlUpdated: "✅ Locations URL updated!",
-                locUrlInvalid: "❌ Please enter a valid URL.",
-                lblReady: "Ready",
-                lblSelectPrompt: "-- Select --"
+                locUrlInvalid: "❌ Please enter a valid URL."
             }
         };
 
@@ -232,12 +228,7 @@ function initUiElements() {
         langBtn.addEventListener('click', () => {
             const newLang = document.documentElement.lang === 'de' ? 'en' : 'de';
             document.documentElement.lang = newLang;
-            
             translateUi(newLang);
-            
-            // Re-render components with newly assigned active language text values
-            renderSelectionDropdowns();
-            renderPrintSheetPreview();
         });
     }
 
@@ -309,9 +300,11 @@ function initUiElements() {
     document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
 
     // 8. Unified Grid Click & Synchronization Logic
+    // FIXED: Removed old conflicting behavior to avoid locking selection count to 1!
     const countInput = document.getElementById('input-count');
     const startPosInput = document.getElementById('input-startpos');
     if (startPosInput && countInput) {
+        // Track manual changes via direct form inputs
         countInput.addEventListener('input', () => {
             countInput.dataset.userModified = "true";
         });
@@ -348,11 +341,8 @@ function renderSelectionDropdowns() {
     
     if (!artNrDropdown || !bezDropdown) return;
 
-    const currentLang = document.documentElement.lang || 'de';
-    const selectPrompt = i18n[currentLang]?.lblSelectPrompt || "-- Wähle --";
-
-    artNrDropdown.innerHTML = `<option value="">${selectPrompt} Art.Nr. --</option>`;
-    bezDropdown.innerHTML = `<option value="">${selectPrompt} Bezeichnung --</option>`;
+    artNrDropdown.innerHTML = '<option value="">-- Wähle Art.Nr. --</option>';
+    bezDropdown.innerHTML = '<option value="">-- Wähle Bezeichnung --</option>';
 
     const sortedData = [...a2].sort((a, b) => String(a.artNr).localeCompare(String(b.artNr)));
 
@@ -372,6 +362,18 @@ function renderSelectionDropdowns() {
 /**
  * Computes grid measurements and maps visual classes to the interactive preview targets
  */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
 function renderPrintSheetPreview() {
     const targetSheet = document.getElementById('interactive-sheet-preview');
     if (!targetSheet) return;
@@ -384,9 +386,6 @@ function renderPrintSheetPreview() {
     const totalCells = formatConfig.cols * formatConfig.rows;
     const startPosInput = document.getElementById('input-startpos');
     const countInput = document.getElementById('input-count');
-
-    const currentLang = document.documentElement.lang || 'de';
-    const dynamicReadyText = i18n[currentLang]?.lblReady || "Bereit";
 
     // Force default fallbacks safely if fields are cleared out
     if (startPosInput && !startPosInput.value) {
@@ -411,6 +410,7 @@ function renderPrintSheetPreview() {
     targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
     targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
 
+    // Calculate boundary explicitly to avoid off-by-one window shifting
     const lastActivePosition = (inputStartPos + inputCount) - 1;
 
     for (let i = 0; i < totalCells; i++) {
@@ -418,8 +418,10 @@ function renderPrintSheetPreview() {
         gridCell.dataset.index = i;
         const cellPosition = i + 1;
 
+        // Label check against exact print window boundaries
         if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
             if (activeItem) {
+                // Active Zone + Chosen Article -> Emerald Green (#059669)
                 gridCell.className = 'label-grid-cell state-selected has-article';
                 gridCell.innerHTML = `
                     <div class="print-label-content" style="text-align: center; padding: 4px;">
@@ -429,21 +431,27 @@ function renderPrintSheetPreview() {
                     </div>
                 `;
             } else {
+                // Active Zone but NO Article -> Default Slate Grey (#334155)
                 gridCell.className = 'label-grid-cell state-selected';
-                gridCell.innerHTML = `<span class="print-hide" style="opacity: 0.9;">${dynamicReadyText}</span>`;
+                gridCell.innerHTML = `<span class="print-hide" style="opacity: 0.9;">Bereit</span>`;
             }
         } else {
+            // FIXED: Outside target window range -> Visually faint on screen, completely blank for print!
             gridCell.className = 'label-grid-cell state-neutral';
             gridCell.innerHTML = `<span class="print-hide" style="opacity: 0.4; font-size: 0.8rem;">(${cellPosition})</span>`;
         }
 
+        // CORRECTED CLICK INTERACTION PIPELINE
         gridCell.addEventListener('click', () => {
             if (startPosInput && countInput) {
+                // If user clicks a label BEFORE the current starting position, shift start backward
                 if (cellPosition < inputStartPos) {
                     startPosInput.value = cellPosition;
                     countInput.value = (lastActivePosition - cellPosition) + 1;
                 }
+                // If user clicks an active element, slice the print range boundary right there
                 else if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
+                    // Toggling the very first active item shifts start forward by 1
                     if (cellPosition === inputStartPos) {
                         if (inputCount <= 1) {
                             startPosInput.value = 1;
@@ -453,16 +461,22 @@ function renderPrintSheetPreview() {
                             countInput.value = inputCount - 1;
                         }
                     } else {
+                        // Slices print count to end exactly at this cell location
                         countInput.value = (cellPosition - inputStartPos) + 1;
                     }
                 }
+                // If user clicks a red cell down the line, expand the active block selection down to it
                 else {
                     countInput.value = (cellPosition - inputStartPos) + 1;
                 }
 
+                // Protect setting adjustments from format clear handlers
                 countInput.dataset.userModified = "true";
+
+                // Broadcast mutations to system forms
                 startPosInput.dispatchEvent(new Event('change', { bubbles: true }));
                 countInput.dispatchEvent(new Event('change', { bubbles: true }));
+
                 renderPrintSheetPreview();
             }
         });
