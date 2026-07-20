@@ -6,9 +6,10 @@
 (function () {
     let i18n = {};
     let formats = {};
-    let a2 = []; 
+    let a2 = [];
     let locationsData = [];
     let deferredPrompt;
+    let currentZoom = 1; // #7: persist zoom level
 
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Hours Cache TTL
 
@@ -65,7 +66,7 @@
                 fetch(sortimentUrl).catch(() => ({ ok: false })),
                 fetch(locationsUrl).catch(() => ({ ok: false }))
             ]);
-            
+
             if (manifestRes && manifestRes.ok) {
                 await manifestRes.json().catch(() => null);
             }
@@ -90,6 +91,13 @@
                 loadEmbeddedFormatsFallbacks();
             }
 
+            // #6: Cache invalidation – remove stale cache if older than TTL
+            const cacheTimestamp = localStorage.getItem('lavu_studio_sortiment_timestamp');
+            if (cacheTimestamp && (Date.now() - parseInt(cacheTimestamp, 10) > CACHE_TTL_MS)) {
+                localStorage.removeItem('lavu_studio_sortiment_v9');
+                localStorage.removeItem('lavu_studio_sortiment_timestamp');
+            }
+
             let sortimentData = [];
             if (sortimentRes && sortimentRes.ok) {
                 sortimentData = await sortimentRes.json().catch(() => []);
@@ -106,6 +114,13 @@
                 } catch (e) {
                     a2 = [];
                 }
+            }
+
+            // Locations cache invalidation
+            const locCacheTimestamp = localStorage.getItem('lavu_studio_locations_timestamp');
+            if (locCacheTimestamp && (Date.now() - parseInt(locCacheTimestamp, 10) > CACHE_TTL_MS)) {
+                localStorage.removeItem('lavu_studio_locations_v9');
+                localStorage.removeItem('lavu_studio_locations_timestamp');
             }
 
             let locData = [];
@@ -279,12 +294,16 @@
     }
 
     function initUiElements() {
+        // #2: Translate UI on startup
+        translateUi(document.documentElement.lang || 'de');
+
         const zoomSlider = document.getElementById('zoom-range');
         if (zoomSlider) {
             zoomSlider.addEventListener('input', (e) => {
+                currentZoom = parseFloat(e.target.value) || 1; // #7: persist zoom
                 const previewSheet = document.getElementById('interactive-sheet-preview') || document.getElementById('previewContainer');
                 if (previewSheet) {
-                    previewSheet.style.transform = `scale(${e.target.value})`;
+                    previewSheet.style.transform = `scale(${currentZoom})`;
                 }
             });
         }
@@ -314,7 +333,25 @@
             });
         }
 
+        // #3: Targeted API update handlers (no wildcards)
         setupApiUpdateHandlers();
+
+        // #8: "Save Defaults" button – save URLs without reloading
+        const saveDefaultsBtn = document.getElementById('btn-settings-save-default');
+        if (saveDefaultsBtn) {
+            saveDefaultsBtn.addEventListener('click', () => {
+                const sortimentInput = document.getElementById('input-sortiment-api') || document.getElementById('input-url');
+                const locationsInput = document.getElementById('input-location-api');
+                const productInput = document.getElementById('input-product-api');
+
+                if (sortimentInput) localStorage.setItem('apiBase', sortimentInput.value.trim());
+                if (locationsInput) localStorage.setItem('locationsApiBase', locationsInput.value.trim());
+                if (productInput) localStorage.setItem('productApiBase', productInput.value.trim());
+
+                const lang = document.documentElement.lang || 'de';
+                alert(i18n[lang]?.alertSaved || 'Standard gespeichert!');
+            });
+        }
 
         const tabButtons = document.querySelectorAll('.tab-navigation .tab-btn');
         tabButtons.forEach(button => {
@@ -364,7 +401,7 @@
         if (formatSelect) {
             formatSelect.addEventListener('change', () => {
                 if (countInput && startPosInput) {
-                    delete countInput.dataset.userModified; 
+                    delete countInput.dataset.userModified;
                     countInput.value = '';
                     startPosInput.value = 1;
                 }
@@ -382,7 +419,7 @@
                     document.getElementById('select-format')?.focus();
                     return;
                 }
-                
+
                 setTimeout(() => {
                     window.print();
                 }, 250);
@@ -393,29 +430,26 @@
         setupPwaHandlers();
     }
 
+    // #3: Targeted API update handlers (no wildcard)
     function setupApiUpdateHandlers() {
-        const updateButtons = document.querySelectorAll('button[id*="update"], button[id*="save"], .btn-update-api');
-        
-        updateButtons.forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const sortimentInput = document.getElementById('input-sortiment-api') || document.getElementById('input-url');
-                const locationsInput = document.getElementById('input-location-api');
-                const productInput = document.getElementById('input-product-api');
+        const updateSortiment = document.getElementById('btn-update-sortiment');
+        const updateLocations = document.getElementById('btn-update-locations');
 
-                if (sortimentInput) {
-                    localStorage.setItem('apiBase', sortimentInput.value.trim());
-                }
-                if (locationsInput) {
-                    localStorage.setItem('locationsApiBase', locationsInput.value.trim());
-                }
-                if (productInput) {
-                    localStorage.setItem('productApiBase', productInput.value.trim());
-                }
+        const updateHandler = async () => {
+            const sortimentInput = document.getElementById('input-sortiment-api') || document.getElementById('input-url');
+            const locationsInput = document.getElementById('input-location-api');
+            const productInput = document.getElementById('input-product-api');
 
-                alert("API-Einstellungen erfolgreich gespeichert. Daten werden neu geladen...");
-                await initApp();
-            });
-        });
+            if (sortimentInput) localStorage.setItem('apiBase', sortimentInput.value.trim());
+            if (locationsInput) localStorage.setItem('locationsApiBase', locationsInput.value.trim());
+            if (productInput) localStorage.setItem('productApiBase', productInput.value.trim());
+
+            alert("API-Einstellungen gespeichert. Daten werden neu geladen...");
+            await initApp();
+        };
+
+        if (updateSortiment) updateSortiment.addEventListener('click', updateHandler);
+        if (updateLocations) updateLocations.addEventListener('click', updateHandler);
     }
 
     function setupDatabaseManagementHandlers() {
@@ -424,6 +458,21 @@
         const dbArtNr = document.getElementById('db-input-artnr');
         const dbBez = document.getElementById('db-input-bez');
         const dbSuffix = document.getElementById('db-input-suffix');
+
+        // #5: Download JSON handler
+        const downloadBtn = document.getElementById('btn-download-database');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                const dataStr = JSON.stringify(a2, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sortiment_backup_${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
 
         function getAlertText(key, fallback) {
             const currentLang = document.documentElement.lang || 'de';
@@ -453,19 +502,22 @@
             btnDbAdd.addEventListener('click', () => {
                 if (!validateDbInputs()) return;
                 const newArtNr = dbArtNr.value.trim();
-                if (a2.some(item => String(item.artNr || item.ID) === newArtNr)) {
+                // #4: Normalise both sides for duplicate detection
+                if (a2.some(item => String(item.artNr || item.ID).trim() === newArtNr)) {
                     alert(getAlertText('alertDuplicate', 'Diese Artikelnummer existiert bereits!'));
                     return;
                 }
-                a2.push({ 
-                    artNr: newArtNr, 
-                    bez: dbBez.value.trim(), 
-                    geb: dbSuffix ? dbSuffix.value.trim() : '' 
+                a2.push({
+                    artNr: newArtNr,
+                    bez: dbBez.value.trim(),
+                    geb: dbSuffix ? dbSuffix.value.trim() : ''
                 });
                 localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
                 renderSelectionDropdowns();
-                dbArtNr.value = ''; dbBez.value = ''; if (dbSuffix) dbSuffix.value = '';
+                dbArtNr.value = '';
+                dbBez.value = '';
+                if (dbSuffix) dbSuffix.value = '';
             });
         }
 
@@ -473,7 +525,7 @@
             btnDbSave.addEventListener('click', () => {
                 if (!validateDbInputs()) return;
                 const targetArtNr = dbArtNr.value.trim();
-                const index = a2.findIndex(item => String(item.artNr || item.ID) === targetArtNr);
+                const index = a2.findIndex(item => String(item.artNr || item.ID).trim() === targetArtNr);
                 if (index === -1) {
                     alert("Artikelnummer nicht gefunden. Bitte stattdessen 'Neu hinzufügen' verwenden.");
                     return;
@@ -514,7 +566,7 @@
     function renderSelectionDropdowns() {
         const artNrDropdown = document.getElementById('select-artnr');
         const bezDropdown = document.getElementById('select-bezeichnung');
-        
+
         if (!artNrDropdown || !bezDropdown) return;
 
         artNrDropdown.innerHTML = '<option value="">-- Wähle Art.Nr. --</option>';
@@ -534,7 +586,7 @@
 
             let opt2 = document.createElement('option');
             opt2.value = identifier;
-            opt2.textContent = `${description} ${suffix}`.trim(); 
+            opt2.textContent = `${description} ${suffix}`.trim();
             bezDropdown.appendChild(opt2);
         });
     }
@@ -582,6 +634,8 @@
         targetSheet.style.display = 'grid';
         targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
         targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
+        // #7: Re-apply saved zoom level
+        targetSheet.style.transform = `scale(${currentZoom})`;
 
         const lastActivePosition = Math.min(totalCells, (inputStartPos + inputCount) - 1);
 
@@ -593,7 +647,7 @@
             if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
                 if (activeItem) {
                     gridCell.className = 'label-grid-cell state-selected has-article';
-                    
+
                     const innerWrapper = document.createElement('div');
                     innerWrapper.className = 'print-label-content';
                     innerWrapper.style.cssText = 'text-align: center; padding: 4px;';
@@ -632,8 +686,7 @@
                     if (cellPosition < inputStartPos) {
                         startPosInput.value = cellPosition;
                         countInput.value = (lastActivePosition - cellPosition) + 1;
-                    }
-                    else if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
+                    } else if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
                         if (cellPosition === inputStartPos) {
                             if (inputCount <= 1) {
                                 countInput.value = 1;
@@ -644,8 +697,7 @@
                         } else {
                             countInput.value = (cellPosition - inputStartPos) + 1;
                         }
-                    }
-                    else {
+                    } else {
                         countInput.value = (cellPosition - inputStartPos) + 1;
                     }
 
@@ -664,7 +716,7 @@
 
     function translateUi(lang) {
         if (!i18n[lang]) return;
-        
+
         const elementsToTranslate = document.querySelectorAll('[data-i18n]');
         elementsToTranslate.forEach(el => {
             const key = el.getAttribute('data-i18n');
@@ -678,3 +730,4 @@
         });
     }
 })();
+// #1: Removed the second conflicting IIFE entirely
