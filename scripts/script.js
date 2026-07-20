@@ -299,6 +299,19 @@ function initUiElements() {
             }
         });
     });
+// --- ADD THIS: Sync Art.Nr. and Bezeichnung Dropdowns ---
+    const artNrDropdown = document.getElementById('select-artnr');
+    const bezDropdown = document.getElementById('select-bezeichnung');
+
+    if (artNrDropdown && bezDropdown) {
+        artNrDropdown.addEventListener('change', (e) => {
+            bezDropdown.selectedIndex = artNrDropdown.selectedIndex;
+        });
+
+        bezDropdown.addEventListener('change', (e) => {
+            artNrDropdown.selectedIndex = bezDropdown.selectedIndex;
+        });
+    }
 }
 
 /**
