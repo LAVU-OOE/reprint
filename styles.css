@@ -3,7 +3,6 @@
    Core Application Stylesheet & Print Layout Engine
    ========================================================================== */
 
-/* --- Color System & Design Tokens --- */
 :root {
     --bg-primary: #0f172a;
     --bg-secondary: #1e293b;
@@ -19,7 +18,6 @@
     --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* --- Base Framework Resets --- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -31,10 +29,9 @@ body {
     color: var(--text-main);
     font-family: var(--font-stack);
     line-height: 1.5;
-    padding-bottom: 60px; /* Space for the PWA Installer Banner */
+    padding-bottom: 60px;
 }
 
-/* --- Layout Architecture --- */
 .app-header {
     background-color: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
@@ -79,7 +76,6 @@ body {
     grid-column: 1 / -1; 
 }
 
-/* --- Card Components & Form Controls --- */
 .card {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
@@ -132,7 +128,6 @@ label {
     border-color: var(--accent-primary);
 }
 
-/* Custom Select Dropdown List Formatting Overrides */
 select.form-control {
     appearance: none;
     -webkit-appearance: none;
@@ -156,7 +151,6 @@ select.form-control option {
     gap: 0.5rem;
 }
 
-/* --- UI Buttons & Diagnostics Badges --- */
 .btn-primary, .btn-secondary, .btn-success {
     border: none;
     border-radius: 0.375rem;
@@ -197,7 +191,6 @@ select.form-control option {
     font-weight: 500;
 }
 
-/* --- Interactive Print Sheet Preview Controls --- */
 .panel-header {
     display: flex;
     justify-content: space-between;
@@ -225,7 +218,6 @@ select.form-control option {
     border: 1px dashed var(--border-color);
 }
 
-/* --- Interactive Virtual Representation Grid Mapping --- */
 .a4-sheet-container {
     background-color: white;
     color: #334155;
@@ -240,7 +232,6 @@ select.form-control option {
     box-sizing: border-box;
 }
 
-/* Base interactive cell container properties */
 .label-grid-cell {
     border: 1px dashed #475569;
     border-radius: 6px;
@@ -259,7 +250,6 @@ select.form-control option {
     break-inside: avoid;
 }
 
-/* STATE #1: Unselected / Skipped Exclusions (Vibrant Red) */
 .label-grid-cell.state-neutral {
     background-color: #ee1111 !important;
     border-color: #b91c1c !important;
@@ -269,14 +259,12 @@ select.form-control option {
     background-color: #dc2626 !important;
 }
 
-/* STATE #2: Active Print Zone Target Default / Ready (Slate Grey) */
 .label-grid-cell.state-selected {
     background-color: #334155 !important;
     border-color: #475569 !important;
     color: #f8fafc !important;
 }
 
-/* STATE #3: Active Print Zone With Chosen Article (Emerald Green) */
 .label-grid-cell.state-selected.has-article {
     background-color: #059669 !important;
     border-color: #10b981 !important;
@@ -291,7 +279,6 @@ select.form-control option {
     opacity: 0.9;
 }
 
-/* --- Modals Config System Overlays --- */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -395,7 +382,6 @@ select.form-control option {
     margin-top: 1rem;
 }
 
-/* --- PWA System Application Utility Banners --- */
 .pwa-banner {
     position: fixed;
     bottom: 1rem;
@@ -433,12 +419,10 @@ select.form-control option {
     color: var(--text-muted);
 }
 
-/* Helper Display states */
 .hidden {
     display: none !important;
 }
 
-/* --- Animation Utilities --- */
 .animate-fade-in {
     animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -448,23 +432,17 @@ select.form-control option {
     to { opacity: 1; transform: scale(1); }
 }
 
-/* ==========================================================================
-   Print Overrides (Calculations Engine Context Mapping for A4 Outputs)
-   ========================================================================== */
 @media print {
-    /* 1. Force strict A4 physical margins and eliminate browser headers/footers */
     @page {
         size: A4 portrait;
         margin: 0 !important;
     }
 
-    /* 2. Hide all non-printable UI components entirely */
     .app-header, .selection-panel, .panel-header, .modal-overlay, 
     .pwa-banner, .zoom-controls, #btn-print-trigger, #controls {
         display: none !important;
     }
     
-    /* 3. Reset structural containers to eliminate offsets, margins, and flex/grid alignment */
     html, body {
         background-color: white !important;
         color: #000000 !important;
@@ -476,7 +454,6 @@ select.form-control option {
         overflow: hidden !important;
     }
     
-    /* 4. Strip layout wrappers so the sheet prints starting from the absolute top-left (0,0) */
     .workspace-container, .preview-panel, .sheet-scroller {
         display: block !important;
         position: static !important;
@@ -489,7 +466,6 @@ select.form-control option {
         box-shadow: none !important;
     }
 
-    /* 5. Clean up sheet presentation bounds, eliminating screen drop-shadows */
     .a4-sheet-container {
         transform: none !important;
         box-shadow: none !important;
@@ -504,7 +480,6 @@ select.form-control option {
         padding: 10mm !important;
     }
 
-    /* 6. Clean high-contrast borders for printing labels */
     .label-grid-cell {
         border: 1px solid #cbd5e1 !important;
         background-color: transparent !important;

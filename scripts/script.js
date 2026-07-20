@@ -10,6 +10,7 @@
     let locationsData = [];
     let deferredPrompt;
     let currentZoom = 1;
+    let firstClickPosition = null; // Reference anchor tracking for range selection
 
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -461,6 +462,7 @@
                     countInput.value = '';
                     startPosInput.value = 1;
                 }
+                firstClickPosition = null; // Clear range anchor on template switch
                 renderPrintSheetPreview();
             });
         }
@@ -740,7 +742,6 @@
 
                     const smallEl = document.createElement('small');
                     smallEl.style.cssText = 'font-size: 0.7rem; opacity: 0.8;';
-                    // Include location name if selected
                     let suffixText = activeItem.geb || '';
                     if (activeLocation) {
                         suffixText += suffixText ? ' | ' : '';
@@ -764,24 +765,24 @@
                 gridCell.textContent = `Leer (${cellPosition})`;
             }
 
+            // Click range builder interaction logic
             gridCell.addEventListener('click', () => {
                 if (startPosInput && countInput) {
-                    if (cellPosition < inputStartPos) {
+                    if (firstClickPosition === null) {
+                        // First click sets reference anchor
+                        firstClickPosition = cellPosition;
                         startPosInput.value = cellPosition;
-                        countInput.value = (lastActivePosition - cellPosition) + 1;
-                    } else if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
-                        if (cellPosition === inputStartPos) {
-                            if (inputCount <= 1) {
-                                countInput.value = 1;
-                            } else {
-                                startPosInput.value = inputStartPos + 1;
-                                countInput.value = inputCount - 1;
-                            }
-                        } else {
-                            countInput.value = (cellPosition - inputStartPos) + 1;
-                        }
+                        countInput.value = 1;
                     } else {
-                        countInput.value = (cellPosition - inputStartPos) + 1;
+                        // Second click fills labels in between relative to the first click reference
+                        const start = Math.min(firstClickPosition, cellPosition);
+                        const end = Math.max(firstClickPosition, cellPosition);
+                        
+                        startPosInput.value = start;
+                        countInput.value = (end - start) + 1;
+                        
+                        // Reset selection tracker context state for next cycle sequence
+                        firstClickPosition = null;
                     }
 
                     countInput.dataset.userModified = "true";
