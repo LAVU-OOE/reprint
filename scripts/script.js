@@ -488,7 +488,7 @@ function loadLocations() {
 }
 
 // ===========================
-// Article dropdown population
+// Article dropdown population (formerly i1)
 // ===========================
 function populateArticleDropdowns() {
     const selectArt = document.getElementById('s2_art');
@@ -703,9 +703,6 @@ function updateUI() {
     }
 }
 
-// ================================================================
-// ✅ FIXED: renderSheet with simplified click logic (no add/remove)
-// ================================================================
 function renderSheet(containerId, data) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -719,9 +716,7 @@ function renderSheet(containerId, data) {
 
     for (let i = 1; i <= totalCells; i++) {
         const cell = document.createElement('div');
-        const isActive = (i >= start && i < start + count);
-        
-        if (isActive) {
+        if (i >= start && i < start + count) {
             cell.className = 'lb';
             cell.innerHTML = `
                 <div class="lbt">${data.topText || '&nbsp;'}</div>
@@ -736,55 +731,94 @@ function renderSheet(containerId, data) {
         } else {
             cell.className = 'lb e';
         }
-        
         if (containerId === 'mdl') {
             cell.dataset.index = i;
-            // ─── NEW: Simplified click handler ───
             cell.addEventListener('click', function (e) {
-                const clickedIndex = parseInt(this.dataset.index);
-                const countInput = document.getElementById('i2');
-                const startInput = document.getElementById('i3');
-                const f2 = formats[currentFormatKey];
-                const maxLabels = f2.cols * f2.rows;
-                
-                let currentStart = parseInt(startInput.value) || 1;
-                let currentCount = parseInt(countInput.value) || 0;
-                let currentEnd = currentStart + currentCount - 1;
-                
-                let newStart = currentStart;
-                let newCount = currentCount;
-                
-                if (currentCount === 0) {
-                    // No range yet → start here with 1 label
-                    newStart = clickedIndex;
-                    newCount = 1;
-                } else if (clickedIndex < currentStart) {
-                    // Clicked before start → extend left
-                    newStart = clickedIndex;
-                    newCount = currentEnd - clickedIndex + 1;
-                } else if (clickedIndex > currentEnd) {
-                    // Clicked after end → extend right
-                    newStart = currentStart;
-                    newCount = clickedIndex - currentStart + 1;
+                const idx = parseInt(this.dataset.index);
+                let action = 'add';
+                if (this.classList.contains('e')) {
+                    action = 'add';
                 } else {
-                    // Clicked inside the active range → move start here, keep end fixed
-                    newStart = clickedIndex;
-                    newCount = currentEnd - clickedIndex + 1;
+                    action = 'remove';
                 }
-                
-                // Clamp to valid range
-                newStart = Math.max(1, Math.min(newStart, maxLabels));
-                newCount = Math.max(0, Math.min(newCount, maxLabels - newStart + 1));
-                
-                countInput.value = newCount;
-                startInput.value = newStart;
-                
-                updateUI();
-                saveDefaults();
+                updateLabelCount(idx, action);
             });
         }
         container.appendChild(cell);
     }
+}
+
+function updateLabelCount(clickedIndex, action) {
+    const f = formats[currentFormatKey];
+    const maxLabels = f.cols * f.rows;
+    const countInput = document.getElementById('i2');
+    const startInput = document.getElementById('i3');
+    let count = parseInt(countInput.value) || 0;
+    let start = parseInt(startInput.value) || 1;
+    let end = start + count - 1;
+
+    if (count === 0) {
+        start = clickedIndex;
+        count = 1;
+    } else {
+        if (action === 'add') {
+            if (clickedIndex < start) {
+                count = end - clickedIndex + 1;
+                start = clickedIndex;
+            } else if (clickedIndex > end) {
+                count = clickedIndex - start + 1;
+            }
+        } else if (action === 'remove') {
+            if (clickedIndex === start) {
+                start++;
+                count--;
+            } else if (clickedIndex === end) {
+                count--;
+            } else {
+                count = clickedIndex - start;
+            }
+        }
+    }
+    count = Math.max(0, Math.min(maxLabels, count));
+    start = Math.max(1, Math.min(maxLabels, start));
+    countInput.value = count;
+    startInput.value = start;
+    updateUI();
+    saveDefaults();
+}
+
+function applyZoom(customZoomFactor) {
+    customZoomFactor = customZoomFactor || 1;
+    const container = document.querySelector('.mbs');
+    const element = document.getElementById('p1');
+    if (!container || !element) return;
+
+    // Use getBoundingClientRect for accurate dimensions
+    const containerRect = container.getBoundingClientRect();
+    const containerWidth = containerRect.width - 20;  // leave some padding
+    const containerHeight = containerRect.height - 20;
+
+    // Use scrollWidth/Height to get the actual size of the sheet
+    const sheet = element.querySelector('.psh');
+    if (!sheet) return;
+    const sheetWidth = sheet.scrollWidth || 794;
+    const sheetHeight = sheet.scrollHeight || 1123;
+
+    if (containerWidth <= 0 || containerHeight <= 0 || sheetWidth <= 0 || sheetHeight <= 0) {
+        // Not ready – will be called again on resize
+        return;
+    }
+
+    const scaleX = containerWidth / sheetWidth;
+    const scaleY = containerHeight / sheetHeight;
+    const baseScale = Math.min(scaleX, scaleY, 1);
+    const finalScale = Math.min(baseScale * customZoomFactor, 2);
+
+    element.style.position = 'absolute';
+    element.style.top = '50%';
+    element.style.left = '50%';
+    element.style.transformOrigin = 'center center';
+    element.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
 }
 
 // ===========================
@@ -844,6 +878,8 @@ function applyLanguage() {
     const maxLabels = f.cols * f.rows;
     document.getElementById('lblCount').textContent = `${t.lblCount} (max. ${maxLabels}):`;
     document.getElementById('lblStartPos').textContent = `${t.lblStartPos} (1-${maxLabels}):`;
+    // Do NOT call changeFormat here – it would re-trigger updates unnecessarily
+    // Just update the labels – format stays the same
 }
 
 // ===========================
@@ -1001,6 +1037,7 @@ function openPreviewModal() {
     updateUI();
     document.getElementById('m2').style.display = 'flex';
     const zoomVal = document.getElementById('zoomSlider').value;
+    // Use requestAnimationFrame to ensure layout is done
     requestAnimationFrame(() => {
         applyZoom(parseFloat(zoomVal) / 100);
     });
@@ -1012,7 +1049,7 @@ function closePreviewModal() {
 }
 
 // ===========================
-// Save default settings
+// Save default settings (b2)
 // ===========================
 function saveCurrentAsDefault() {
     const f = formats[currentFormatKey];
@@ -1098,49 +1135,6 @@ window.addEventListener('appinstalled', function () {
     const banner = document.getElementById('pwaBanner');
     if (banner) banner.style.display = 'none';
 });
-
-// ===========================
-// Zoom
-// ===========================
-function applyZoom(customZoomFactor) {
-    customZoomFactor = customZoomFactor || 1;
-    const container = document.querySelector('.mbs');
-    const element = document.getElementById('p1');
-    if (!container || !element) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const containerWidth = containerRect.width - 20;
-    const containerHeight = containerRect.height - 20;
-
-    const sheet = element.querySelector('.psh');
-    if (!sheet) return;
-    const sheetWidth = sheet.scrollWidth || 794;
-    const sheetHeight = sheet.scrollHeight || 1123;
-
-    if (containerWidth <= 0 || containerHeight <= 0 || sheetWidth <= 0 || sheetHeight <= 0) {
-        return;
-    }
-
-    const scaleX = containerWidth / sheetWidth;
-    const scaleY = containerHeight / sheetHeight;
-    const baseScale = Math.min(scaleX, scaleY, 1);
-    const finalScale = Math.min(baseScale * customZoomFactor, 2);
-
-    element.style.position = 'absolute';
-    element.style.top = '50%';
-    element.style.left = '50%';
-    element.style.transformOrigin = 'center center';
-    element.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
-}
-
-function applyFastZoom(value) {
-    document.getElementById('zoomVal').textContent = value + '%';
-    const element = document.getElementById('p1');
-    if (element) {
-        applyZoom(parseFloat(value) / 100);
-    }
-    localStorage.setItem('lavu_preview_zoom', value);
-}
 
 // ===========================
 // DOM Ready
@@ -1336,4 +1330,13 @@ function setupEventListeners() {
         const container = document.getElementById('zoomContainer');
         container.classList.toggle('visible');
     });
+}
+
+function applyFastZoom(value) {
+    document.getElementById('zoomVal').textContent = value + '%';
+    const element = document.getElementById('p1');
+    if (element) {
+        applyZoom(parseFloat(value) / 100);
+    }
+    localStorage.setItem('lavu_preview_zoom', value);
 }
