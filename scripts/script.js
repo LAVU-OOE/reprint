@@ -1,815 +1,1339 @@
-/**
- * LAVU OÖ - Label Studio v9
- * Core Application Logic, Data Management & Print Engine
- */
+let sortimentData = []; // will be filled from initial data
+let currentMode = 'select';
+let currentLang = localStorage.getItem('lavu_lang') || 'de';
+let locationData = [];
+let LOCATION_JSON_URL = localStorage.getItem('lavu_locations_url') || "https://locations-api.lavu-ooe.workers.dev/";
 
-(function () {
-    let i18n = {};
-    let formats = {};
-    let a2 = [];
-    let locationsData = [];
-    let deferredPrompt;
-    let currentZoom = 1;
+// ===========================
+// Initial sortiment data (fallback)
+// ===========================
+const defaultSortiment = [
+    { artNr: "1000", bez: "Textilen" },
+    { artNr: "2100", bez: "Kartonagen (ARA-lizenziert)" },
+    { artNr: "2200", bez: "Metallverpackungen" },
+    { artNr: "2210", bez: "Metallverpackungen - geöffnete Gasbehältnisse" },
+    { artNr: "2300", bez: "Glasverpackungen" },
+    { artNr: "2400", bez: "Getränke-Verbundkartons" },
+    { artNr: "2520", bez: "Eimer & Kanister" },
+    { artNr: "2540", bez: "Kunststoff Verpackungsfolien" },
+    { artNr: "2555", bez: "Big-Bags" },
+    { artNr: "2565", bez: "EPS-Styropor" },
+    { artNr: "2580", bez: "Holzverpackungen" },
+    { artNr: "2590", bez: "Keramikverpackungen" },
+    { artNr: "3000", bez: "Altpapier (Deinking-Qualität)" },
+    { artNr: "3005", bez: "Datenschutzpapier" },
+    { artNr: "3210", bez: "Nichteisen-Metalle" },
+    { artNr: "3211", bez: "Armaturen & Messing" },
+    { artNr: "3212", bez: "Alu-Kaffeekapseln" },
+    { artNr: "3220", bez: "Kabelschrott" },
+    { artNr: "3300", bez: "Flachglas" },
+    { artNr: "3310", bez: "Altfenster PVC" },
+    { artNr: "3315", bez: "Altfenster PVC" },
+    { artNr: "3320", bez: "Flachglas" },
+    { artNr: "3400", bez: "Speisefett/-öl (Haushalts-Öl)" },
+    { artNr: "3405", bez: "Speisefett/-öl (Gastro-Öl)" },
+    { artNr: "3410", bez: "Speisefett/-öl (in Kleingebinden)" },
+    { artNr: "3430", bez: "Kerzen" },
+    { artNr: "3500", bez: "Altreifen" },
+    { artNr: "3520", bez: "Hartkunststoffe" },
+    { artNr: "3526", bez: "Kunststoff-Mülltonnen" },
+    { artNr: "3540", bez: "Kunststoff-Sonstige Folien" },
+    { artNr: "3560", bez: "Filmmaterial" },
+    { artNr: "3572", bez: "Compact-Disk (CD)" },
+    { artNr: "3580", bez: "Sonderreifen" },
+    { artNr: "3585", bez: "Reifen m. Felgen" },
+    { artNr: "3600", bez: "Mineralischer Bauschutt" },
+    { artNr: "3610", bez: "Gipskarton" },
+    { artNr: "3700", bez: "Altholz" },
+    { artNr: "3805", bez: "Ersatzbrennstoff" },
+    { artNr: "4010", bez: "Elektro-Großgeräte" },
+    { artNr: "4015", bez: "Nachtspeicheröfen" },
+    { artNr: "4020", bez: "Kühlgeräte" },
+    { artNr: "4030", bez: "Bildschirmgeräte" },
+    { artNr: "4031", bez: "Flachbildschirmgeräte" },
+    { artNr: "4040", bez: "Elektro-Kleingeräte" },
+    { artNr: "4041", bez: "Elektro-Kleingeräte,schadst. f." },
+    { artNr: "4050", bez: "Gasentladungslampen" },
+    { artNr: "4051", bez: "Gasentladungslampen Sonderformen" },
+    { artNr: "4100", bez: "Gerätebatterien" },
+    { artNr: "4110", bez: "Fahrzeugbatterien" },
+    { artNr: "4111", bez: "Lithium-Batterien" },
+    { artNr: "4120", bez: "Ni-Cd Akkumulatoren" },
+    { artNr: "4125", bez: "Traktionsbatterien" },
+    { artNr: "4200", bez: "Altöle" },
+    { artNr: "4221", bez: "Feuerlöscher" },
+    { artNr: "4230", bez: "Gasflaschen" },
+    { artNr: "4250", bez: "Altöl" },
+    { artNr: "4260", bez: "Lösemittel-Wassergemische" },
+    { artNr: "4270", bez: "Säurengemische" },
+    { artNr: "4275", bez: "Laugengemische" },
+    { artNr: "4280", bez: "Ölverunreinigtes Erdmaterial" },
+    { artNr: "4300", bez: "Altlacke & Werkstättenabfälle" },
+    { artNr: "4305", bez: "Lack- & Farbschlamm" },
+    { artNr: "4310", bez: "Kunststoffemballagen (mit schädlichen Restinhalten)" },
+    { artNr: "4320", bez: "Öl-/Wassergemische & Emulsionen" },
+    { artNr: "4325", bez: "Ölschlamm & Ölgatsch" },
+    { artNr: "4330", bez: "Schädlingsbekämpfungs- & Chemikalienreste" },
+    { artNr: "4340", bez: "Altmedikamente (unsortierte Arzneien)" },
+    { artNr: "4350", bez: "Spraydosen (mit Restinhalt)" },
+    { artNr: "4360", bez: "Spraydosen (mit Restinhalt)" },
+    { artNr: "4380", bez: "Kondensatoren" },
+    { artNr: "4390", bez: "XPS-Dämmplatten" },
+    { artNr: "4395", bez: "Mineralwolle" },
+    { artNr: "4430", bez: "Netze & Schnüre" },
+    { artNr: "4450", bez: "Dispersionsfarben" },
+    { artNr: "4460", bez: "Altmedikamente (vorsortiert)" },
+    { artNr: "4461", bez: "Altmedikamente (vorsortiert/Apotheken)" },
+    { artNr: "4464", bez: "Injektionsnadeln" },
+    { artNr: "4465", bez: "Injektionsnadeln (aus Spitälern)" },
+    { artNr: "5100", bez: "Ungefährliche medizinische Abfälle" },
+    { artNr: "9900", bez: "Hilfsgebinde" }
+];
 
-    const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+// ===========================
+// i18n
+// ===========================
+const i18n = {
+    de: {
+        studioV9: "Etiketten-Studio v9",
+        loadingFormat: "Format wird geladen...",
+        printLayout: "Druck-Layout",
+        artNr: "Art.Nr.",
+        bezeichnung: "Bezeichnung",
+        printNow: "Jetzt Drucken",
+        options: "Optionen",
+        modal1Title: "Druck- & Standorteinstellungen",
+        lblLocation: "Standort (ASZ Niederlassung OÖ):",
+        lblFormat: "Etiketten-Hersteller & Format:",
+        lblCount: "Anzahl Etiketten",
+        lblStartPos: "Start-Position",
+        tabSelect: "LAVU Service-Worker",
+        tabManage: "Datenbank verwalten",
+        lblUrl: "Sortiment API:",
+        lblLocationsUrl: "Locations API:",
+        btnUpdate: "Aktualisieren",
+        btnUpdateLocations: "Aktualisieren",
+        lblDbSuffix: "Gebinde / Suffix:",
+        lblDbBez: "Bezeichnung:",
+        btnSave: "💾 Ändern",
+        btnAddNew: "➕ Neu hinzufügen",
+        btnCancel: "Abbrechen",
+        btnDownloadJson: "📥 Aktuelle Datenbank als JSON herunterladen",
+        lblCurrentEntries: "Aktuelle Einträge im lokalen Workspace:",
+        btnSaveDefault: "Standard sichern",
+        btnDone: "Fertig",
+        modal2Title: "Interaktiver A4-Druckbogen",
+        btnModalPrint: "Drucken",
+        btnModalClose: "Schließen",
+        txtPwaTitle: "Als App installieren",
+        txtPwaSub: "Schnellerer Zugriff & Offline-Nutzung",
+        btnPwaInstall: "Installieren",
+        layoutTitleAttr: "Klicken für vollständige A4-Großansicht",
+        alertSaved: "Aktuelle Einstellungen wurden als Standard im Browser gespeichert!",
+        confirmDelete: "Möchten Sie diesen Eintrag wirklich löschen?",
+        alertFillForm: "Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.",
+        alertErrorChange: "Fehler beim Ändern.",
+        alertDuplicate: "Diese Artikelnummer existiert bereits!",
+        netLoading: "⏳ Verbinde...",
+        netSuccessLocal: "🟢 Lokale sortiment.json erfolgreich aktiv",
+        netSuccessRemote: "🟢 Verbunden mit externem JSON Repository",
+        netFallbackLocal: "⚠️ Keine lokale sortiment.json gefunden. Cache geladen.",
+        netFallbackRemote: "⚠️ Remote JSON Offline! Lokaler Cache geladen.",
+        txtZoom: "Zoom",
+        locationLoading: "Standorte werden geladen...",
+        locationError: "Fehler beim Laden der Standorte",
+        locUrlSaved: "📍 Locations-URL gespeichert.",
+        locUrlUpdated: "✅ Locations-URL aktualisiert!",
+        locUrlInvalid: "❌ Bitte gültige URL eingeben."
+    },
+    en: {
+        studioV9: "Label Studio v9",
+        loadingFormat: "Loading format...",
+        printLayout: "Print Layout",
+        artNr: "Item No.",
+        bezeichnung: "Description",
+        printNow: "Print Now",
+        options: "Options",
+        modal1Title: "Print & Location Settings",
+        lblLocation: "Location (ASZ Branch OÖ):",
+        lblFormat: "Label Manufacturer & Format:",
+        lblCount: "Number of Labels",
+        lblStartPos: "Start Position",
+        tabSelect: "LAVU Service-Worker",
+        tabManage: "Manage Database",
+        lblUrl: "Sortiment API:",
+        lblLocationsUrl: "Locations API:",
+        btnUpdate: "Update",
+        btnUpdateLocations: "Update",
+        lblDbSuffix: "Container / Suffix:",
+        lblDbBez: "Description:",
+        btnSave: "💾 Change",
+        btnAddNew: "➕ Add New",
+        btnCancel: "Cancel",
+        btnDownloadJson: "📥 Download Current Database as JSON",
+        lblCurrentEntries: "Current entries in local workspace:",
+        btnSaveDefault: "Save Defaults",
+        btnDone: "Done",
+        modal2Title: "Interactive A4 Print Sheet",
+        btnModalPrint: "Print",
+        btnModalClose: "Close",
+        txtPwaTitle: "Install as App",
+        txtPwaSub: "Faster access & offline usage",
+        btnPwaInstall: "Install",
+        layoutTitleAttr: "Click for full A4 sheet preview",
+        alertSaved: "Current settings saved as defaults in browser!",
+        confirmDelete: "Do you really want to delete this entry?",
+        alertFillForm: "Please fill in at least Item No. and Description.",
+        alertErrorChange: "Error applying changes.",
+        alertDuplicate: "This Article Number already exists!",
+        netLoading: "⏳ Connecting...",
+        netSuccessLocal: "🟢 Local sortiment.json active successfully",
+        netSuccessRemote: "🟢 Connected to remote JSON Repository",
+        netFallbackLocal: "⚠️ No local sortiment.json found. Cache loaded.",
+        netFallbackRemote: "⚠️ Remote JSON Offline! Local cache loaded.",
+        txtZoom: "Zoom",
+        locationLoading: "Loading locations...",
+        locationError: "Error loading locations",
+        locUrlSaved: "📍 Locations URL saved.",
+        locUrlUpdated: "✅ Locations URL updated!",
+        locUrlInvalid: "❌ Please enter a valid URL."
+    }
+};
 
-    function runInitialization() {
-        initApiInputValues();
-        initApp();
-        setupStoragePersistence();
+// ===========================
+// Formats
+// ===========================
+const formats = {
+    "4473": { cols: 3, rows: 8, name: "HERMA 4473 (70 x 36 mm)" },
+    "4273": { cols: 3, rows: 8, name: "HERMA 4273 (70 x 36 mm)" },
+    "4676": { cols: 3, rows: 8, name: "HERMA 4676 (70 x 36 mm)" },
+    "5074": { cols: 3, rows: 8, name: "HERMA 5074 (70 x 36 mm)" },
+    "4428": { cols: 2, rows: 4, name: "HERMA 4428 (105 x 68 mm)" },
+    "4282": { cols: 2, rows: 4, name: "HERMA 4282 (105 x 68 mm)" },
+    "4463": { cols: 2, rows: 4, name: "HERMA 4463 (105 x 68 mm)" },
+    "4276": { cols: 2, rows: 6, name: "HERMA 4276 (99,1 x 42,3 mm)" },
+    "4465": { cols: 2, rows: 6, name: "HERMA 4465 (99,1 x 42,3 mm)" },
+    "5077": { cols: 2, rows: 4, name: "HERMA 5077 (99,1 x 67,7 mm)" },
+    "4269": { cols: 2, rows: 4, name: "HERMA 4269 (99,1 x 67,7 mm)" },
+    "4459": { cols: 3, rows: 17, name: "HERMA 4459 (70 x 16,9 mm)" },
+    "4278": { cols: 3, rows: 5, name: "HERMA 4278 (70 x 50,8 mm)" },
+    "5055": { cols: 3, rows: 5, name: "HERMA 5055 (70 x 50,8 mm)" },
+    "4456": { cols: 3, rows: 10, name: "HERMA 4456 (70 x 29,7 mm)" },
+    "4441": { cols: 3, rows: 7, name: "HERMA 4441 (70 x 42 mm)" },
+    "4623": { cols: 2, rows: 7, name: "HERMA 4623 (97 x 42,3 mm)" },
+    "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" },
+    "5062": { cols: 2, rows: 4, name: "HERMA 5062 (105 x 74 mm)" },
+    "4626": { cols: 2, rows: 4, name: "HERMA 4626 (105 x 74 mm)" },
+    "4470": { cols: 2, rows: 4, name: "HERMA 4470 (105 x 74 mm)" },
+    "4462": { cols: 2, rows: 8, name: "HERMA 4462 (105 x 37 mm)" },
+    "4359": { cols: 2, rows: 4, name: "HERMA 4359 (97 x 67,7 mm)" }
+};
+
+let currentFormatKey = "4473";
+let fallbackSortiment = [
+    { artNr: "4040", bez: "Elektro-Kleingeräte (ohne Akku)", geb: "QR-Box" },
+    { artNr: "4010", bez: "Elektro-Großgeräte", geb: "Gitterbox" },
+    { artNr: "3120", bez: "Altholz thermisch (beschichtet)", geb: "Mulde" },
+    { artNr: "3110", bez: "Altholz stofflich (unbeschichtet)", geb: "Container" },
+    { artNr: "1720", bez: "Altmetall / Schrott", geb: "Mulde" },
+    { artNr: "1610", bez: "Verpackungsholz (Paletten)", geb: "Stapel" },
+    { artNr: "1410", bez: "Altpapier (Kartonagen)", geb: "Presse" },
+    { artNr: "1420", bez: "Altpapier (Mischpapier)", geb: "Umleersystem" },
+    { artNr: "5510", bez: "Bauschutt rein", geb: "Mulde" },
+    { artNr: "5530", bez: "Baustellenabfälle gemischt", geb: "Großcontainer" }
+];
+
+const DEFAULT_LOCATION_VALUE = "106";
+
+// ===========================
+// Utility functions
+// ===========================
+function getFirstLetter(text) {
+    if (!text) return '';
+    const first = text.charAt(0).toUpperCase();
+    const map = { 'Ä': 'A', 'Ö': 'O', 'Ü': 'U', 'ẞ': 'S' };
+    return map[first] || first;
+}
+
+function groupByFirstLetter(items) {
+    const groups = {};
+    items.forEach(item => {
+        const letter = getFirstLetter(item.bez);
+        if (!groups[letter]) groups[letter] = [];
+        groups[letter].push(item);
+    });
+    return groups;
+}
+
+function groupByNumericRange(items) {
+    const groups = {};
+    items.forEach(item => {
+        const num = parseInt(item.artNr) || 0;
+        const groupKey = Math.floor(num / 1000);
+        if (!groups[groupKey]) groups[groupKey] = [];
+        groups[groupKey].push(item);
+    });
+    return groups;
+}
+
+function populateNameDropdownWithGroups(selectElement, items) {
+    if (!selectElement) return;
+    const groups = groupByFirstLetter(items);
+    const sortedLetters = Object.keys(groups).sort();
+    selectElement.innerHTML = '';
+    sortedLetters.forEach((letter) => {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = letter;
+        const sortedItems = groups[letter].sort((a, b) => a.bez.localeCompare(b.bez, 'de'));
+        sortedItems.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.artNr;
+            option.textContent = '· ' + item.bez;
+            optgroup.appendChild(option);
+        });
+        selectElement.appendChild(optgroup);
+    });
+}
+
+function populateArtDropdownWithGroups(selectElement, items) {
+    if (!selectElement) return;
+    const groups = groupByNumericRange(items);
+    const sortedKeys = Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b));
+    selectElement.innerHTML = '';
+    sortedKeys.forEach((key) => {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = key;
+        const sortedItems = groups[key].sort((a, b) => (parseInt(a.artNr) || 0) - (parseInt(b.artNr) || 0));
+        sortedItems.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.artNr;
+            option.textContent = '· ' + item.artNr;
+            optgroup.appendChild(option);
+        });
+        selectElement.appendChild(optgroup);
+    });
+}
+
+// ===========================
+// Location handling
+// ===========================
+function populateLocationDropdowns(locations) {
+    const s1 = document.getElementById('s1');
+    const locationSelect = document.getElementById('locationSelect');
+    if (!s1 || !locationSelect) return;
+    s1.innerHTML = '';
+    locationSelect.innerHTML = '';
+
+    if (!locations || locations.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = i18n[currentLang].locationError || 'No locations found';
+        option.disabled = true;
+        option.selected = true;
+        s1.appendChild(option);
+        locationSelect.appendChild(option.cloneNode(true));
+        return;
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', runInitialization);
+    const grouped = {};
+    locations.forEach(loc => {
+        const region = loc.region || 'Andere';
+        if (!grouped[region]) grouped[region] = [];
+        grouped[region].push(loc);
+    });
+
+    const sortedRegions = Object.keys(grouped).sort();
+    sortedRegions.forEach(region => {
+        const optgroupS1 = document.createElement('optgroup');
+        const optgroupLoc = document.createElement('optgroup');
+        optgroupS1.label = region;
+        optgroupLoc.label = region;
+        const sortedLocs = grouped[region].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+        sortedLocs.forEach(loc => {
+            const value = loc.siteCode || loc.name;
+            const displayName = loc.siteCode ? `${loc.name} (${loc.siteCode})` : loc.name;
+            const optionS1 = document.createElement('option');
+            optionS1.value = value;
+            optionS1.textContent = displayName;
+            optgroupS1.appendChild(optionS1);
+            const optionLoc = document.createElement('option');
+            optionLoc.value = value;
+            optionLoc.textContent = displayName;
+            optgroupLoc.appendChild(optionLoc);
+        });
+        s1.appendChild(optgroupS1);
+        locationSelect.appendChild(optgroupLoc);
+    });
+
+    // Select saved or default
+    const savedLocation = localStorage.getItem('lavu_location');
+    let targetValue = savedLocation || DEFAULT_LOCATION_VALUE;
+
+    if (savedLocation && s1.querySelector(`option[value="${savedLocation}"]`)) {
+        targetValue = savedLocation;
     } else {
-        runInitialization();
+        const defaultLoc = locations.find(loc => loc.siteCode === DEFAULT_LOCATION_VALUE);
+        if (defaultLoc && s1.querySelector(`option[value="${defaultLoc.siteCode}"]`)) {
+            targetValue = defaultLoc.siteCode;
+        } else {
+            for (let opt of s1.options) {
+                if (!opt.disabled && opt.value) {
+                    targetValue = opt.value;
+                    break;
+                }
+            }
+        }
     }
 
-    async function initApp() {
-        updateNetworkStatus('netLoading');
-        await loadExternalData();
-        if (!a2 || a2.length === 0) {
-            loadEmbeddedSortimentFallbacks();
-        }
-        if (!locationsData || locationsData.length === 0) {
-            loadEmbeddedLocationsFallbacks();
-        }
-        initUiElements();
-        renderSelectionDropdowns();
-        renderLocationsDropdown();
-        renderPrintSheetPreview();
+    if (targetValue && s1.querySelector(`option[value="${targetValue}"]`)) {
+        s1.value = targetValue;
+        locationSelect.value = targetValue;
+        localStorage.setItem('lavu_location', targetValue);
+    }
+}
+
+function loadLocations() {
+    const s1 = document.getElementById('s1');
+    const locationSelect = document.getElementById('locationSelect');
+    const t = i18n[currentLang];
+    const locationsUrl = localStorage.getItem('lavu_locations_url') || "https://locations-api.lavu-ooe.workers.dev/";
+
+    if (s1) {
+        s1.innerHTML = '';
+        const loadingOpt = document.createElement('option');
+        loadingOpt.value = '';
+        loadingOpt.textContent = t.locationLoading || 'Loading locations...';
+        loadingOpt.disabled = true;
+        loadingOpt.selected = true;
+        s1.appendChild(loadingOpt);
+    }
+    if (locationSelect) {
+        locationSelect.innerHTML = '';
+        const loadingOpt = document.createElement('option');
+        loadingOpt.value = '';
+        loadingOpt.textContent = t.locationLoading || 'Loading locations...';
+        loadingOpt.disabled = true;
+        loadingOpt.selected = true;
+        locationSelect.appendChild(loadingOpt);
     }
 
-    async function setupStoragePersistence() {
+    const cachedLocations = localStorage.getItem('lavu_locations_cache');
+    if (cachedLocations) {
         try {
-            if (navigator && typeof navigator.storage !== 'undefined' && typeof navigator.storage.persist === 'function') {
-                const isPersisted = await navigator.storage.persist();
-                console.log(`Storage persistence granted: ${isPersisted}`);
+            const parsed = JSON.parse(cachedLocations);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                locationData = parsed;
+                populateLocationDropdowns(locationData);
+            }
+        } catch (e) {
+            console.warn("Cache parsing error:", e);
+        }
+    }
+
+    fetch(locationsUrl, { cache: "no-store" })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            if (Array.isArray(data) && data.length > 0) {
+                locationData = data;
+                localStorage.setItem('lavu_locations_cache', JSON.stringify(locationData));
+                populateLocationDropdowns(locationData);
+                const n2 = document.getElementById('n2');
+                if (n2) {
+                    n2.innerHTML = '✅ Locations geladen (' + locationData.length + ' Einträge)';
+                    n2.style.color = '#27ae60';
+                }
             } else {
-                console.warn('Storage Persistence API not supported in this environment.');
+                throw new Error("Invalid location data format");
             }
-        } catch (err) {
-            console.error('Failed to request storage persistence:', err);
-        }
-    }
-
-    async function loadExternalData() {
-        const rawSortimentApi = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
-        const rawLocationsApi = localStorage.getItem('locationsApiBase') || 'https://locations-api.lavu-ooe.workers.dev';
-        const rawProductApi = localStorage.getItem('productApiBase') || 'https://product-api.lavu-ooe.workers.dev';
-
-        const sortimentUrl = rawSortimentApi.replace(/\/+$/, '');
-        const locationsUrl = rawLocationsApi.replace(/\/+$/, '');
-        const productUrl = rawProductApi.replace(/\/+$/, '') + '/formats';
-
-        try {
-            const [manifestRes, i18nRes, formatsRes, sortimentRes, locationsRes] = await Promise.all([
-                fetch('manifest.json').catch(() => ({ ok: false })),
-                fetch('scripts/i18n.json').catch(() => ({ ok: false })),
-                fetch(productUrl).catch(() => ({ ok: false })),
-                fetch(sortimentUrl).catch(() => ({ ok: false })),
-                fetch(locationsUrl).catch(() => ({ ok: false }))
-            ]);
-
-            if (manifestRes && manifestRes.ok) {
-                await manifestRes.json().catch(() => null);
+        })
+        .catch(err => {
+            console.warn("Error loading locations from URL, using fallback:", err);
+            const n2 = document.getElementById('n2');
+            if (n2) {
+                n2.innerHTML = '⚠️ Fehler beim Laden der Locations. Verwende Fallback-Daten.';
+                n2.style.color = '#e74c3c';
             }
-
-            if (i18nRes.ok) {
-                i18n = await i18nRes.json();
-            } else {
-                loadEmbeddedI18nFallbacks();
-            }
-
-            let formatsData = null;
-            if (formatsRes && formatsRes.ok) {
-                const contentType = formatsRes.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    formatsData = await formatsRes.json().catch(() => null);
-                }
-            }
-
-            if (formatsData && typeof formatsData === 'object' && Object.keys(formatsData).length > 0) {
-                formats = formatsData;
-            } else {
-                loadEmbeddedFormatsFallbacks();
-            }
-
-            const cacheTimestamp = localStorage.getItem('lavu_studio_sortiment_timestamp');
-            if (cacheTimestamp && (Date.now() - parseInt(cacheTimestamp, 10) > CACHE_TTL_MS)) {
-                localStorage.removeItem('lavu_studio_sortiment_v9');
-                localStorage.removeItem('lavu_studio_sortiment_timestamp');
-            }
-
-            let sortimentData = [];
-            if (sortimentRes && sortimentRes.ok) {
-                sortimentData = await sortimentRes.json().catch(() => []);
-            }
-
-            if (Array.isArray(sortimentData) && sortimentData.length > 0) {
-                a2 = sortimentData;
-                localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
-                localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
-            } else {
-                const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
-                try {
-                    a2 = localCache ? JSON.parse(localCache) : [];
-                } catch (e) {
-                    a2 = [];
-                }
-                if (!a2 || a2.length === 0) {
-                    loadEmbeddedSortimentFallbacks();
-                }
-            }
-
-            const locCacheTimestamp = localStorage.getItem('lavu_studio_locations_timestamp');
-            if (locCacheTimestamp && (Date.now() - parseInt(locCacheTimestamp, 10) > CACHE_TTL_MS)) {
-                localStorage.removeItem('lavu_studio_locations_v9');
-                localStorage.removeItem('lavu_studio_locations_timestamp');
-            }
-
-            let locData = [];
-            if (locationsRes && locationsRes.ok) {
-                locData = await locationsRes.json().catch(() => []);
-            }
-
-            if (Array.isArray(locData) && locData.length > 0) {
-                locationsData = locData;
-                localStorage.setItem('lavu_studio_locations_v9', JSON.stringify(locationsData));
-                localStorage.setItem('lavu_studio_locations_timestamp', Date.now().toString());
-            } else {
-                const localLocCache = localStorage.getItem('lavu_studio_locations_v9');
-                try {
-                    locationsData = localLocCache ? JSON.parse(localLocCache) : [];
-                } catch (e) {
-                    locationsData = [];
-                }
-                if (!locationsData || locationsData.length === 0) {
-                    loadEmbeddedLocationsFallbacks();
-                }
-            }
-
-            if (sortimentRes.ok || locationsRes.ok || formatsRes.ok) {
-                updateNetworkStatus('netSuccessLocal');
-            } else {
-                if (a2.length > 0 && !sortimentRes.ok) {
-                    updateNetworkStatus('netFallbackLocal');
-                } else {
-                    updateNetworkStatus('netHardcoded');
-                }
-            }
-            hideLoadingScreen();
-
-        } catch (err) {
-            console.warn('API fetch cycle failed completely, falling back to local storage or hardcoded data:', err);
-            loadEmbeddedI18nFallbacks();
-            loadEmbeddedFormatsFallbacks();
-
-            const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
-            a2 = localCache ? JSON.parse(localCache) : [];
-            if (!a2 || a2.length === 0) {
-                loadEmbeddedSortimentFallbacks();
-            }
-
-            const localLocCache = localStorage.getItem('lavu_studio_locations_v9');
-            locationsData = localLocCache ? JSON.parse(localLocCache) : [];
-            if (!locationsData || locationsData.length === 0) {
-                loadEmbeddedLocationsFallbacks();
-            }
-
-            updateNetworkStatus('netHardcoded');
-            hideLoadingScreen();
-        }
-    }
-
-    function initApiInputValues() {
-        const sortimentInput = document.getElementById('input-sortiment-api') || document.getElementById('input-url');
-        const locationsInput = document.getElementById('input-location-api');
-        const productInput = document.getElementById('input-product-api');
-
-        if (sortimentInput) {
-            sortimentInput.value = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
-        }
-        if (locationsInput) {
-            locationsInput.value = localStorage.getItem('locationsApiBase') || 'https://locations-api.lavu-ooe.workers.dev';
-        }
-        if (productInput) {
-            productInput.value = localStorage.getItem('productApiBase') || 'https://product-api.lavu-ooe.workers.dev';
-        }
-    }
-
-    function hideLoadingScreen() {
-        const loader = document.getElementById('loadingOverlay') || document.getElementById('loading-screen');
-        if (loader) {
-            loader.classList.add('hidden');
-        }
-    }
-
-    function loadEmbeddedSortimentFallbacks() {
-        a2 = [
-            { artNr: "1001", bez: "Bürocontainer 240 l", geb: "blau" },
-            { artNr: "1002", bez: "Wertstoffsack 120 l", geb: "gelb" },
-            { artNr: "1003", bez: "Altpapierbehälter 60 l", geb: "grün" },
-            { artNr: "1004", bez: "Glascontainer 1100 l", geb: "weiß" },
-            { artNr: "1005", bez: "Restmülltonne 80 l", geb: "schwarz" }
-        ];
-        localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
-        localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
-    }
-
-    function loadEmbeddedLocationsFallbacks() {
-        locationsData = [
-            { id: "loc1", name: "Linz - Hauptlager" },
-            { id: "loc2", name: "Wels - Nord" },
-            { id: "loc3", name: "Steyr - Ost" },
-            { id: "loc4", name: "Vöcklabruck - Süd" }
-        ];
-        localStorage.setItem('lavu_studio_locations_v9', JSON.stringify(locationsData));
-        localStorage.setItem('lavu_studio_locations_timestamp', Date.now().toString());
-    }
-
-    function loadEmbeddedFormatsFallbacks() {
-        formats = {
-            "4473": { cols: 3, rows: 8, name: "HERMA 4473 (70 x 36 mm)" },
-            "4428": { cols: 2, rows: 4, name: "HERMA 4428 (105 x 68 mm)" },
-            "4276": { cols: 2, rows: 6, name: "HERMA 4276 (99,1 x 42,3 mm)" },
-            "5077": { cols: 2, rows: 4, name: "HERMA 5077 (99,1 x 67,7 mm)" },
-            "4459": { cols: 3, rows: 17, name: "HERMA 4459 (70 x 16,9 mm)" },
-            "4456": { cols: 3, rows: 10, name: "HERMA 4456 (70 x 29,7 mm)" },
-            "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" }
-        };
-    }
-
-    function loadEmbeddedI18nFallbacks() {
-        i18n = {
-            de: {
-                studioV9: "Etiketten-Studio v9",
-                loadingFormat: "Format wird geladen...",
-                printLayout: "Druck-Layout",
-                artNr: "Art.Nr.",
-                bezeichnung: "Bezeichnung",
-                lblLocation: "Standort",
-                printNow: "Jetzt Drucken",
-                options: "Optionen",
-                modal1Title: "Druck- & Standorteinstellungen",
-                lblFormat: "Etiketten-Hersteller & Format:",
-                lblCount: "Anzahl Etiketten",
-                lblStartPos: "Start-Position",
-                selectFormatPrompt: "-- Bitte Format wählen --",
-                alertSelectFormat: "Bitte wählen Sie zuerst ein Etiketten-Format aus!",
-                tabSelect: "LAVU Service-Worker",
-                tabManage: "Datenbank verwalten",
-                lblUrl: "Sortiment API:",
-                lblLocationsUrl: "Locations API:",
-                btnUpdate: "Aktualisieren",
-                btnUpdateLocations: "Aktualisieren",
-                lblDbSuffix: "Gebinde / Suffix:",
-                lblDbBez: "Bezeichnung:",
-                btnSave: "💾 Ändern",
-                btnAddNew: "➕ Neu hinzufügen",
-                btnCancel: "Abbrechen",
-                btnDownloadJson: "📥 Aktuelle Datenbank als JSON herunterladen",
-                btnSaveDefault: "Standard sichern",
-                btnDone: "Fertig",
-                modal2Title: "Interaktiver A4-Druckbogen",
-                txtPwaTitle: "Als App installieren",
-                txtPwaSub: "Schnellerer Zugriff & Offline-Nutzung",
-                btnPwaInstall: "Installieren",
-                alertSaved: "Aktuelle Einstellungen wurden als Standard im Browser gespeichert!",
-                alertFillForm: "Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.",
-                alertDuplicate: "Diese Artikelnummer existiert bereits!",
-                netLoading: "⏳ Verbinde...",
-                netSuccessLocal: "🟢 APIs & Cloudflare Workers aktiv",
-                netFallbackLocal: "⚠️ Offline. Lokaler Gerätespeicher aktiv.",
-                netHardcoded: "⚠️ Fallback-Daten (Hardcoded)",
-                txtZoom: "Zoom"
-            },
-            en: {
-                studioV9: "Label Studio v9",
-                loadingFormat: "Loading format...",
-                printLayout: "Print Layout",
-                artNr: "Item No.",
-                bezeichnung: "Description",
-                lblLocation: "Location",
-                printNow: "Print Now",
-                options: "Options",
-                modal1Title: "Print & Location Settings",
-                lblFormat: "Label Manufacturer & Format:",
-                lblCount: "Number of Labels",
-                lblStartPos: "Start Position",
-                selectFormatPrompt: "-- Please select a format --",
-                alertSelectFormat: "Please select a label format first!",
-                tabSelect: "LAVU Service-Worker",
-                tabManage: "Manage Database",
-                lblUrl: "Sortiment API:",
-                lblLocationsUrl: "Locations API:",
-                btnUpdate: "Update",
-                btnUpdateLocations: "Update",
-                lblDbSuffix: "Container / Suffix:",
-                lblDbBez: "Description:",
-                btnSave: "💾 Change",
-                btnAddNew: "➕ Add New",
-                btnCancel: "Cancel",
-                btnDownloadJson: "📥 Download Current Database as JSON",
-                btnSaveDefault: "Save Defaults",
-                btnDone: "Done",
-                modal2Title: "Interactive A4 Print Sheet",
-                txtPwaTitle: "Install as App",
-                txtPwaSub: "Faster access & offline usage",
-                btnPwaInstall: "Install",
-                alertSaved: "Current settings saved as defaults in browser!",
-                alertFillForm: "Please fill in at least Item No. and Description.",
-                alertDuplicate: "This Article Number already exists!",
-                netLoading: "⏳ Connecting...",
-                netSuccessLocal: "🟢 APIs & Cloudflare Workers active",
-                netFallbackLocal: "⚠️ Offline. Local device cache active.",
-                netHardcoded: "⚠️ Fallback data (Hardcoded)",
-                txtZoom: "Zoom"
-            }
-        };
-    }
-
-    function updateNetworkStatus(statusKey) {
-        const currentLang = document.documentElement.lang || 'de';
-        const statusText = i18n[currentLang]?.[statusKey] || "Connecting...";
-        const badge = document.getElementById('network-status-badge') || document.querySelector('.status-badge');
-        if (badge) {
-            badge.textContent = statusText;
-        }
-    }
-
-    function initUiElements() {
-        translateUi(document.documentElement.lang || 'de');
-
-        const zoomSlider = document.getElementById('zoom-range');
-        if (zoomSlider) {
-            zoomSlider.addEventListener('input', (e) => {
-                currentZoom = parseFloat(e.target.value) || 1;
-                const previewSheet = document.getElementById('interactive-sheet-preview') || document.getElementById('previewContainer');
-                if (previewSheet) {
-                    previewSheet.style.transform = `scale(${currentZoom})`;
-                }
-            });
-        }
-
-        const langBtn = document.getElementById('language-toggle');
-        if (langBtn) {
-            langBtn.addEventListener('click', () => {
-                const newLang = document.documentElement.lang === 'de' ? 'en' : 'de';
-                document.documentElement.lang = newLang;
-                translateUi(newLang);
-            });
-        }
-
-        const optionsBtn = document.getElementById('btn-options-modal') || document.getElementById('btn-settings');
-        const settingsModal = document.getElementById('settings-modal') || document.getElementById('settingsModal');
-        const closeTriggers = document.querySelectorAll('.modal-close-trigger, .close-modal');
-
-        if (optionsBtn && settingsModal) {
-            optionsBtn.addEventListener('click', () => {
-                settingsModal.classList.remove('hidden');
-            });
-
-            closeTriggers.forEach(trigger => {
-                trigger.addEventListener('click', () => {
-                    settingsModal.classList.add('hidden');
-                });
-            });
-        }
-
-        setupApiUpdateHandlers();
-
-        const saveDefaultsBtn = document.getElementById('btn-settings-save-default');
-        if (saveDefaultsBtn) {
-            saveDefaultsBtn.addEventListener('click', () => {
-                const sortimentInput = document.getElementById('input-sortiment-api') || document.getElementById('input-url');
-                const locationsInput = document.getElementById('input-location-api');
-                const productInput = document.getElementById('input-product-api');
-
-                if (sortimentInput) localStorage.setItem('apiBase', sortimentInput.value.trim());
-                if (locationsInput) localStorage.setItem('locationsApiBase', locationsInput.value.trim());
-                if (productInput) localStorage.setItem('productApiBase', productInput.value.trim());
-
-                const lang = document.documentElement.lang || 'de';
-                alert(i18n[lang]?.alertSaved || 'Standard gespeichert!');
-            });
-        }
-
-        const tabButtons = document.querySelectorAll('.tab-navigation .tab-btn');
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                const contentPanels = document.querySelectorAll('.tab-content-panel');
-                contentPanels.forEach(panel => panel.classList.remove('active'));
-
-                button.classList.add('active');
-                const targetId = button.getAttribute('data-target');
-                const targetPanel = document.getElementById(targetId);
-                if (targetPanel) {
-                    targetPanel.classList.add('active');
-                }
-            });
-        });
-
-        const artNrDropdown = document.getElementById('select-artnr');
-        const bezDropdown = document.getElementById('select-bezeichnung');
-
-        if (artNrDropdown && bezDropdown) {
-            artNrDropdown.addEventListener('change', () => {
-                bezDropdown.selectedIndex = artNrDropdown.selectedIndex;
-            });
-
-            bezDropdown.addEventListener('change', () => {
-                artNrDropdown.selectedIndex = bezDropdown.selectedIndex;
-            });
-        }
-
-        document.getElementById('select-location')?.addEventListener('change', renderPrintSheetPreview);
-
-        const syncTriggers = ['select-artnr', 'select-bezeichnung', 'input-count', 'input-startpos', 'select-format', 'select-location'];
-        syncTriggers.forEach(id => {
-            document.getElementById(id)?.addEventListener('change', renderPrintSheetPreview);
-        });
-        document.getElementById('input-count')?.addEventListener('input', renderPrintSheetPreview);
-        document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
-
-        const countInput = document.getElementById('input-count');
-        const startPosInput = document.getElementById('input-startpos');
-        if (startPosInput && countInput) {
-            countInput.addEventListener('input', () => {
-                countInput.dataset.userModified = "true";
-            });
-        }
-
-        const formatSelect = document.getElementById('select-format');
-        if (formatSelect) {
-            formatSelect.addEventListener('change', () => {
-                if (countInput && startPosInput) {
-                    delete countInput.dataset.userModified;
-                    countInput.value = '';
-                    startPosInput.value = 1;
-                }
-                renderPrintSheetPreview();
-            });
-        }
-
-        const printBtn = document.getElementById('btn-print-trigger');
-        if (printBtn) {
-            printBtn.addEventListener('click', () => {
-                const formatKey = document.getElementById('select-format')?.value;
-                if (!formatKey) {
-                    const currentLang = document.documentElement.lang || 'de';
-                    alert(i18n[currentLang]?.alertSelectFormat || "Bitte wählen Sie zuerst ein Etiketten-Format aus!");
-                    document.getElementById('select-format')?.focus();
-                    return;
-                }
-
-                setTimeout(() => {
-                    window.print();
-                }, 250);
-            });
-        }
-
-        setupDatabaseManagementHandlers();
-        setupPwaHandlers();
-    }
-
-    function setupApiUpdateHandlers() {
-        const updateSortiment = document.getElementById('btn-update-sortiment');
-        const updateLocations = document.getElementById('btn-update-locations');
-
-        const updateHandler = async () => {
-            const sortimentInput = document.getElementById('input-sortiment-api') || document.getElementById('input-url');
-            const locationsInput = document.getElementById('input-location-api');
-            const productInput = document.getElementById('input-product-api');
-
-            if (sortimentInput) localStorage.setItem('apiBase', sortimentInput.value.trim());
-            if (locationsInput) localStorage.setItem('locationsApiBase', locationsInput.value.trim());
-            if (productInput) localStorage.setItem('productApiBase', productInput.value.trim());
-
-            alert("API-Einstellungen gespeichert. Daten werden neu geladen...");
-            await initApp();
-        };
-
-        if (updateSortiment) updateSortiment.addEventListener('click', updateHandler);
-        if (updateLocations) updateLocations.addEventListener('click', updateHandler);
-    }
-
-    function setupDatabaseManagementHandlers() {
-        const btnDbAdd = document.getElementById('btn-db-add');
-        const btnDbSave = document.getElementById('btn-db-save');
-        const dbArtNr = document.getElementById('db-input-artnr');
-        const dbBez = document.getElementById('db-input-bez');
-        const dbSuffix = document.getElementById('db-input-suffix');
-
-        const downloadBtn = document.getElementById('btn-download-database');
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', () => {
-                const dataStr = JSON.stringify(a2, null, 2);
-                const blob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `sortiment_backup_${new Date().toISOString().slice(0, 10)}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-            });
-        }
-
-        function getAlertText(key, fallback) {
-            const currentLang = document.documentElement.lang || 'de';
-            return (i18n[currentLang] && i18n[currentLang][key]) ? i18n[currentLang][key] : fallback;
-        }
-
-        function validateDbInputs() {
-            if (!dbArtNr || !dbBez || !dbArtNr.value.trim() || !dbBez.value.trim()) {
-                alert(getAlertText('alertFillForm', 'Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.'));
-                return false;
-            }
-            return true;
-        }
-
-        [dbArtNr, dbBez, dbSuffix].forEach(inputField => {
-            if (inputField) {
-                inputField.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (btnDbAdd) btnDbAdd.click();
-                    }
-                });
+            if (!locationData || locationData.length === 0) {
+                locationData = [
+                    { siteCode: "106", name: "ASZ Asten", zipCode: "4481", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Ansfelden", zipCode: "4053", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Enns", zipCode: "4470", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Hörsching", zipCode: "4063", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Leonding", zipCode: "4060", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Neuhofen", zipCode: "4501", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Pasching", zipCode: "4061", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ St. Florian", zipCode: "4490", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Traun", zipCode: "4050", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Wilhering", zipCode: "4073", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Linz-Nebingerstraße", zipCode: "4020", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Linz-Mostnnystraße", zipCode: "4040", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Linz-Wiener Straße", zipCode: "4030", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Linz-Dornach", zipCode: "4040", region: "Linz-Land & Linz Stadt" },
+                    { siteCode: "N/G", name: "ASZ Wels-Nord", zipCode: "4600", region: "Wels & Wels-Land" },
+                    { siteCode: "N/G", name: "ASZ Wels-Kenten", zipCode: "4600", region: "Wels & Wels-Land" },
+                    { siteCode: "N/G", name: "ASZ Marchtrenk", zipCode: "4614", region: "Wels & Wels-Land" },
+                    { siteCode: "N/G", name: "ASZ Gunskirchen", zipCode: "4623", region: "Wels & Wels-Land" },
+                    { siteCode: "N/G", name: "ASZ Thalheim", zipCode: "4600", region: "Wels & Wels-Land" },
+                    { siteCode: "N/G", name: "ASZ Steyr", zipCode: "4400", region: "Steyr & Steyr-Land" },
+                    { siteCode: "N/G", name: "ASZ Bad Hall", zipCode: "4540", region: "Steyr & Steyr-Land" },
+                    { siteCode: "N/G", name: "ASZ Garsten", zipCode: "4451", region: "Steyr & Steyr-Land" },
+                    { siteCode: "N/G", name: "ASZ Sierning", zipCode: "4522", region: "Steyr & Steyr-Land" }
+                ];
+                populateLocationDropdowns(locationData);
             }
         });
+}
 
-        if (btnDbAdd && dbArtNr && dbBez) {
-            btnDbAdd.addEventListener('click', () => {
-                if (!validateDbInputs()) return;
-                const newArtNr = dbArtNr.value.trim();
-                if (a2.some(item => String(item.artNr || item.ID).trim() === newArtNr)) {
-                    alert(getAlertText('alertDuplicate', 'Diese Artikelnummer existiert bereits!'));
-                    return;
-                }
-                a2.push({
-                    artNr: newArtNr,
-                    bez: dbBez.value.trim(),
-                    geb: dbSuffix ? dbSuffix.value.trim() : ''
-                });
-                localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
-                localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
-                renderSelectionDropdowns();
-                dbArtNr.value = '';
-                dbBez.value = '';
-                if (dbSuffix) dbSuffix.value = '';
-            });
+// ===========================
+// Article dropdown population
+// ===========================
+function populateArticleDropdowns() {
+    const selectArt = document.getElementById('s2_art');
+    const selectName = document.getElementById('s2_name');
+    if (!selectArt || !selectName) return;
+    const currentSelectedArtNr = selectArt.value;
+    populateArtDropdownWithGroups(selectArt, sortimentData);
+    populateNameDropdownWithGroups(selectName, sortimentData);
+    if (currentSelectedArtNr !== "") {
+        if (selectArt.querySelector(`option[value="${currentSelectedArtNr}"]`)) {
+            selectArt.value = currentSelectedArtNr;
         }
-
-        if (btnDbSave && dbArtNr && dbBez) {
-            btnDbSave.addEventListener('click', () => {
-                if (!validateDbInputs()) return;
-                const targetArtNr = dbArtNr.value.trim();
-                const index = a2.findIndex(item => String(item.artNr || item.ID).trim() === targetArtNr);
-                if (index === -1) {
-                    alert("Artikelnummer nicht gefunden. Bitte stattdessen 'Neu hinzufügen' verwenden.");
-                    return;
-                }
-                a2[index].bez = dbBez.value.trim();
-                if (dbSuffix) a2[index].geb = dbSuffix.value.trim();
-                localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
-                localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
-                renderSelectionDropdowns();
-            });
+        if (selectName.querySelector(`option[value="${currentSelectedArtNr}"]`)) {
+            selectName.value = currentSelectedArtNr;
+        }
+    } else if (sortimentData.length > 0) {
+        const firstItem = sortimentData[0];
+        if (selectArt.querySelector(`option[value="${firstItem.artNr}"]`)) {
+            selectArt.value = firstItem.artNr;
+        }
+        if (selectName.querySelector(`option[value="${firstItem.artNr}"]`)) {
+            selectName.value = firstItem.artNr;
         }
     }
+    renderEntryList();
+    updatePreviewFromArticle();
+}
 
-    function setupPwaHandlers() {
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const pwaBanner = document.getElementById('pwa-install-banner');
-            if (pwaBanner) pwaBanner.classList.remove('hidden');
+// ===========================
+// Main functions
+// ===========================
+function syncDropdowns(selectedArtNr) {
+    const selectArt = document.getElementById('s2_art');
+    const selectName = document.getElementById('s2_name');
+    if (selectArt && selectArt.querySelector(`option[value="${selectedArtNr}"]`)) {
+        selectArt.value = selectedArtNr;
+    }
+    if (selectName && selectName.querySelector(`option[value="${selectedArtNr}"]`)) {
+        selectName.value = selectedArtNr;
+    }
+    updatePreviewFromArticle();
+    saveDefaults();
+}
+
+function updatePreviewFromArticle() {
+    const selectArt = document.getElementById('s2_art');
+    if (!selectArt || selectArt.value === "") return;
+    const currentArtNr = selectArt.value;
+    const item = sortimentData.find(i => i.artNr === currentArtNr);
+    if (item) {
+        document.getElementById('i5').value = item.artNr;
+        document.getElementById('i6').value = item.geb || "";
+        document.getElementById('i7').value = item.bez;
+        updateUI();
+    }
+}
+
+function setLocationValue(value) {
+    document.getElementById('locationSelect').value = value;
+    document.getElementById('s1').value = value;
+    localStorage.setItem('lavu_location', value);
+    updateUI();
+    saveDefaults();
+}
+
+function switchTab(mode) {
+    currentMode = mode;
+    document.getElementById('t2').classList.toggle('a', mode === 'select');
+    document.getElementById('t3').classList.toggle('a', mode === 'input');
+    document.getElementById('s3').classList.toggle('a', mode === 'select');
+    document.getElementById('s4').classList.toggle('a', mode === 'input');
+}
+
+function renderEntryList() {
+    const container = document.getElementById('c4');
+    if (!container) return;
+    container.innerHTML = '';
+    sortimentData.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'cir';
+        div.innerHTML = `
+            <div class="cii">
+                <b>${item.artNr}</b> - ${item.bez} <span style="color:#7f8c8d; font-size:0.75rem;">(${item.geb || '-'})</span>
+            </div>
+            <div style="display: flex; gap: 4px;">
+                <button class="bc" style="padding: 3px 6px; background: #3498db; color: white; font-size: 0.75rem;" data-index="${index}" data-action="edit">✏️</button>
+                <button class="bc" style="padding: 3px 6px; background: #e74c3c; color: white; font-size: 0.75rem;" data-index="${index}" data-action="delete">🗑️</button>
+            </div>
+        `;
+        container.appendChild(div);
+        div.querySelector('[data-action="edit"]').addEventListener('click', function () {
+            editEntry(parseInt(this.dataset.index));
         });
-
-        const btnPwaInstall = document.getElementById('btn-pwa-install-trigger');
-        if (btnPwaInstall) {
-            btnPwaInstall.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        const pwaBanner = document.getElementById('pwa-install-banner');
-                        if (pwaBanner) pwaBanner.classList.add('hidden');
-                    }
-                    deferredPrompt = null;
-                }
-            });
-        }
-    }
-
-    function renderSelectionDropdowns() {
-        const artNrDropdown = document.getElementById('select-artnr');
-        const bezDropdown = document.getElementById('select-bezeichnung');
-
-        if (!artNrDropdown || !bezDropdown) return;
-
-        if (!a2 || a2.length === 0) {
-            loadEmbeddedSortimentFallbacks();
-        }
-
-        artNrDropdown.innerHTML = '<option value="">-- Wähle Art.Nr. --</option>';
-        bezDropdown.innerHTML = '<option value="">-- Wähle Bezeichnung --</option>';
-
-        const sortedData = [...a2].sort((a, b) => String(a.artNr || a.ID || '').localeCompare(String(b.artNr || b.ID || '')));
-
-        sortedData.forEach(item => {
-            const identifier = item.artNr || item.ID || '';
-            const description = item.bez || item.Bezeichnung || '';
-            const suffix = item.geb || '';
-
-            let opt1 = document.createElement('option');
-            opt1.value = identifier;
-            opt1.textContent = identifier;
-            artNrDropdown.appendChild(opt1);
-
-            let opt2 = document.createElement('option');
-            opt2.value = identifier;
-            opt2.textContent = `${description} ${suffix}`.trim();
-            bezDropdown.appendChild(opt2);
+        div.querySelector('[data-action="delete"]').addEventListener('click', function () {
+            deleteEntry(parseInt(this.dataset.index));
         });
+    });
+}
+
+function editEntry(index) {
+    const item = sortimentData[index];
+    document.getElementById('e1').value = index;
+    document.getElementById('c1').value = item.artNr;
+    document.getElementById('c2').value = item.geb || "";
+    document.getElementById('c3').value = item.bez;
+    document.getElementById('b1').style.display = 'inline-block';
+}
+
+function deleteEntry(index) {
+    const t = i18n[currentLang];
+    if (confirm(t.confirmDelete)) {
+        sortimentData.splice(index, 1);
+        localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(sortimentData));
+        populateArticleDropdowns();
+        saveDefaults();
     }
+}
 
-    function renderLocationsDropdown() {
-        const locDropdown = document.getElementById('select-location');
-        if (!locDropdown) return;
+function clearEditForm() {
+    document.getElementById('e1').value = "";
+    document.getElementById('c1').value = "";
+    document.getElementById('c2').value = "";
+    document.getElementById('c3').value = "";
+    document.getElementById('b1').style.display = 'none';
+}
 
-        if (!locationsData || locationsData.length === 0) {
-            loadEmbeddedLocationsFallbacks();
-        }
-
-        locDropdown.innerHTML = '<option value="">-- Standort wählen --</option>';
-        locationsData.forEach(loc => {
-            const opt = document.createElement('option');
-            opt.value = loc.id || loc.name;
-            opt.textContent = loc.name || loc;
-            locDropdown.appendChild(opt);
-        });
+function saveEdit() {
+    const index = document.getElementById('e1').value;
+    const c1 = document.getElementById('c1').value.trim();
+    const c2 = document.getElementById('c2').value.trim();
+    const c3 = document.getElementById('c3').value.trim();
+    const t = i18n[currentLang];
+    if (index === "" || isNaN(index) || index < 0 || index >= sortimentData.length || !c1 || !c3) {
+        alert(t.alertErrorChange);
+        return;
     }
+    sortimentData[index] = { artNr: c1, geb: c2, bez: c3 };
+    localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(sortimentData));
+    populateArticleDropdowns();
+    clearEditForm();
+    saveDefaults();
+}
 
-    function renderPrintSheetPreview() {
-        const targetSheet = document.getElementById('interactive-sheet-preview') || document.getElementById('previewContainer');
-        if (!targetSheet) return;
+function downloadJson() {
+    try {
+        const dataStr = JSON.stringify(sortimentData, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = "sortiment_export.json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error("Export error:", e);
+        alert("Export failed: " + e.message);
+    }
+}
 
-        const formatSelect = document.getElementById('select-format');
-        const selectedFormatKey = formatSelect?.value;
+function getLocationDisplayName(locationValue) {
+    if (!locationValue || !locationData || locationData.length === 0) return locationValue;
+    const found = locationData.find(loc => (loc.siteCode && loc.siteCode === locationValue) || loc.name === locationValue);
+    if (found) {
+        return found.siteCode ? `${found.name} (${found.siteCode})` : found.name;
+    }
+    return locationValue;
+}
 
-        if (!selectedFormatKey) {
-            targetSheet.innerHTML = `<div class="preview-placeholder-msg" style="padding: 40px; text-align: center; color: #64748b; font-weight: 500;">Bitte wählen Sie oben ein Etiketten-Format aus, um die Vorschau anzuzeigen.</div>`;
-            return;
+function getCurrentData() {
+    const selectArt = document.getElementById('s2_art');
+    const locationValue = document.getElementById('locationSelect').value;
+    const locationDisplayName = getLocationDisplayName(locationValue);
+    return {
+        topText: locationDisplayName,
+        artNr: document.getElementById('i5').value.trim(),
+        suffix: document.getElementById('i6').value.trim(),
+        bezeichnung: document.getElementById('i7').value.trim(),
+        count: parseInt(document.getElementById('i2').value) || 0,
+        startPos: parseInt(document.getElementById('i3').value) || 1,
+        sortimentIndex: selectArt ? selectArt.value : "0"
+    };
+}
+
+function updateUI() {
+    const data = getCurrentData();
+    const f = formats[currentFormatKey];
+    document.getElementById('d0').textContent = data.topText || '-';
+    document.getElementById('d1').textContent = data.bezeichnung || '-';
+    document.getElementById('d2').textContent = data.artNr || '-';
+    const badge = document.getElementById('d3');
+    if (data.suffix) {
+        badge.textContent = data.suffix;
+        badge.style.display = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+    const t = i18n[currentLang];
+    const layoutTranslationText = currentLang === 'de' ? 'ab Position' : 'from position';
+    document.getElementById('d4').textContent = `${t.printLayout}: ${data.count}x ${layoutTranslationText} ${data.startPos}`;
+    document.getElementById('s1').value = document.getElementById('locationSelect').value;
+    document.getElementById('fmt-overlay').innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg> ${f.name}
+    `;
+    renderSheet('t1', data);
+    renderSheet('mdl', data);
+    renderSheet('d5', data);
+    if (document.getElementById('m2').style.display === 'flex') {
+        const zoomVal = document.getElementById('zoomSlider').value;
+        applyZoom(parseFloat(zoomVal) / 100);
+    }
+}
+
+// ================================================================
+// ✅ FIXED: renderSheet with simplified click logic (no add/remove)
+// ================================================================
+function renderSheet(containerId, data) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+    const f = formats[currentFormatKey];
+    container.style.gridTemplateColumns = `repeat(${f.cols}, 1fr)`;
+    container.style.gridTemplateRows = `repeat(${f.rows}, 1fr)`;
+    const totalCells = f.cols * f.rows;
+    const start = data.startPos;
+    const count = data.count;
+
+    for (let i = 1; i <= totalCells; i++) {
+        const cell = document.createElement('div');
+        const isActive = (i >= start && i < start + count);
+        
+        if (isActive) {
+            cell.className = 'lb';
+            cell.innerHTML = `
+                <div class="lbt">${data.topText || '&nbsp;'}</div>
+                <div class="lbm">
+                    <div class="lba">${data.artNr || '&nbsp;'}</div>
+                    ${data.suffix ? `<div class="lbs">${data.suffix}</div>` : ''}
+                </div>
+                <div class="lbt bbb-fake-fix" style="border-bottom:none; font-size:1px; height:1px; line-height:1px;"></div>
+                <div class="lbb">${data.bezeichnung || '&nbsp;'}</div>
+                <div class="lbf">https://lavu-ooe.github.io/</div>
+            `;
+        } else {
+            cell.className = 'lb e';
         }
-
-        const rawConfig = formats[selectedFormatKey];
-        const formatConfig = {
-            cols: (rawConfig && Number.isInteger(rawConfig.cols) && rawConfig.cols > 0) ? rawConfig.cols : 3,
-            rows: (rawConfig && Number.isInteger(rawConfig.rows) && rawConfig.rows > 0) ? rawConfig.rows : 8,
-            name: (rawConfig && rawConfig.name) ? rawConfig.name : "Default Format"
-        };
-
-        const totalCells = formatConfig.cols * formatConfig.rows;
-        const startPosInput = document.getElementById('input-startpos');
-        const countInput = document.getElementById('input-count');
-
-        if (startPosInput && !startPosInput.value) {
-            startPosInput.value = 1;
-        }
-
-        if (countInput && (!countInput.value || !countInput.dataset.userModified)) {
-            const currentStart = parseInt(startPosInput?.value, 10) || 1;
-            countInput.value = Math.max(1, (totalCells - currentStart) + 1);
-        }
-
-        const inputCount = Math.max(1, parseInt(countInput?.value, 10) || totalCells);
-        const inputStartPos = Math.max(1, parseInt(startPosInput?.value, 10) || 1);
-
-        const artNrDropdown = document.getElementById('select-artnr');
-        const selectedArtNr = artNrDropdown?.value;
-        const activeItem = a2.find(item => String(item.artNr || item.ID) === String(selectedArtNr));
-
-        const locDropdown = document.getElementById('select-location');
-        const selectedLocId = locDropdown?.value;
-        const activeLocation = locationsData.find(loc => (loc.id || loc.name) === selectedLocId);
-
-        targetSheet.innerHTML = '';
-        targetSheet.style.display = 'grid';
-        targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
-        targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
-        targetSheet.style.transform = `scale(${currentZoom})`;
-
-        const lastActivePosition = Math.min(totalCells, (inputStartPos + inputCount) - 1);
-
-        for (let i = 0; i < totalCells; i++) {
-            const gridCell = document.createElement('div');
-            gridCell.dataset.index = i;
-            const cellPosition = i + 1;
-
-            if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
-                if (activeItem) {
-                    gridCell.className = 'label-grid-cell state-selected has-article';
-
-                    const innerWrapper = document.createElement('div');
-                    innerWrapper.className = 'print-label-content';
-                    innerWrapper.style.cssText = 'text-align: center; padding: 4px;';
-
-                    const strongEl = document.createElement('strong');
-                    strongEl.style.cssText = 'display: block; font-size: 1rem;';
-                    strongEl.textContent = activeItem.artNr || activeItem.ID || '';
-
-                    const spanEl = document.createElement('span');
-                    spanEl.className = 'cell-desc';
-                    spanEl.style.cssText = 'display: block; font-size: 0.8rem; margin-top: 2px;';
-                    spanEl.textContent = activeItem.bez || activeItem.Bezeichnung || '';
-
-                    const smallEl = document.createElement('small');
-                    smallEl.style.cssText = 'font-size: 0.7rem; opacity: 0.8;';
-                    let suffixText = activeItem.geb || '';
-                    if (activeLocation) {
-                        suffixText += suffixText ? ' | ' : '';
-                        suffixText += activeLocation.name || '';
-                    }
-                    smallEl.textContent = suffixText;
-
-                    innerWrapper.appendChild(strongEl);
-                    innerWrapper.appendChild(spanEl);
-                    innerWrapper.appendChild(smallEl);
-                    gridCell.appendChild(innerWrapper);
-                } else {
-                    gridCell.className = 'label-grid-cell state-selected';
-                    const spanEl = document.createElement('span');
-                    spanEl.style.opacity = '0.9';
-                    spanEl.textContent = 'Bereit (Kein Artikel)';
-                    gridCell.appendChild(spanEl);
-                }
-            } else {
-                gridCell.className = 'label-grid-cell state-neutral';
-                gridCell.textContent = `Leer (${cellPosition})`;
-            }
-
-            // ------------------------------------------------------------
-            // NEW CLICK LOGIC (matches your requested behaviour)
-            // ------------------------------------------------------------
-            gridCell.addEventListener('click', () => {
-                if (!startPosInput || !countInput) return;
-
-                const currentStart = parseInt(startPosInput.value, 10) || 1;
-                const currentCount = parseInt(countInput.value, 10) || 1;
-                const currentEnd = currentStart + currentCount - 1;
-
+        
+        if (containerId === 'mdl') {
+            cell.dataset.index = i;
+            // ─── NEW: Simplified click handler ───
+            cell.addEventListener('click', function (e) {
+                const clickedIndex = parseInt(this.dataset.index);
+                const countInput = document.getElementById('i2');
+                const startInput = document.getElementById('i3');
+                const f2 = formats[currentFormatKey];
+                const maxLabels = f2.cols * f2.rows;
+                
+                let currentStart = parseInt(startInput.value) || 1;
+                let currentCount = parseInt(countInput.value) || 0;
+                let currentEnd = currentStart + currentCount - 1;
+                
                 let newStart = currentStart;
                 let newCount = currentCount;
-
-                if (cellPosition < currentStart) {
-                    // Clicked before current start → extend to the left
-                    newStart = cellPosition;
-                    newCount = currentEnd - cellPosition + 1;
-                } else if (cellPosition > currentEnd) {
-                    // Clicked after current end → extend to the right
+                
+                if (currentCount === 0) {
+                    // No range yet → start here with 1 label
+                    newStart = clickedIndex;
+                    newCount = 1;
+                } else if (clickedIndex < currentStart) {
+                    // Clicked before start → extend left
+                    newStart = clickedIndex;
+                    newCount = currentEnd - clickedIndex + 1;
+                } else if (clickedIndex > currentEnd) {
+                    // Clicked after end → extend right
                     newStart = currentStart;
-                    newCount = cellPosition - currentStart + 1;
+                    newCount = clickedIndex - currentStart + 1;
                 } else {
-                    // Clicked inside the active range → set start to here, keep end fixed
-                    newStart = cellPosition;
-                    newCount = currentEnd - cellPosition + 1;
+                    // Clicked inside the active range → move start here, keep end fixed
+                    newStart = clickedIndex;
+                    newCount = currentEnd - clickedIndex + 1;
                 }
-
+                
                 // Clamp to valid range
-                newStart = Math.max(1, Math.min(newStart, totalCells));
-                newCount = Math.max(1, Math.min(newCount, totalCells - newStart + 1));
-
-                startPosInput.value = newStart;
+                newStart = Math.max(1, Math.min(newStart, maxLabels));
+                newCount = Math.max(0, Math.min(newCount, maxLabels - newStart + 1));
+                
                 countInput.value = newCount;
-                countInput.dataset.userModified = "true";
-
-                // Trigger re‑render via events
-                startPosInput.dispatchEvent(new Event('change', { bubbles: true }));
-                countInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-                renderPrintSheetPreview();
+                startInput.value = newStart;
+                
+                updateUI();
+                saveDefaults();
             });
-
-            targetSheet.appendChild(gridCell);
         }
+        container.appendChild(cell);
     }
+}
 
-    function translateUi(lang) {
-        if (!i18n[lang]) return;
+// ===========================
+// Language
+// ===========================
+function toggleLanguage() {
+    currentLang = currentLang === 'de' ? 'en' : 'de';
+    localStorage.setItem('lavu_lang', currentLang);
+    applyLanguage();
+    updateUI();
+    renderEntryList();
+    if (locationData && locationData.length > 0) {
+        populateLocationDropdowns(locationData);
+    } else {
+        loadLocations();
+    }
+}
 
-        const elementsToTranslate = document.querySelectorAll('[data-i18n]');
-        elementsToTranslate.forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (i18n[lang][key]) {
-                if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
-                    el.value = i18n[lang][key];
-                } else {
-                    el.textContent = i18n[lang][key];
+function applyLanguage() {
+    const t = i18n[currentLang];
+    document.getElementById('langToggleBtn').textContent = currentLang === 'de' ? 'EN' : 'DE';
+    document.getElementById('txt-studio-v9').textContent = t.studioV9;
+    const printLayoutEl = document.getElementById('txt-print-layout');
+    printLayoutEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> ${t.printLayout}`;
+    document.getElementById('txt-art-nr').textContent = t.artNr;
+    document.getElementById('txt-bezeichnung').textContent = t.bezeichnung;
+    const printBtn = document.getElementById('btn-print-now');
+    printBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> ${t.printNow}`;
+    const optionsBtn = document.getElementById('btn-options');
+    optionsBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> ${t.options}`;
+    document.getElementById('txt-modal1-title').textContent = t.modal1Title;
+    document.getElementById('lbl-location').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${t.lblLocation}`;
+    document.getElementById('lbl-format').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg> ${t.lblFormat}`;
+    document.getElementById('txt-tab-select').textContent = t.tabSelect;
+    document.getElementById('txt-tab-manage').textContent = t.tabManage;
+    document.getElementById('lbl-url').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> ${t.lblUrl}`;
+    document.getElementById('lbl-locations-url').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${t.lblLocationsUrl}`;
+    document.getElementById('btn-update').textContent = t.btnUpdate;
+    document.getElementById('btn-update-locations').textContent = t.btnUpdateLocations;
+    document.getElementById('lbl-db-suffix').textContent = t.lblDbSuffix;
+    document.getElementById('lbl-db-bez').textContent = t.lblDbBez;
+    document.getElementById('btn-add-new').textContent = t.btnAddNew;
+    document.getElementById('btn-cancel').textContent = t.btnCancel;
+    document.getElementById('btn-download-json').textContent = t.btnDownloadJson;
+    document.getElementById('lbl-current-entries').textContent = t.lblCurrentEntries;
+    document.getElementById('btn-save-default').innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ${t.btnSaveDefault}`;
+    document.getElementById('btn-done').textContent = t.btnDone;
+    document.getElementById('modalTitle').textContent = t.modal2Title;
+    const modalPrintBtn = document.getElementById('btn-modal-print');
+    modalPrintBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> ${t.btnModalPrint}`;
+    document.getElementById('btn-modal-close').textContent = t.btnModalClose;
+    document.getElementById('txt-pwa-title').textContent = t.txtPwaTitle;
+    document.getElementById('txt-pwa-sub').textContent = t.txtPwaSub;
+    document.getElementById('b3').textContent = t.btnPwaInstall;
+    document.getElementById('layout-title-attr').setAttribute('title', t.layoutTitleAttr);
+    const f = formats[currentFormatKey];
+    const maxLabels = f.cols * f.rows;
+    document.getElementById('lblCount').textContent = `${t.lblCount} (max. ${maxLabels}):`;
+    document.getElementById('lblStartPos').textContent = `${t.lblStartPos} (1-${maxLabels}):`;
+}
+
+// ===========================
+// Format change
+// ===========================
+function changeFormat(key) {
+    currentFormatKey = key;
+    const selectSettings = document.getElementById('labelFormatSelect');
+    const selectModal = document.getElementById('modalLabelFormatSelect');
+    if (selectSettings) selectSettings.value = key;
+    if (selectModal) selectModal.value = key;
+    const f = formats[key];
+    const maxLabels = f.cols * f.rows;
+    const i2 = document.getElementById('i2');
+    const i3 = document.getElementById('i3');
+    const t = i18n[currentLang];
+    document.getElementById('lblCount').textContent = `${t.lblCount} (max. ${maxLabels}):`;
+    document.getElementById('lblStartPos').textContent = `${t.lblStartPos} (1-${maxLabels}):`;
+    i2.max = maxLabels;
+    i3.max = maxLabels;
+    if (parseInt(i2.value) > maxLabels) i2.value = maxLabels;
+    if (parseInt(i3.value) > maxLabels) i3.value = 1;
+    updateUI();
+}
+
+function initFormatSelects() {
+    const selectSettings = document.getElementById('labelFormatSelect');
+    const selectModal = document.getElementById('modalLabelFormatSelect');
+    [selectSettings, selectModal].forEach(select => {
+        if (!select) return;
+        select.innerHTML = '';
+        for (const key in formats) {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = formats[key].name;
+            if (key === currentFormatKey) opt.selected = true;
+            select.appendChild(opt);
+        }
+    });
+}
+
+// ===========================
+// Load sortiment data
+// ===========================
+function loadSortiment() {
+    let url = localStorage.getItem('lavu_sortiment_url') || "https://sortiment-api.lavu-ooe.workers.dev/";
+    const t = i18n[currentLang];
+    fetch(url, { cache: "no-store" })
+        .then(response => {
+            if (!response.ok) throw new Error("Netzwerkantwort war fehlerhaft");
+            return response.json();
+        })
+        .then(data => {
+            if (Array.isArray(data) && data.length > 0) {
+                sortimentData = data;
+                localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(sortimentData));
+                document.getElementById('n1').innerHTML = (url === "sortiment.json") ? t.netSuccessLocal : t.netSuccessRemote;
+                document.getElementById('n1').style.color = '#27ae60';
+                populateArticleDropdowns();
+            }
+        })
+        .catch(e => {
+            console.warn("Fehler beim Abrufen der JSON-Quelle, weiche auf cache / localStorage aus.", e);
+            document.getElementById('n1').innerHTML = (url === "sortiment.json") ? t.netFallbackLocal : t.netFallbackRemote;
+            document.getElementById('n1').style.color = '#e74c3c';
+            const cached = localStorage.getItem('lavu_studio_sortiment_v8');
+            if (cached) {
+                try {
+                    sortimentData = JSON.parse(cached);
+                } catch (e) {
+                    sortimentData = fallbackSortiment.slice();
+                }
+            } else {
+                sortimentData = fallbackSortiment.slice();
+            }
+            populateArticleDropdowns();
+        });
+}
+
+// ===========================
+// Save / load defaults
+// ===========================
+function saveDefaults() {
+    const data = getCurrentData();
+    const config = {
+        formatKey: currentFormatKey,
+        topText: document.getElementById('locationSelect').value,
+        count: data.count,
+        startPos: data.startPos,
+        artNr: data.artNr,
+        suffix: data.suffix,
+        bezeichnung: data.bezeichnung,
+        sortimentIndex: data.sortimentIndex
+    };
+    localStorage.setItem('lavu_studio_defaults_v8', JSON.stringify(config));
+    localStorage.setItem('lavu_location', document.getElementById('locationSelect').value);
+}
+
+function loadDefaults() {
+    const savedStr = localStorage.getItem('lavu_studio_defaults_v8');
+    if (savedStr) {
+        try {
+            const saved = JSON.parse(savedStr);
+            if (saved.formatKey && formats[saved.formatKey]) {
+                currentFormatKey = saved.formatKey;
+                document.getElementById('labelFormatSelect').value = currentFormatKey;
+                if (document.getElementById('modalLabelFormatSelect')) {
+                    document.getElementById('modalLabelFormatSelect').value = currentFormatKey;
                 }
             }
-        });
+            const f = formats[currentFormatKey];
+            const maxLabels = f.cols * f.rows;
+            const savedLocation = localStorage.getItem('lavu_location');
+            const locationValue = (savedLocation && savedLocation !== '') ? savedLocation : DEFAULT_LOCATION_VALUE;
+            document.getElementById('locationSelect').value = locationValue;
+            document.getElementById('s1').value = locationValue;
+            if (saved.count !== undefined) document.getElementById('i2').value = Math.min(maxLabels, saved.count);
+            if (saved.startPos !== undefined) document.getElementById('i3').value = Math.min(maxLabels, saved.startPos);
+            if (saved.artNr !== undefined) document.getElementById('i5').value = saved.artNr;
+            if (saved.suffix !== undefined) document.getElementById('i6').value = saved.suffix;
+            if (saved.bezeichnung !== undefined) document.getElementById('i7').value = saved.bezeichnung;
+            if (saved.sortimentIndex !== undefined) {
+                setTimeout(() => syncDropdowns(saved.sortimentIndex), 100);
+            }
+            changeFormat(currentFormatKey);
+        } catch (e) {
+            console.warn("Fehler beim Verarbeiten lokaler Defaults.", e);
+        }
+    } else {
+        document.getElementById('locationSelect').value = DEFAULT_LOCATION_VALUE;
+        document.getElementById('s1').value = DEFAULT_LOCATION_VALUE;
+        localStorage.setItem('lavu_location', DEFAULT_LOCATION_VALUE);
+        changeFormat(currentFormatKey);
     }
-})();
+}
+
+// ===========================
+// Modal controls
+// ===========================
+function openSettingsModal() {
+    document.getElementById('m1').style.display = 'flex';
+    renderEntryList();
+}
+
+function closeSettingsModal() {
+    document.getElementById('m1').style.display = 'none';
+}
+
+function openPreviewModal() {
+    const f = formats[currentFormatKey];
+    const maxLabels = f.cols * f.rows;
+    document.getElementById('i2').value = maxLabels;
+    document.getElementById('i3').value = 1;
+    document.getElementById('zoomContainer').classList.remove('visible');
+    updateUI();
+    document.getElementById('m2').style.display = 'flex';
+    const zoomVal = document.getElementById('zoomSlider').value;
+    requestAnimationFrame(() => {
+        applyZoom(parseFloat(zoomVal) / 100);
+    });
+}
+
+function closePreviewModal() {
+    document.getElementById('m2').style.display = 'none';
+    document.getElementById('zoomContainer').classList.remove('visible');
+}
+
+// ===========================
+// Save default settings
+// ===========================
+function saveCurrentAsDefault() {
+    const f = formats[currentFormatKey];
+    const maxLabels = f.cols * f.rows;
+    const i2 = document.getElementById('i2');
+    const i3 = document.getElementById('i3');
+    if (parseInt(i2.value) > maxLabels) i2.value = maxLabels;
+    if (parseInt(i3.value) > maxLabels) i3.value = 1;
+    saveDefaults();
+    alert(i18n[currentLang].alertSaved);
+}
+
+// ===========================
+// Add new entry
+// ===========================
+function addNewEntry() {
+    const c1 = document.getElementById('c1').value.trim();
+    const c2 = document.getElementById('c2').value.trim();
+    const c3 = document.getElementById('c3').value.trim();
+    const t = i18n[currentLang];
+    if (!c1 || !c3) {
+        alert(t.alertFillForm);
+        return;
+    }
+    if (sortimentData.some(item => item.artNr === c1)) {
+        alert(t.alertDuplicate);
+        return;
+    }
+    sortimentData.push({ artNr: c1, geb: c2 || '-', bez: c3 });
+    localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(sortimentData));
+    populateArticleDropdowns();
+    clearEditForm();
+    saveDefaults();
+}
+
+// ===========================
+// PWA
+// ===========================
+let deferredPrompt;
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js', { scope: '' })
+            .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+    });
+}
+
+window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    const savedStr = localStorage.getItem('lavu_studio_defaults_v8');
+    let showBanner = true;
+    if (savedStr) {
+        try {
+            const saved = JSON.parse(savedStr);
+            if (saved.count && parseInt(saved.count) > 0) {
+                showBanner = false;
+            }
+        } catch (err) {}
+    }
+    if (showBanner) {
+        const banner = document.getElementById('pwaBanner');
+        if (banner) {
+            banner.style.display = 'flex';
+            banner.style.opacity = '1';
+            banner.style.transition = 'opacity 1s ease';
+            setTimeout(function () {
+                banner.style.opacity = '0';
+                setTimeout(function () {
+                    banner.style.display = 'none';
+                }, 1000);
+            }, 6000);
+        }
+    }
+});
+
+window.addEventListener('appinstalled', function () {
+    console.log('LAVU label-studio wurde erfolgreich installiert.');
+    const banner = document.getElementById('pwaBanner');
+    if (banner) banner.style.display = 'none';
+});
+
+// ===========================
+// Zoom
+// ===========================
+function applyZoom(customZoomFactor) {
+    customZoomFactor = customZoomFactor || 1;
+    const container = document.querySelector('.mbs');
+    const element = document.getElementById('p1');
+    if (!container || !element) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const containerWidth = containerRect.width - 20;
+    const containerHeight = containerRect.height - 20;
+
+    const sheet = element.querySelector('.psh');
+    if (!sheet) return;
+    const sheetWidth = sheet.scrollWidth || 794;
+    const sheetHeight = sheet.scrollHeight || 1123;
+
+    if (containerWidth <= 0 || containerHeight <= 0 || sheetWidth <= 0 || sheetHeight <= 0) {
+        return;
+    }
+
+    const scaleX = containerWidth / sheetWidth;
+    const scaleY = containerHeight / sheetHeight;
+    const baseScale = Math.min(scaleX, scaleY, 1);
+    const finalScale = Math.min(baseScale * customZoomFactor, 2);
+
+    element.style.position = 'absolute';
+    element.style.top = '50%';
+    element.style.left = '50%';
+    element.style.transformOrigin = 'center center';
+    element.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
+}
+
+function applyFastZoom(value) {
+    document.getElementById('zoomVal').textContent = value + '%';
+    const element = document.getElementById('p1');
+    if (element) {
+        applyZoom(parseFloat(value) / 100);
+    }
+    localStorage.setItem('lavu_preview_zoom', value);
+}
+
+// ===========================
+// DOM Ready
+// ===========================
+document.addEventListener('DOMContentLoaded', function () {
+    // Init data
+    sortimentData = defaultSortiment.slice();
+    localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(sortimentData));
+
+    loadLocations();
+    initFormatSelects();
+    applyLanguage();
+    loadDefaults();
+
+    // Set sortiment URL field
+    let url = localStorage.getItem('lavu_sortiment_url');
+    if (url === null) {
+        url = "https://sortiment-api.lavu-ooe.workers.dev/";
+        localStorage.setItem('lavu_sortiment_url', url);
+    }
+    document.getElementById('i4').value = url;
+
+    // Locations URL
+    const savedLocUrl = localStorage.getItem('lavu_locations_url');
+    if (savedLocUrl) {
+        document.getElementById('i8').value = savedLocUrl;
+        document.getElementById('n2').innerHTML = '📍 ' + (i18n[currentLang].locUrlSaved || 'Locations-URL gespeichert.');
+        document.getElementById('n2').style.color = '#27ae60';
+    } else {
+        document.getElementById('i8').value = "https://locations-api.lavu-ooe.workers.dev/";
+    }
+
+    // Status
+    const t = i18n[currentLang];
+    document.getElementById('n1').innerHTML = t.netLoading;
+    document.getElementById('n1').style.color = '#f39c12';
+    loadSortiment();
+    updateUI();
+
+    // Zoom slider
+    const savedZoom = localStorage.getItem('lavu_preview_zoom') || '100';
+    document.getElementById('zoomSlider').value = savedZoom;
+    applyFastZoom(savedZoom);
+
+    // Event listeners (only once)
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    // Language toggle
+    document.getElementById('langToggleBtn').addEventListener('click', toggleLanguage);
+
+    // Location selects sync
+    document.getElementById('s1').addEventListener('change', function () {
+        const val = this.value;
+        document.getElementById('locationSelect').value = val;
+        localStorage.setItem('lavu_location', val);
+        updateUI();
+        saveDefaults();
+    });
+    document.getElementById('locationSelect').addEventListener('change', function () {
+        const val = this.value;
+        document.getElementById('s1').value = val;
+        localStorage.setItem('lavu_location', val);
+        updateUI();
+        saveDefaults();
+    });
+
+    // Print button
+    document.getElementById('btn-print-now').addEventListener('click', function () {
+        window.print();
+    });
+
+    // Options button
+    document.getElementById('btn-options').addEventListener('click', openSettingsModal);
+
+    // Modal close buttons
+    document.getElementById('modal1CloseBtn').addEventListener('click', closeSettingsModal);
+    document.getElementById('m1').addEventListener('click', function (e) {
+        if (e.target.id === 'm1') closeSettingsModal();
+    });
+    document.getElementById('modal2CloseBtn').addEventListener('click', closePreviewModal);
+    document.getElementById('m2').addEventListener('click', function (e) {
+        if (e.target.id === 'm2') closePreviewModal();
+    });
+    document.getElementById('btn-modal-print').addEventListener('click', function () {
+        window.print();
+    });
+    document.getElementById('btn-modal-close').addEventListener('click', closePreviewModal);
+
+    // Format changes
+    document.getElementById('labelFormatSelect').addEventListener('change', function () {
+        changeFormat(this.value);
+        saveDefaults();
+    });
+    document.getElementById('modalLabelFormatSelect').addEventListener('change', function () {
+        changeFormat(this.value);
+    });
+
+    // Preview click
+    document.getElementById('layout-title-attr').addEventListener('click', openPreviewModal);
+
+    // Count and start inputs
+    document.getElementById('i2').addEventListener('input', function () {
+        updateUI();
+        saveDefaults();
+    });
+    document.getElementById('i3').addEventListener('input', function () {
+        updateUI();
+        saveDefaults();
+    });
+
+    // Tabs
+    document.getElementById('t2').addEventListener('click', function () { switchTab('select'); });
+    document.getElementById('t3').addEventListener('click', function () { switchTab('input'); });
+
+    // Update sortiment URL
+    document.getElementById('btn-update').addEventListener('click', function () {
+        localStorage.setItem('lavu_sortiment_url', document.getElementById('i4').value.trim());
+        loadSortiment();
+    });
+
+    // Update locations URL
+    document.getElementById('btn-update-locations').addEventListener('click', function () {
+        const newUrl = document.getElementById('i8').value.trim();
+        const t = i18n[currentLang];
+        const n2 = document.getElementById('n2');
+        if (newUrl) {
+            try {
+                new URL(newUrl);
+                localStorage.setItem('lavu_locations_url', newUrl);
+                LOCATION_JSON_URL = newUrl;
+                n2.innerHTML = '✅ ' + (t.locUrlUpdated || 'Locations-URL aktualisiert!');
+                n2.style.color = '#27ae60';
+                loadLocations();
+            } catch (e) {
+                n2.innerHTML = '❌ ' + (t.locUrlInvalid || 'Bitte gültige URL eingeben.');
+                n2.style.color = '#e74c3c';
+            }
+        } else {
+            n2.innerHTML = '❌ ' + (t.locUrlInvalid || 'Bitte gültige URL eingeben.');
+            n2.style.color = '#e74c3c';
+        }
+    });
+
+    // Add new entry
+    document.getElementById('btn-add-new').addEventListener('click', addNewEntry);
+    document.getElementById('btn-cancel').addEventListener('click', clearEditForm);
+    document.getElementById('btn-download-json').addEventListener('click', downloadJson);
+    document.getElementById('b1').addEventListener('click', saveEdit);
+    document.getElementById('b2').addEventListener('click', saveCurrentAsDefault);
+    document.getElementById('btn-done').addEventListener('click', function () {
+        document.getElementById('m1').style.display = 'none';
+    });
+
+    // Zoom slider
+    document.getElementById('zoomSlider').addEventListener('input', function () {
+        applyFastZoom(this.value);
+    });
+
+    // Article dropdown sync
+    document.getElementById('s2_art').addEventListener('change', function () {
+        syncDropdowns(this.value);
+    });
+    document.getElementById('s2_name').addEventListener('change', function () {
+        syncDropdowns(this.value);
+    });
+
+    // PWA install
+    document.getElementById('b3').addEventListener('click', function () {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function (choiceResult) {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                }
+                document.getElementById('pwaBanner').style.display = 'none';
+                deferredPrompt = null;
+            });
+        }
+    });
+
+    // Resize for zoom
+    window.addEventListener('resize', function () {
+        if (document.getElementById('m2').style.display === 'flex') {
+            const zoomVal = document.getElementById('zoomSlider').value;
+            applyZoom(parseFloat(zoomVal) / 100);
+        }
+    });
+
+    // Zoom toggle
+    document.getElementById('zoomToggleBtn').addEventListener('click', function () {
+        const container = document.getElementById('zoomContainer');
+        container.classList.toggle('visible');
+    });
+}
