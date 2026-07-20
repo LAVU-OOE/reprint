@@ -380,6 +380,14 @@ function initUiElements() {
             }
         });
     }
+// --- ADD THIS: Native Print Dialogue Execution Trigger ---
+    const printBtn = document.getElementById('btn-print-trigger');
+    if (printBtn) {
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+    }
+} // <--- This closes the initUiElements function
 }
 
 /**
