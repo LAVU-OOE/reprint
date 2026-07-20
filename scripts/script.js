@@ -371,6 +371,9 @@ function renderSelectionDropdowns() {
 /**
  * Computes grid measurements and maps visual classes to the interactive preview targets
  */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
 function renderPrintSheetPreview() {
     const targetSheet = document.getElementById('interactive-sheet-preview');
     if (!targetSheet) return;
@@ -430,12 +433,12 @@ function renderPrintSheetPreview() {
             } else {
                 // Active Zone but NO Article -> Default Slate Grey (#334155)
                 gridCell.className = 'label-grid-cell state-selected';
-                gridCell.innerHTML = `<span style="opacity: 0.9;">Bereit (Kein Artikel)</span>`;
+                gridCell.innerHTML = `<span class="print-hide" style="opacity: 0.9;">Bereit</span>`;
             }
         } else {
-            // Outside target window range -> Turns Vibrant Red (#ee1111)
+            // FIXED: Outside target window range -> Visually faint on screen, completely blank for print!
             gridCell.className = 'label-grid-cell state-neutral';
-            gridCell.textContent = `Leer (${cellPosition})`;
+            gridCell.innerHTML = `<span class="print-hide" style="opacity: 0.4; font-size: 0.8rem;">(${cellPosition})</span>`;
         }
 
         // CORRECTED CLICK INTERACTION PIPELINE
