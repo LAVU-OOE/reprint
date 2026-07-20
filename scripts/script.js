@@ -319,7 +319,44 @@ function initUiElements() {
     });
     document.getElementById('input-count')?.addEventListener('input', renderPrintSheetPreview);
     document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
-}
+// --- ADD THIS: Click Grid Cells to Set Start Position & Label Count ---
+    const targetSheet = document.getElementById('interactive-sheet-preview');
+    const startPosInput = document.getElementById('input-startpos');
+    const countInput = document.getElementById('input-count');
+
+    if (targetSheet && startPosInput && countInput) {
+        targetSheet.addEventListener('click', (e) => {
+            // Find the closest grid cell element that was clicked
+            const cell = e.target.closest('.label-grid-cell');
+            if (!cell) return;
+
+            // Extract the 1-based index position from the clicked cell
+            const cellIndex = parseInt(cell.dataset.index, 10);
+            const chosenPosition = cellIndex + 1;
+
+            // Shift-Click Behavior: Extends or adjusts the total label count
+            if (e.shiftKey) {
+                const currentStart = parseInt(startPosInput.value, 10) || 1;
+                if (chosenPosition >= currentStart) {
+                    // Calculate range span up to the clicked cell
+                    countInput.value = (chosenPosition - currentStart) + 1;
+                } else {
+                    // If clicked behind current start position, shift start backward and re-span
+                    const previousCount = parseInt(countInput.value, 10) || 1;
+                    const oldEndPosition = currentStart + previousCount - 1;
+                    startPosInput.value = chosenPosition;
+                    countInput.value = (oldEndPosition - chosenPosition) + 1;
+                }
+            } 
+            // Normal Click Behavior: Sets the absolute starting position
+            else {
+                startPosInput.value = chosenPosition;
+            }
+
+            // Trigger preview refresh to display changed values instantly
+            renderPrintSheetPreview();
+        });
+    }}
 
 /**
  * Parses and displays selection dropdown menus alphabetized dynamically
