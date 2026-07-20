@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="studioV9"></title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e293b">
+    <link rel="icon" type="image/png" sizes="192x192" href="images/web-app-manifest-192x192.png">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-container">
+            <h1 data-i18n="studioV9"></h1>
+            <div class="header-actions">
+                <span id="network-status-badge" class="status-badge">⏳ Verbinde...</span>
+                <button id="language-toggle" class="btn-secondary">DE / EN</button>
+                <button id="btn-options-modal" class="btn-primary" data-i18n="options">Optionen</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="workspace-container">
+        
+        <section class="selection-panel card">
+            <h2 data-i18n="printLayout">Druck-Layout</h2>
+            <div class="form-group-row">
+                <div class="form-group">
+                    <label for="select-artnr" data-i18n="artNr">Art.Nr.</label>
+                    <select id="select-artnr" class="form-control">
+                        <option data-i18n="netLoading">⏳ Verbinde...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="select-bezeichnung" data-i18n="bezeichnung">Bezeichnung</label>
+                    <select id="select-bezeichnung" class="form-control">
+                        <option data-i18n="netLoading">⏳ Verbinde...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="select-location" data-i18n="lblLocation">Standort</label>
+                    <select id="select-location" class="form-control">
+                        <option value="">-- Standort wählen --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group-row adjustments">
+                <div class="form-group">
+                    <label for="select-format" data-i18n="lblFormat">Etiketten-Hersteller & Format:</label>
+                    <select id="select-format" class="form-control">
+                        <option value="" data-i18n="selectFormatPrompt">-- Bitte Format wählen --</option>
+                        <option value="4473">HERMA 4473 (70 x 36 mm)</option>
+                        <option value="4428">HERMA 4428 (105 x 68 mm)</option>
+                        <option value="4276">HERMA 4276 (99,1 x 42,3 mm)</option>
+                        <option value="5077">HERMA 5077 (99,1 x 67,7 mm)</option>
+                        <option value="4459">HERMA 4459 (70 x 16,9 mm)</option>
+                        <option value="4456">HERMA 4456 (70 x 29,7 mm)</option>
+                        <option value="8645">HERMA 8645 (105 x 74 mm)</option>
+                    </select>
+                </div>
+                <div class="form-group compact">
+                    <label for="input-count" data-i18n="lblCount">Anzahl Etiketten</label>
+                    <input type="number" id="input-count" class="form-control" value="1" min="1">
+                </div>
+                <div class="form-group compact">
+                    <label for="input-startpos" data-i18n="lblStartPos">Start-Position</label>
+                    <input type="number" id="input-startpos" class="form-control" value="1" min="1">
+                </div>
+            </div>
+        </section>
+
+        <section class="preview-panel card">
+            <div class="panel-header">
+                <h3 data-i18n="modal2Title">Interaktiver A4-Druckbogen</h3>
+                <div class="zoom-controls">
+                    <span data-i18n="txtZoom">Zoom</span>
+                    <input type="range" id="zoom-range" min="0.5" max="1.5" step="0.1" value="1">
+                </div>
+            </div>
+            <div class="sheet-scroller">
+                <div id="interactive-sheet-preview" class="a4-sheet-container"></div>
+            </div>
+            <button id="btn-print-trigger" class="btn-success btn-large" data-i18n="printNow">Jetzt Drucken</button>
+        </section>
+    </main>
+
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content card animate-fade-in">
+            <div class="modal-header">
+                <h3 data-i18n="modal1Title">Druck- & Standorteinstellungen</h3>
+                <button class="modal-close-trigger">&times;</button>
+            </div>
+            <div class="modal-body">
+                
+                <div class="tab-navigation">
+                    <button class="tab-btn active" data-target="tab-worker" data-i18n="tabSelect">LAVU Service-Worker</button>
+                    <button class="tab-btn" data-target="tab-database" data-i18n="tabManage">Datenbank verwalten</button>
+                </div>
+
+                <div id="tab-worker" class="tab-content-panel active">
+                    <div class="form-group">
+                        <label for="input-location-api" data-i18n="lblLocationsUrl">Locations API:</label>
+                        <div class="input-append">
+                            <input type="url" id="input-location-api" class="form-control" placeholder="https://...">
+                            <button id="btn-update-locations" class="btn-primary" data-i18n="btnUpdateLocations">Aktualisieren</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="input-sortiment-api" data-i18n="lblUrl">Sortiment API:</label>
+                        <div class="input-append">
+                            <input type="url" id="input-sortiment-api" class="form-control" placeholder="https://...">
+                            <button id="btn-update-sortiment" class="btn-primary" data-i18n="btnUpdate">Aktualisieren</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-database" class="tab-content-panel">
+                    <div class="form-group-row">
+                        <div class="form-group compact">
+                            <label for="db-input-artnr" data-i18n="artNr">Art.Nr.:</label>
+                            <input type="text" id="db-input-artnr" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="db-input-bez" data-i18n="lblDbBez">Bezeichnung:</label>
+                            <input type="text" id="db-input-bez" class="form-control">
+                        </div>
+                        <div class="form-group compact">
+                            <label for="db-input-suffix" data-i18n="lblDbSuffix">Gebinde / Suffix:</label>
+                            <input type="text" id="db-input-suffix" class="form-control">
+                        </div>
+                    </div>
+                    <div class="modal-action-row">
+                        <button id="btn-db-save" class="btn-success" data-i18n="btnSave">💾 Ändern</button>
+                        <button id="btn-db-add" class="btn-primary" data-i18n="btnAddNew">➕ Neu hinzufügen</button>
+                    </div>
+                    <hr class="divider">
+                    <button id="btn-download-database" class="btn-secondary btn-full" data-i18n="btnDownloadJson">📥 Aktuelle Datenbank als JSON herunterladen</button>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button id="btn-settings-save-default" class="btn-secondary" data-i18n="btnSaveDefault">Standard sichern</button>
+                <button id="btn-settings-done" class="btn-success modal-close-trigger" data-i18n="btnDone">Fertig</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pwa-install-banner" class="pwa-banner hidden">
+        <div class="banner-text">
+            <strong data-i18n="txtPwaTitle">Als App installieren</strong>
+            <span data-i18n="txtPwaSub">Schnellerer Zugriff & Offline-Nutzung</span>
+        </div>
+        <button id="btn-pwa-install-trigger" class="btn-primary compact" data-i18n="btnPwaInstall">Installieren</button>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('ServiceWorker registered:', reg.scope))
+                    .catch(err => console.warn('ServiceWorker error:', err));
+            });
+        }
+    </script>
+    <script src="scripts/script.js?v=20250720"></script>
+</body>
+</html>
