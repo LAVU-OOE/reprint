@@ -368,6 +368,9 @@ function renderSelectionDropdowns() {
 /**
  * Computes grid measurements and maps visual classes to the interactive preview targets
  */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
 function renderPrintSheetPreview() {
     const targetSheet = document.getElementById('interactive-sheet-preview');
     if (!targetSheet) return;
@@ -385,8 +388,11 @@ function renderPrintSheetPreview() {
     if (startPosInput && !startPosInput.value) {
         startPosInput.value = 1;
     }
-    if (countInput && !countInput.value) {
-        countInput.value = totalCells;
+
+    // ENFORCED DEFAULT: If there is no user-modified flag, always default to using every possible label
+    if (countInput && (!countInput.value || !countInput.dataset.userModified)) {
+        const currentStart = parseInt(startPosInput?.value, 10) || 1;
+        countInput.value = (totalCells - currentStart) + 1;
     }
 
     const inputCount = parseInt(countInput?.value, 10) || totalCells;
