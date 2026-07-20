@@ -1,17 +1,18 @@
 const CACHE_NAME = 'reprint-studio-v9';
+// Use relative or subpath-aware paths matching your GitHub Pages deployment
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/manifest.json',
-  '/scripts/script.js',
-  '/scripts/i18n.json',
-  '/scripts/formats.json',
-  '/scripts/sortiment.json',
-  '/images/web-app-manifest-192x192.png',
-  '/images/web-app-manifest-512x512.png',
-  '/images/apple-touch-icon.png',
-  '/images/favicon.ico'
+  './',
+  './index.html',
+  './styles.css',
+  './manifest.json',
+  './scripts/script.js',
+  './scripts/i18n.json',
+  './scripts/formats.json',
+  './scripts/sortiment.json',
+  './images/web-app-manifest-192x192.png',
+  './images/web-app-manifest-512x512.png',
+  './images/apple-touch-icon.png',
+  './images/favicon.ico'
 ];
 
 self.addEventListener('install', (event) => {
@@ -39,16 +40,13 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only intercept GET requests
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
-        // Return cached file if it exists, otherwise fetch from network
         return cachedResponse || fetch(event.request).then((networkResponse) => {
           return caches.open(CACHE_NAME).then((cache) => {
-            // Only cache valid responses
             if (networkResponse.status === 200) {
                 cache.put(event.request, networkResponse.clone());
             }
@@ -56,7 +54,7 @@ self.addEventListener('fetch', (event) => {
           });
         });
       }).catch(() => {
-        // If offline and file isn't cached, you can provide an offline fallback here if desired.
+        // Fallback options can be handled here if offline
       })
   );
 });
