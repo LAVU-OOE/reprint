@@ -249,24 +249,56 @@ function initUiElements() {
         });
     }
 
-    // --- ADD THIS: Modal Open & Close Event Listeners ---
+    // --- Modal Open & Close Event Listeners ---
     const optionsBtn = document.getElementById('btn-options-modal');
     const settingsModal = document.getElementById('settings-modal');
     const closeTriggers = document.querySelectorAll('.modal-close-trigger');
 
     if (optionsBtn && settingsModal) {
-        // Open Modal
         optionsBtn.addEventListener('click', () => {
             settingsModal.classList.remove('hidden');
         });
 
-        // Close Modal via 'X' or 'Fertig' buttons
         closeTriggers.forEach(trigger => {
             trigger.addEventListener('click', () => {
                 settingsModal.classList.add('hidden');
             });
         });
     }
+
+    // --- ADD THIS: Set Default API URL Values ---
+    const sortimentInput = document.getElementById('input-sortiment-api');
+    const locationsInput = document.getElementById('input-location-api');
+
+    if (sortimentInput && !sortimentInput.value) {
+        sortimentInput.value = 'https://sortiment-api.lavu-ooe.workers.dev/';
+    }
+    if (locationsInput && !locationsInput.value) {
+        locationsInput.value = 'https://locations-api.lavu-ooe.workers.dev/';
+    }
+
+    // --- ADD THIS: Interactive Tab Navigation Logic ---
+    const tabButtons = document.querySelectorAll('.tab-navigation .tab-btn');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active status from all tab buttons in this container
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Hide all tab content panels
+            const contentPanels = document.querySelectorAll('.tab-content-panel');
+            contentPanels.forEach(panel => panel.classList.remove('active'));
+
+            // Add active state to clicked button
+            button.classList.add('active');
+
+            // Show target content panel
+            const targetId = button.getAttribute('data-target');
+            const targetPanel = document.getElementById(targetId);
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
+        });
+    });
 }
 
 /**
