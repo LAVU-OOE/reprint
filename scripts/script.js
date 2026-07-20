@@ -228,7 +228,7 @@ function updateNetworkStatus(statusKey) {
  * Configures event listeners, sliders, and sets up settings triggers
  */
 function initUiElements() {
-    // Config Zoom Handler Setup
+    // --- Existing Zoom Handler Setup ---
     const zoomSlider = document.getElementById('zoom-range');
     if (zoomSlider) {
         zoomSlider.addEventListener('input', (e) => {
@@ -239,13 +239,32 @@ function initUiElements() {
         });
     }
 
-    // Language Toggle Setup
+    // --- Existing Language Toggle Setup ---
     const langBtn = document.getElementById('language-toggle');
     if (langBtn) {
         langBtn.addEventListener('click', () => {
             const newLang = document.documentElement.lang === 'de' ? 'en' : 'de';
             document.documentElement.lang = newLang;
             translateUi(newLang);
+        });
+    }
+
+    // --- ADD THIS: Modal Open & Close Event Listeners ---
+    const optionsBtn = document.getElementById('btn-options-modal');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeTriggers = document.querySelectorAll('.modal-close-trigger');
+
+    if (optionsBtn && settingsModal) {
+        // Open Modal
+        optionsBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('hidden');
+        });
+
+        // Close Modal via 'X' or 'Fertig' buttons
+        closeTriggers.forEach(trigger => {
+            trigger.addEventListener('click', () => {
+                settingsModal.classList.add('hidden');
+            });
         });
     }
 }
@@ -272,9 +291,10 @@ function renderSelectionDropdowns() {
         opt1.textContent = item.artNr;
         artNrDropdown.appendChild(opt1);
 
+        // FIXED HERE: changed item.bezeichnung -> item.bez AND item.suffix -> item.geb
         let opt2 = document.createElement('option');
         opt2.value = item.artNr;
-        opt2.textContent = `${item.bezeichnung} ${item.suffix || ''}`;
+        opt2.textContent = `${item.bez} ${item.geb || ''}`.trim(); 
         bezDropdown.appendChild(opt2);
     });
 }
