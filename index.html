@@ -7,13 +7,11 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e293b">
-    <!-- PWA Icons Fixed Paths -->
     <link rel="icon" type="image/png" sizes="192x192" href="images/web-app-manifest-192x192.png">
     <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 </head>
 <body>
 
-    <!-- Header Navigation & Status Bar -->
     <header class="app-header">
         <div class="header-container">
             <h1 data-i18n="studioV9"></h1>
@@ -25,10 +23,8 @@
         </div>
     </header>
 
-    <!-- Main Workspace Setup -->
     <main class="workspace-container">
         
-        <!-- Selection Form Modifiers -->
         <section class="selection-panel card">
             <h2 data-i18n="printLayout">Druck-Layout</h2>
             <div class="form-group-row">
@@ -50,6 +46,7 @@
                 <div class="form-group">
                     <label for="select-format" data-i18n="lblFormat">Etiketten-Hersteller & Format:</label>
                     <select id="select-format" class="form-control">
+                        <option value="" data-i18n="selectFormatPrompt">-- Bitte Format wählen --</option>
                         <option value="4473">HERMA 4473 (70 x 36 mm)</option>
                         <option value="4428">HERMA 4428 (105 x 68 mm)</option>
                         <option value="4276">HERMA 4276 (99,1 x 42,3 mm)</option>
@@ -70,24 +67,21 @@
             </div>
         </section>
 
-        <!-- Interactive Visual Layout Workspace Overlay -->
         <section class="preview-panel card">
             <div class="panel-header">
-                <h3 data-i18n="modal2Title" layoutTitleAttr="Klicken für vollständige A4-Großansicht">Interaktiver A4-Druckbogen</h3>
+                <h3 data-i18n="modal2Title">Interaktiver A4-Druckbogen</h3>
                 <div class="zoom-controls">
                     <span data-i18n="txtZoom">Zoom</span>
                     <input type="range" id="zoom-range" min="0.5" max="1.5" step="0.1" value="1">
                 </div>
             </div>
             <div class="sheet-scroller">
-                <!-- Target node used heavily by computational placement loops inside script.js -->
                 <div id="interactive-sheet-preview" class="a4-sheet-container"></div>
             </div>
             <button id="btn-print-trigger" class="btn-success btn-large" data-i18n="printNow">Jetzt Drucken</button>
         </section>
     </main>
 
-    <!-- Configuration Settings Overlay Modal (Modal 1) -->
     <div id="settings-modal" class="modal-overlay hidden">
         <div class="modal-content card animate-fade-in">
             <div class="modal-header">
@@ -96,13 +90,11 @@
             </div>
             <div class="modal-body">
                 
-                <!-- Tab Switching Navigation -->
                 <div class="tab-navigation">
                     <button class="tab-btn active" data-target="tab-worker" data-i18n="tabSelect">LAVU Service-Worker</button>
                     <button class="tab-btn" data-target="tab-database" data-i18n="tabManage">Datenbank verwalten</button>
                 </div>
 
-                <!-- Tab content for worker operations -->
                 <div id="tab-worker" class="tab-content-panel active">
                     <div class="form-group">
                         <label for="input-location-api" data-i18n="lblLocationsUrl">Locations API:</label>
@@ -120,10 +112,8 @@
                     </div>
                 </div>
 
-                <!-- Tab content for database changes -->
                 <div id="tab-database" class="tab-content-panel">
                     <div class="form-group-row">
-                        <!-- Added ArtNr input field to complete validation logic -->
                         <div class="form-group compact">
                             <label for="db-input-artnr" data-i18n="artNr">Art.Nr.:</label>
                             <input type="text" id="db-input-artnr" class="form-control">
@@ -153,7 +143,6 @@
         </div>
     </div>
 
-    <!-- PWA Smart Banner Bar -->
     <div id="pwa-install-banner" class="pwa-banner hidden">
         <div class="banner-text">
             <strong data-i18n="txtPwaTitle">Als App installieren</strong>
@@ -162,7 +151,6 @@
         <button id="btn-pwa-install-trigger" class="btn-primary compact" data-i18n="btnPwaInstall">Installieren</button>
     </div>
 
-    <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -172,7 +160,6 @@
             });
         }
     </script>
-    <!-- Application Engine Script Attachments -->
     <script src="scripts/script.js"></script>
 </body>
 </html>
