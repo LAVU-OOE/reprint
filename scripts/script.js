@@ -323,9 +323,9 @@ function renderSelectionDropdowns() {
     
     if (!artNrDropdown || !bezDropdown) return;
 
-    // Clear existing values
-    artNrDropdown.innerHTML = '';
-    bezDropdown.innerHTML = '';
+    // Clear and add styled placeholder options first
+    artNrDropdown.innerHTML = '<option value="">-- Wähle Art.Nr. --</option>';
+    bezDropdown.innerHTML = '<option value="">-- Wähle Bezeichnung --</option>';
 
     // Alphabetical Sorting based on Article Numbers
     const sortedData = [...a2].sort((a, b) => String(a.artNr).localeCompare(String(b.artNr)));
@@ -336,7 +336,6 @@ function renderSelectionDropdowns() {
         opt1.textContent = item.artNr;
         artNrDropdown.appendChild(opt1);
 
-        // FIXED HERE: changed item.bezeichnung -> item.bez AND item.suffix -> item.geb
         let opt2 = document.createElement('option');
         opt2.value = item.artNr;
         opt2.textContent = `${item.bez} ${item.geb || ''}`.trim(); 
