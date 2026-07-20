@@ -225,13 +225,15 @@ select.form-control option {
     border: 1px dashed var(--border-color);
 }
 
-/* --- Interactive Virtual Representation Grid Mapping --- */
+/* Interactive Virtual Representation Grid Mapping */
 .a4-sheet-container {
     background-color: white;
     color: #334155;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     transform-origin: top center;
     transition: transform 0.2s ease-out;
+    
+    /* Strict CSS Real-world A4 Dimensions Scaled Baseline */
     width: 210mm;
     height: 297mm;
     padding: 10mm;
@@ -255,36 +257,42 @@ select.form-control option {
     font-weight: 500;
 }
 
-/* STATE #1: Unselected / Skipped Exclusions (Vibrant Red) */
+/* STATE #1: Neutral Default State (UI Slate Appearance) */
 .label-grid-cell.state-neutral {
-    background-color: #ee1111 !important;
-    border-color: #b91c1c !important;
-    color: #ffffff !important;
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-muted) !important;
 }
 .label-grid-cell.state-neutral:hover {
-    background-color: #dc2626 !important;
+    background-color: var(--border-color) !important;
+    color: var(--text-main) !important;
 }
 
-/* STATE #2: Active Print Zone Target Default / Ready (Slate Grey) */
+/* STATE #2: Active Print Zone Target (Solid Vibrant Emerald Green) */
 .label-grid-cell.state-selected {
-    background-color: #334155 !important;
-    border-color: #475569 !important;
-    color: #f8fafc !important;
-}
-
-/* STATE #3: Active Print Zone With Chosen Article (Emerald Green) */
-.label-grid-cell.state-selected.has-article {
     background-color: #059669 !important;
     border-color: #10b981 !important;
     color: #ffffff !important;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
-.label-grid-cell.state-selected.has-article:hover {
+.label-grid-cell.state-selected:hover {
     background-color: #047857 !important;
+    border-color: #059669 !important;
 }
 .label-grid-cell.state-selected .cell-desc {
     font-size: 0.7rem;
     opacity: 0.9;
+}
+
+/* STATE #3: Unselected / Skipped Exclusions (Transparent Muted Red Zone) */
+.label-grid-cell.state-unselected {
+    background-color: rgba(220, 38, 38, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    color: #f87171 !important;
+}
+.label-grid-cell.state-unselected:hover {
+    background-color: rgba(220, 38, 38, 0.22) !important;
+    border-color: #ef4444 !important;
 }
 
 /* --- Modals Config System Overlays --- */
