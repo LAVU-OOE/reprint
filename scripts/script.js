@@ -1,6 +1,6 @@
 /**
  * LAVU OÖ - Label Studio v9
- * Core Application Logic & Data Management
+ * Core Application Logic, Data Management & Print Engine
  */
 
 (function () {
@@ -12,9 +12,16 @@
 
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Hours Cache TTL
 
-    document.addEventListener('DOMContentLoaded', () => {
-        initApp();
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initApp();
+        setupStoragePersistence();
     });
+
+    // Fallback execution check if module loads post-DOMContentLoaded
+    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+        initApp();
+        setupStoragePersistence();
+    }
 
     async function initApp() {
         updateNetworkStatus('netLoading');
@@ -24,131 +31,75 @@
         renderPrintSheetPreview();
     }
 
-    async function loadExternalData() {
+    /* ==========================================================================
+       Safe Storage Persistence Handler (Fix #1)
+       ========================================================================== */
+    async function setupStoragePersistence() {
         try {
-            // FIXED ISSUE 5: Safely fetch manifest alongside i18n, formats, and sortiment with fallback error handling
+            if (navigator && typeof navigator.storage !== 'undefined' && typeof navigator.storage.persist === 'function') {
+                const isPersisted = await navigator.storage.persist();
+                console.log(`Storage persistence granted: ${isPersisted}`);
+            } else {
+                console.warn('Storage Persistence API not supported in this environment.');
+            }
+        } catch (err) {
+            console.error('Failed to request storage persistence:', err);
+        }
+    }
+
+    /* ==========================================================================
+       Robust API & Asset Loader (Fix #2)
+       ========================================================================== */
+    async function loadExternalData() {
+        const rawApiBase = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
+        const apiBase = rawApiBase.replace(/\/+$/, '');
+        const sortimentUrl = `${apiBase}/sortiment.json`;
+
+        try {
             const [manifestRes, i18nRes, formatsRes, sortimentRes] = await Promise.all([
                 fetch('manifest.json').catch(() => ({ ok: false })),
-                fetch('scripts/i18n.json'),
-                fetch('scripts/formats.json'),
-                fetch('scripts/sortiment.json')
+                fetch('scripts/i18n.json').catch(() => ({ ok: false })),
+                fetch('scripts/formats.json').catch(() => ({ ok: false })),
+                fetch(sortimentUrl).catch(() => ({ ok: false }))
             ]);
-            
-            if (!i18nRes.ok || !formatsRes.ok || !sortimentRes.ok) {
-                throw new Error('One or more core resource JSON files not found');
-            }
             
             if (manifestRes && manifestRes.ok) {
                 await manifestRes.json().catch(() => null);
             }
 
-            i18n = await i18nRes.json();
-            formats = await formatsRes.json();
-            const sortimentData = await sortimentRes.json();
+            if (i18nRes.ok) {
+                i18n = await i18nRes.json();
+            } else {
+                loadEmbeddedI18nFallbacks();
+            }
+
+            if (formatsRes.ok) {
+                formats = await formatsRes.json();
+            } else {
+                loadEmbeddedFormatsFallbacks();
+            }
+
+            let sortimentData = [];
+            if (sortimentRes.ok) {
+                const contentType = sortimentRes.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    sortimentData = await sortimentRes.json();
+                }
+            }
             
             if (Array.isArray(sortimentData) && sortimentData.length > 0) {
                 a2 = sortimentData;
                 localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
                 updateNetworkStatus('netSuccessLocal');
+                hideLoadingScreen();
             } else {
-                throw new Error('Invalid sortiment data structure');
+                throw new Error('Invalid or empty sortiment data payload from API');
             }
         } catch (err) {
-            console.warn('External data load failed, using fallbacks and local cache with TTL verification:', err);
-            
-            i18n = {
-                de: {
-                    studioV9: "Etiketten-Studio v9",
-                    loadingFormat: "Format wird geladen...",
-                    printLayout: "Druck-Layout",
-                    artNr: "Art.Nr.",
-                    bezeichnung: "Bezeichnung",
-                    printNow: "Jetzt Drucken",
-                    options: "Optionen",
-                    modal1Title: "Druck- & Standorteinstellungen",
-                    lblFormat: "Etiketten-Hersteller & Format:",
-                    lblCount: "Anzahl Etiketten",
-                    lblStartPos: "Start-Position",
-                    selectFormatPrompt: "-- Bitte Format wählen --",
-                    alertSelectFormat: "Bitte wählen Sie zuerst ein Etiketten-Format aus!",
-                    tabSelect: "LAVU Service-Worker",
-                    tabManage: "Datenbank verwalten",
-                    lblUrl: "Sortiment API:",
-                    lblLocationsUrl: "Locations API:",
-                    btnUpdate: "Aktualisieren",
-                    btnUpdateLocations: "Aktualisieren",
-                    lblDbSuffix: "Gebinde / Suffix:",
-                    lblDbBez: "Bezeichnung:",
-                    btnSave: "💾 Ändern",
-                    btnAddNew: "➕ Neu hinzufügen",
-                    btnCancel: "Abbrechen",
-                    btnDownloadJson: "📥 Aktuelle Datenbank als JSON herunterladen",
-                    btnSaveDefault: "Standard sichern",
-                    btnDone: "Fertig",
-                    modal2Title: "Interaktiver A4-Druckbogen",
-                    txtPwaTitle: "Als App installieren",
-                    txtPwaSub: "Schnellerer Zugriff & Offline-Nutzung",
-                    btnPwaInstall: "Installieren",
-                    alertSaved: "Aktuelle Einstellungen wurden als Standard im Browser gespeichert!",
-                    alertFillForm: "Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.",
-                    alertDuplicate: "Diese Artikelnummer existiert bereits!",
-                    netLoading: "⏳ Verbinde...",
-                    netSuccessLocal: "🟢 Lokale sortiment.json erfolgreich aktiv",
-                    netFallbackLocal: "⚠️ Keine lokale sortiment.json gefunden. Cache geladen.",
-                    txtZoom: "Zoom"
-                },
-                en: {
-                    studioV9: "Label Studio v9",
-                    loadingFormat: "Loading format...",
-                    printLayout: "Print Layout",
-                    artNr: "Item No.",
-                    bezeichnung: "Description",
-                    printNow: "Print Now",
-                    options: "Options",
-                    modal1Title: "Print & Location Settings",
-                    lblFormat: "Label Manufacturer & Format:",
-                    lblCount: "Number of Labels",
-                    lblStartPos: "Start Position",
-                    selectFormatPrompt: "-- Please select a format --",
-                    alertSelectFormat: "Please select a label format first!",
-                    tabSelect: "LAVU Service-Worker",
-                    tabManage: "Manage Database",
-                    lblUrl: "Sortiment API:",
-                    lblLocationsUrl: "Locations API:",
-                    btnUpdate: "Update",
-                    btnUpdateLocations: "Update",
-                    lblDbSuffix: "Container / Suffix:",
-                    lblDbBez: "Description:",
-                    btnSave: "💾 Change",
-                    btnAddNew: "➕ Add New",
-                    btnCancel: "Cancel",
-                    btnDownloadJson: "📥 Download Current Database as JSON",
-                    btnSaveDefault: "Save Defaults",
-                    btnDone: "Done",
-                    modal2Title: "Interactive A4 Print Sheet",
-                    txtPwaTitle: "Install as App",
-                    txtPwaSub: "Faster access & offline usage",
-                    btnPwaInstall: "Install",
-                    alertSaved: "Current settings saved as defaults in browser!",
-                    alertFillForm: "Please fill in at least Item No. and Description.",
-                    alertDuplicate: "This Article Number already exists!",
-                    netLoading: "⏳ Connecting...",
-                    netSuccessLocal: "🟢 Local sortiment.json active successfully",
-                    netFallbackLocal: "⚠️ No local sortiment.json found. Cache loaded.",
-                    txtZoom: "Zoom"
-                }
-            };
-
-            formats = {
-                "4473": { cols: 3, rows: 8, name: "HERMA 4473 (70 x 36 mm)" },
-                "4428": { cols: 2, rows: 4, name: "HERMA 4428 (105 x 68 mm)" },
-                "4276": { cols: 2, rows: 6, name: "HERMA 4276 (99,1 x 42,3 mm)" },
-                "5077": { cols: 2, rows: 4, name: "HERMA 5077 (99,1 x 67,7 mm)" },
-                "4459": { cols: 3, rows: 17, name: "HERMA 4459 (70 x 16,9 mm)" },
-                "4456": { cols: 3, rows: 10, name: "HERMA 4456 (70 x 29,7 mm)" },
-                "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" }
-            };
+            console.warn('External data load failed, checking local cache storage:', err);
+            loadEmbeddedI18nFallbacks();
+            loadEmbeddedFormatsFallbacks();
 
             const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
             const cacheTimestamp = localStorage.getItem('lavu_studio_sortiment_timestamp');
@@ -160,29 +111,148 @@
                     updateNetworkStatus('netFallbackLocal');
                 } catch (e) {
                     a2 = fallbackSortiment.slice();
+                    updateNetworkStatus('netFallbackLocal');
                 }
             } else {
                 localStorage.removeItem('lavu_studio_sortiment_v9');
                 localStorage.removeItem('lavu_studio_sortiment_timestamp');
                 a2 = fallbackSortiment.slice();
+                showApiErrorBanner(err.message);
             }
+            hideLoadingScreen();
         }
+    }
+
+    function hideLoadingScreen() {
+        const loader = document.getElementById('loadingOverlay') || document.getElementById('loading-screen');
+        if (loader) {
+            loader.classList.add('hidden');
+        }
+    }
+
+    function showApiErrorBanner(message) {
+        const badge = document.getElementById('network-status-badge') || document.querySelector('.status-badge');
+        if (badge) {
+            badge.textContent = 'API Connection Error (Offline Mode)';
+            badge.style.backgroundColor = 'var(--warning-amber, #f59e0b)';
+        }
+        console.warn(`Application running with fallback data due to: ${message}`);
+    }
+
+    function loadEmbeddedFormatsFallbacks() {
+        formats = {
+            "4473": { cols: 3, rows: 8, name: "HERMA 4473 (70 x 36 mm)" },
+            "4428": { cols: 2, rows: 4, name: "HERMA 4428 (105 x 68 mm)" },
+            "4276": { cols: 2, rows: 6, name: "HERMA 4276 (99,1 x 42,3 mm)" },
+            "5077": { cols: 2, rows: 4, name: "HERMA 5077 (99,1 x 67,7 mm)" },
+            "4459": { cols: 3, rows: 17, name: "HERMA 4459 (70 x 16,9 mm)" },
+            "4456": { cols: 3, rows: 10, name: "HERMA 4456 (70 x 29,7 mm)" },
+            "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" }
+        };
+    }
+
+    function loadEmbeddedI18nFallbacks() {
+        i18n = {
+            de: {
+                studioV9: "Etiketten-Studio v9",
+                loadingFormat: "Format wird geladen...",
+                printLayout: "Druck-Layout",
+                artNr: "Art.Nr.",
+                bezeichnung: "Bezeichnung",
+                printNow: "Jetzt Drucken",
+                options: "Optionen",
+                modal1Title: "Druck- & Standorteinstellungen",
+                lblFormat: "Etiketten-Hersteller & Format:",
+                lblCount: "Anzahl Etiketten",
+                lblStartPos: "Start-Position",
+                selectFormatPrompt: "-- Bitte Format wählen --",
+                alertSelectFormat: "Bitte wählen Sie zuerst ein Etiketten-Format aus!",
+                tabSelect: "LAVU Service-Worker",
+                tabManage: "Datenbank verwalten",
+                lblUrl: "Sortiment API:",
+                lblLocationsUrl: "Locations API:",
+                btnUpdate: "Aktualisieren",
+                btnUpdateLocations: "Aktualisieren",
+                lblDbSuffix: "Gebinde / Suffix:",
+                lblDbBez: "Bezeichnung:",
+                btnSave: "💾 Ändern",
+                btnAddNew: "➕ Neu hinzufügen",
+                btnCancel: "Abbrechen",
+                btnDownloadJson: "📥 Aktuelle Datenbank als JSON herunterladen",
+                btnSaveDefault: "Standard sichern",
+                btnDone: "Fertig",
+                modal2Title: "Interaktiver A4-Druckbogen",
+                txtPwaTitle: "Als App installieren",
+                txtPwaSub: "Schnellerer Zugriff & Offline-Nutzung",
+                btnPwaInstall: "Installieren",
+                alertSaved: "Aktuelle Einstellungen wurden als Standard im Browser gespeichert!",
+                alertFillForm: "Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.",
+                alertDuplicate: "Diese Artikelnummer existiert bereits!",
+                netLoading: "⏳ Verbinde...",
+                netSuccessLocal: "🟢 Lokale sortiment.json erfolgreich aktiv",
+                netFallbackLocal: "⚠️ Keine Verbindung. Cache geladen.",
+                txtZoom: "Zoom"
+            },
+            en: {
+                studioV9: "Label Studio v9",
+                loadingFormat: "Loading format...",
+                printLayout: "Print Layout",
+                artNr: "Item No.",
+                bezeichnung: "Description",
+                printNow: "Print Now",
+                options: "Options",
+                modal1Title: "Print & Location Settings",
+                lblFormat: "Label Manufacturer & Format:",
+                lblCount: "Number of Labels",
+                lblStartPos: "Start Position",
+                selectFormatPrompt: "-- Please select a format --",
+                alertSelectFormat: "Please select a label format first!",
+                tabSelect: "LAVU Service-Worker",
+                tabManage: "Manage Database",
+                lblUrl: "Sortiment API:",
+                lblLocationsUrl: "Locations API:",
+                btnUpdate: "Update",
+                btnUpdateLocations: "Update",
+                lblDbSuffix: "Container / Suffix:",
+                lblDbBez: "Description:",
+                btnSave: "💾 Change",
+                btnAddNew: "➕ Add New",
+                btnCancel: "Cancel",
+                btnDownloadJson: "📥 Download Current Database as JSON",
+                btnSaveDefault: "Save Defaults",
+                btnDone: "Done",
+                modal2Title: "Interactive A4 Print Sheet",
+                txtPwaTitle: "Install as App",
+                txtPwaSub: "Faster access & offline usage",
+                btnPwaInstall: "Install",
+                alertSaved: "Current settings saved as defaults in browser!",
+                alertFillForm: "Please fill in at least Item No. and Description.",
+                alertDuplicate: "This Article Number already exists!",
+                netLoading: "⏳ Connecting...",
+                netSuccessLocal: "🟢 Local sortiment.json active successfully",
+                netFallbackLocal: "⚠️ Offline. Cache loaded.",
+                txtZoom: "Zoom"
+            }
+        };
     }
 
     function updateNetworkStatus(statusKey) {
         const currentLang = document.documentElement.lang || 'de';
-        const statusText = i18n[currentLang] ? i18n[currentLang][statusKey] : "Connecting...";
-        const badge = document.getElementById('network-status-badge');
+        const statusText = i18n[currentLang]?.[statusKey] || "Connecting...";
+        const badge = document.getElementById('network-status-badge') || document.querySelector('.status-badge');
         if (badge) {
             badge.textContent = statusText;
         }
     }
 
+    /* ==========================================================================
+       UI Event Bindings & Interaction Handlers
+       ========================================================================== */
     function initUiElements() {
         const zoomSlider = document.getElementById('zoom-range');
         if (zoomSlider) {
             zoomSlider.addEventListener('input', (e) => {
-                const previewSheet = document.getElementById('interactive-sheet-preview');
+                const previewSheet = document.getElementById('interactive-sheet-preview') || document.getElementById('previewContainer');
                 if (previewSheet) {
                     previewSheet.style.transform = `scale(${e.target.value})`;
                 }
@@ -198,9 +268,9 @@
             });
         }
 
-        const optionsBtn = document.getElementById('btn-options-modal');
-        const settingsModal = document.getElementById('settings-modal');
-        const closeTriggers = document.querySelectorAll('.modal-close-trigger');
+        const optionsBtn = document.getElementById('btn-options-modal') || document.getElementById('btn-settings');
+        const settingsModal = document.getElementById('settings-modal') || document.getElementById('settingsModal');
+        const closeTriggers = document.querySelectorAll('.modal-close-trigger, .close-modal');
 
         if (optionsBtn && settingsModal) {
             optionsBtn.addEventListener('click', () => {
@@ -270,7 +340,7 @@
             });
         }
 
-        // FIXED ISSUE 6: Added safety validation check and explicit setTimeout delay before calling window.print()
+        // Print Trigger with safety delay timeout (Fix #6)
         const printBtn = document.getElementById('btn-print-trigger');
         if (printBtn) {
             printBtn.addEventListener('click', () => {
@@ -282,13 +352,17 @@
                     return;
                 }
                 
-                // Allow UI thread to fully repaint layout before triggering native print dialog
                 setTimeout(() => {
                     window.print();
                 }, 250);
             });
         }
 
+        setupDatabaseManagementHandlers();
+        setupPwaHandlers();
+    }
+
+    function setupDatabaseManagementHandlers() {
         const btnDbAdd = document.getElementById('btn-db-add');
         const btnDbSave = document.getElementById('btn-db-save');
         const dbArtNr = document.getElementById('db-input-artnr');
@@ -301,7 +375,7 @@
         }
 
         function validateDbInputs() {
-            if (!dbArtNr.value.trim() || !dbBez.value.trim()) {
+            if (!dbArtNr || !dbBez || !dbArtNr.value.trim() || !dbBez.value.trim()) {
                 alert(getAlertText('alertFillForm', 'Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.'));
                 return false;
             }
@@ -319,44 +393,50 @@
             }
         });
 
-        if (btnDbAdd) {
+        if (btnDbAdd && dbArtNr && dbBez) {
             btnDbAdd.addEventListener('click', () => {
                 if (!validateDbInputs()) return;
                 const newArtNr = dbArtNr.value.trim();
-                if (a2.some(item => String(item.artNr) === newArtNr)) {
+                if (a2.some(item => String(item.artNr || item.ID) === newArtNr)) {
                     alert(getAlertText('alertDuplicate', 'Diese Artikelnummer existiert bereits!'));
                     return;
                 }
-                a2.push({ artNr: newArtNr, bez: dbBez.value.trim(), geb: dbSuffix.value.trim() });
+                a2.push({ 
+                    artNr: newArtNr, 
+                    bez: dbBez.value.trim(), 
+                    geb: dbSuffix ? dbSuffix.value.trim() : '' 
+                });
                 localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
                 renderSelectionDropdowns();
-                dbArtNr.value = ''; dbBez.value = ''; dbSuffix.value = '';
+                dbArtNr.value = ''; dbBez.value = ''; if (dbSuffix) dbSuffix.value = '';
             });
         }
 
-        if (btnDbSave) {
+        if (btnDbSave && dbArtNr && dbBez) {
             btnDbSave.addEventListener('click', () => {
                 if (!validateDbInputs()) return;
                 const targetArtNr = dbArtNr.value.trim();
-                const index = a2.findIndex(item => String(item.artNr) === targetArtNr);
+                const index = a2.findIndex(item => String(item.artNr || item.ID) === targetArtNr);
                 if (index === -1) {
                     alert("Artikelnummer nicht gefunden. Bitte stattdessen 'Neu hinzufügen' verwenden.");
                     return;
                 }
                 a2[index].bez = dbBez.value.trim();
-                a2[index].geb = dbSuffix.value.trim();
+                if (dbSuffix) a2[index].geb = dbSuffix.value.trim();
                 localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
                 renderSelectionDropdowns();
             });
         }
+    }
 
+    function setupPwaHandlers() {
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             const pwaBanner = document.getElementById('pwa-install-banner');
-            if (pwaBanner) pwaBanner.classList.add('hidden');
+            if (pwaBanner) pwaBanner.classList.remove('hidden');
         });
 
         const btnPwaInstall = document.getElementById('btn-pwa-install-trigger');
@@ -366,7 +446,8 @@
                     deferredPrompt.prompt();
                     const { outcome } = await deferredPrompt.userChoice;
                     if (outcome === 'accepted') {
-                        document.getElementById('pwa-install-banner').classList.add('hidden');
+                        const pwaBanner = document.getElementById('pwa-install-banner');
+                        if (pwaBanner) pwaBanner.classList.add('hidden');
                     }
                     deferredPrompt = null;
                 }
@@ -383,23 +464,30 @@
         artNrDropdown.innerHTML = '<option value="">-- Wähle Art.Nr. --</option>';
         bezDropdown.innerHTML = '<option value="">-- Wähle Bezeichnung --</option>';
 
-        const sortedData = [...a2].sort((a, b) => String(a.artNr).localeCompare(String(b.artNr)));
+        const sortedData = [...a2].sort((a, b) => String(a.artNr || a.ID || '').localeCompare(String(b.artNr || b.ID || '')));
 
         sortedData.forEach(item => {
+            const identifier = item.artNr || item.ID || '';
+            const description = item.bez || item.Bezeichnung || '';
+            const suffix = item.geb || '';
+
             let opt1 = document.createElement('option');
-            opt1.value = item.artNr;
-            opt1.textContent = item.artNr;
+            opt1.value = identifier;
+            opt1.textContent = identifier;
             artNrDropdown.appendChild(opt1);
 
             let opt2 = document.createElement('option');
-            opt2.value = item.artNr;
-            opt2.textContent = `${item.bez} ${item.geb || ''}`.trim(); 
+            opt2.value = identifier;
+            opt2.textContent = `${description} ${suffix}`.trim(); 
             bezDropdown.appendChild(opt2);
         });
     }
 
+    /* ==========================================================================
+       Interactive Print Sheet Preview Engine (Fix #3 XSS prevention & Fix #7 NaN safeguards)
+       ========================================================================== */
     function renderPrintSheetPreview() {
-        const targetSheet = document.getElementById('interactive-sheet-preview');
+        const targetSheet = document.getElementById('interactive-sheet-preview') || document.getElementById('previewContainer');
         if (!targetSheet) return;
 
         const formatSelect = document.getElementById('select-format');
@@ -410,7 +498,6 @@
             return;
         }
 
-        // FIXED ISSUE 7: Protected math calculations against malformed configurations yielding NaN
         const rawConfig = formats[selectedFormatKey];
         const formatConfig = {
             cols: (rawConfig && Number.isInteger(rawConfig.cols) && rawConfig.cols > 0) ? rawConfig.cols : 3,
@@ -436,7 +523,7 @@
 
         const artNrDropdown = document.getElementById('select-artnr');
         const selectedArtNr = artNrDropdown?.value;
-        const activeItem = a2.find(item => String(item.artNr) === String(selectedArtNr));
+        const activeItem = a2.find(item => String(item.artNr || item.ID) === String(selectedArtNr));
 
         targetSheet.innerHTML = '';
         targetSheet.style.display = 'grid';
@@ -453,16 +540,34 @@
             if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
                 if (activeItem) {
                     gridCell.className = 'label-grid-cell state-selected has-article';
-                    gridCell.innerHTML = `
-                        <div class="print-label-content" style="text-align: center; padding: 4px;">
-                            <strong style="display: block; font-size: 1rem;">${activeItem.artNr}</strong>
-                            <span class="cell-desc" style="display: block; font-size: 0.8rem; margin-top: 2px;">${activeItem.bez}</span>
-                            <small style="font-size: 0.7rem; opacity: 0.8;">${activeItem.geb || ''}</small>
-                        </div>
-                    `;
+                    
+                    const innerWrapper = document.createElement('div');
+                    innerWrapper.className = 'print-label-content';
+                    innerWrapper.style.cssText = 'text-align: center; padding: 4px;';
+
+                    const strongEl = document.createElement('strong');
+                    strongEl.style.cssText = 'display: block; font-size: 1rem;';
+                    strongEl.textContent = activeItem.artNr || activeItem.ID || '';
+
+                    const spanEl = document.createElement('span');
+                    spanEl.className = 'cell-desc';
+                    spanEl.style.cssText = 'display: block; font-size: 0.8rem; margin-top: 2px;';
+                    spanEl.textContent = activeItem.bez || activeItem.Bezeichnung || '';
+
+                    const smallEl = document.createElement('small');
+                    smallEl.style.cssText = 'font-size: 0.7rem; opacity: 0.8;';
+                    smallEl.textContent = activeItem.geb || '';
+
+                    innerWrapper.appendChild(strongEl);
+                    innerWrapper.appendChild(spanEl);
+                    innerWrapper.appendChild(smallEl);
+                    gridCell.appendChild(innerWrapper);
                 } else {
                     gridCell.className = 'label-grid-cell state-selected';
-                    gridCell.innerHTML = `<span style="opacity: 0.9;">Bereit (Kein Artikel)</span>`;
+                    const spanEl = document.createElement('span');
+                    spanEl.style.opacity = '0.9';
+                    spanEl.textContent = 'Bereit (Kein Artikel)';
+                    gridCell.appendChild(spanEl);
                 }
             } else {
                 gridCell.className = 'label-grid-cell state-neutral';
