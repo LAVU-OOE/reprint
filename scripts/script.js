@@ -26,16 +26,22 @@
 
     async function loadExternalData() {
         try {
-            const [i18nRes, formatsRes, sortimentRes] = await Promise.all([
+            // FIXED ISSUE 5: Safely fetch manifest alongside i18n, formats, and sortiment with fallback error handling
+            const [manifestRes, i18nRes, formatsRes, sortimentRes] = await Promise.all([
+                fetch('manifest.json').catch(() => ({ ok: false })),
                 fetch('scripts/i18n.json'),
                 fetch('scripts/formats.json'),
                 fetch('scripts/sortiment.json')
             ]);
             
             if (!i18nRes.ok || !formatsRes.ok || !sortimentRes.ok) {
-                throw new Error('One or more JSON files not found');
+                throw new Error('One or more core resource JSON files not found');
             }
             
+            if (manifestRes && manifestRes.ok) {
+                await manifestRes.json().catch(() => null);
+            }
+
             i18n = await i18nRes.json();
             formats = await formatsRes.json();
             const sortimentData = await sortimentRes.json();
@@ -148,7 +154,6 @@
             const cacheTimestamp = localStorage.getItem('lavu_studio_sortiment_timestamp');
             const now = Date.now();
 
-            // Cache Invalidation Check via TTL (24 Hours)
             if (localCache && cacheTimestamp && (now - parseInt(cacheTimestamp, 10) < CACHE_TTL_MS)) {
                 try {
                     a2 = JSON.parse(localCache);
@@ -157,7 +162,6 @@
                     a2 = fallbackSortiment.slice();
                 }
             } else {
-                console.warn('Cache expired or missing. Clearing outdated cache entry.');
                 localStorage.removeItem('lavu_studio_sortiment_v9');
                 localStorage.removeItem('lavu_studio_sortiment_timestamp');
                 a2 = fallbackSortiment.slice();
@@ -266,6 +270,7 @@
             });
         }
 
+        // FIXED ISSUE 6: Added safety validation check and explicit setTimeout delay before calling window.print()
         const printBtn = document.getElementById('btn-print-trigger');
         if (printBtn) {
             printBtn.addEventListener('click', () => {
@@ -276,7 +281,11 @@
                     document.getElementById('select-format')?.focus();
                     return;
                 }
-                window.print();
+                
+                // Allow UI thread to fully repaint layout before triggering native print dialog
+                setTimeout(() => {
+                    window.print();
+                }, 250);
             });
         }
 
@@ -299,7 +308,6 @@
             return true;
         }
 
-        // Add Enter Key Validation & Execution Support for Inputs
         [dbArtNr, dbBez, dbSuffix].forEach(inputField => {
             if (inputField) {
                 inputField.addEventListener('keydown', (e) => {
@@ -348,7 +356,7 @@
             e.preventDefault();
             deferredPrompt = e;
             const pwaBanner = document.getElementById('pwa-install-banner');
-            if (pwaBanner) pwaBanner.classList.add('hidden'); // Fixed banner initialization
+            if (pwaBanner) pwaBanner.classList.add('hidden');
         });
 
         const btnPwaInstall = document.getElementById('btn-pwa-install-trigger');
@@ -397,13 +405,18 @@
         const formatSelect = document.getElementById('select-format');
         const selectedFormatKey = formatSelect?.value;
 
-        // Fallback safety and messaging if no format is selected yet
         if (!selectedFormatKey) {
             targetSheet.innerHTML = `<div class="preview-placeholder-msg" style="padding: 40px; text-align: center; color: #64748b; font-weight: 500;">Bitte wählen Sie oben ein Etiketten-Format aus, um die Vorschau anzuzeigen.</div>`;
             return;
         }
 
-        const formatConfig = formats[selectedFormatKey] || { cols: 3, rows: 8, name: "Default (70 x 36 mm)" };
+        // FIXED ISSUE 7: Protected math calculations against malformed configurations yielding NaN
+        const rawConfig = formats[selectedFormatKey];
+        const formatConfig = {
+            cols: (rawConfig && Number.isInteger(rawConfig.cols) && rawConfig.cols > 0) ? rawConfig.cols : 3,
+            rows: (rawConfig && Number.isInteger(rawConfig.rows) && rawConfig.rows > 0) ? rawConfig.rows : 8,
+            name: (rawConfig && rawConfig.name) ? rawConfig.name : "Default Format"
+        };
 
         const totalCells = formatConfig.cols * formatConfig.rows;
         const startPosInput = document.getElementById('input-startpos');
@@ -415,11 +428,11 @@
 
         if (countInput && (!countInput.value || !countInput.dataset.userModified)) {
             const currentStart = parseInt(startPosInput?.value, 10) || 1;
-            countInput.value = (totalCells - currentStart) + 1;
+            countInput.value = Math.max(1, (totalCells - currentStart) + 1);
         }
 
-        const inputCount = parseInt(countInput?.value, 10) || totalCells;
-        const inputStartPos = parseInt(startPosInput?.value, 10) || 1;
+        const inputCount = Math.max(1, parseInt(countInput?.value, 10) || totalCells);
+        const inputStartPos = Math.max(1, parseInt(startPosInput?.value, 10) || 1);
 
         const artNrDropdown = document.getElementById('select-artnr');
         const selectedArtNr = artNrDropdown?.value;
@@ -430,7 +443,7 @@
         targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
         targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
 
-        const lastActivePosition = (inputStartPos + inputCount) - 1;
+        const lastActivePosition = Math.min(totalCells, (inputStartPos + inputCount) - 1);
 
         for (let i = 0; i < totalCells; i++) {
             const gridCell = document.createElement('div');

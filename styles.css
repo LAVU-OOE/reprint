@@ -235,7 +235,9 @@ select.form-control option {
     width: 210mm;
     height: 297mm;
     padding: 10mm;
+    display: grid;
     gap: 2mm;
+    box-sizing: border-box;
 }
 
 /* Base interactive cell container properties */
@@ -253,6 +255,8 @@ select.form-control option {
     transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
     font-weight: 500;
+    page-break-inside: avoid;
+    break-inside: avoid;
 }
 
 /* STATE #1: Unselected / Skipped Exclusions (Vibrant Red) */
@@ -300,10 +304,19 @@ select.form-control option {
     transition: opacity 0.2s ease;
 }
 
+.modal-overlay.hidden {
+    display: none !important;
+}
+
 .modal-content {
     width: 90%;
     max-width: 600px;
     border-radius: 0.75rem;
+    max-height: 90vh;
+    overflow-y: auto;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
 }
 
 .modal-header {
@@ -311,6 +324,17 @@ select.form-control option {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: 1.5rem;
 }
 
 .modal-close-trigger {
@@ -391,6 +415,10 @@ select.form-control option {
     z-index: 999;
 }
 
+.pwa-banner.hidden {
+    display: none !important;
+}
+
 .banner-text {
     display: flex;
     flex-direction: column;
@@ -432,7 +460,7 @@ select.form-control option {
 
     /* 2. Hide all non-printable UI components entirely */
     .app-header, .selection-panel, .panel-header, .modal-overlay, 
-    .pwa-banner, .zoom-controls, #btn-print-trigger {
+    .pwa-banner, .zoom-controls, #btn-print-trigger, #controls {
         display: none !important;
     }
     
@@ -445,7 +473,7 @@ select.form-control option {
         width: 210mm !important;
         height: 297mm !important;
         display: block !important;
-        overflow: hidden !important; /* Forces layout confinement to exactly 1 page */
+        overflow: hidden !important;
     }
     
     /* 4. Strip layout wrappers so the sheet prints starting from the absolute top-left (0,0) */
@@ -458,6 +486,7 @@ select.form-control option {
         background: transparent !important;
         width: 210mm !important;
         height: 297mm !important;
+        box-shadow: none !important;
     }
 
     /* 5. Clean up sheet presentation bounds, eliminating screen drop-shadows */
@@ -472,6 +501,7 @@ select.form-control option {
         height: 297mm !important;
         page-break-inside: avoid !important;
         page-break-after: avoid !important;
+        padding: 10mm !important;
     }
 
     /* 6. Clean high-contrast borders for printing labels */
@@ -479,10 +509,13 @@ select.form-control option {
         border: 1px solid #cbd5e1 !important;
         background-color: transparent !important;
         color: #000000 !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
-/* Safeguard: Hide control elements and headers completely */
-    .app-header, .selection-panel, .panel-header, .modal-overlay, 
-    .pwa-banner, .zoom-controls, #btn-print-trigger, #controls {
-        display: none !important;
+
+    .label-grid-cell.state-neutral {
+        background: transparent !important;
+        color: transparent !important;
+        border: none !important;
     }
 }
