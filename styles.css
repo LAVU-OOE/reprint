@@ -432,7 +432,7 @@ select.form-control option {
 
     /* 2. Hide all non-printable UI components entirely */
     .app-header, .selection-panel, .panel-header, .modal-overlay, 
-    .pwa-banner, .zoom-controls, #btn-print-trigger, .print-hide {
+    .pwa-banner, .zoom-controls, #btn-print-trigger {
         display: none !important;
     }
     
