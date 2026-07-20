@@ -426,12 +426,75 @@ label {
         page-break-after: avoid !important;
     }
 
-    /* 6. High contrast borders optimized for ink/toner transfer output precision */
-    .label-grid-cell {
-        border: 1px solid #cbd5e1 !important;
-        background-color: transparent !important;
-        color: #000000 !important;
-    }
+/* --- Interactive Virtual Representation Grid Mapping --- */
+.label-grid-cell {
+    border: 1px dashed #cbd5e1;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: #64748b;
+    /* --- CHANGED: Default background color for empty/unselected cells is now transparent --- */
+    background-color: transparent;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    user-select: none;
+}
+
+.label-grid-cell:hover {
+    /* --- CHANGED: Hover background color updated to a brighter slate --- */
+    background-color: #f1f5f9;
+    border-color: var(--accent-primary);
+}
+
+/* Update layout indicators to clearly guide user interaction */
+.label-grid-cell {
+    cursor: pointer;
+    user-select: none;
+}
+/* Style for active label printing zone cells */
+/* --- REMOVE this old style --- */
+/*.label-grid-cell:not(:empty) {
+    background-color: #1e3a8a !important; /* Deep blueprint blue */
+/*    border-color: #3b82f6 !important;     /* Bright border accent */
+/*    color: #f8fafc !important;             /* White text clarity */
+/*}*/
+
+/* Hover preview effect over skipped/empty grid positions */
+/* --- REMOVE this old style --- */
+/*.label-grid-cell:empty:hover {
+/*    background-color: #334155 !important;
+/*    color: #f8fafc;
+/*}*/
+
+/* =========================================================================
+   ADD THESE RULES HERE AT THE END OF THE INTERACTIVE GRID SECTION
+   ========================================================================= */
+
+/* 1. Style for Selected/Active Labels (Green Zone) */
+.label-grid-cell:not(:empty) {
+    background-color: #059669 !important; /* Rich Green (var(--success-hover) variant) */
+    border-color: #10b981 !important;     /* Bright Green border */
+    color: #ffffff !important;             /* White text for contrast */
+}
+
+/* 2. Style for Empty/Unselected Labels (Red Zone) */
+.label-grid-cell:empty {
+    background-color: rgba(185, 28, 28, 0.15) !important; /* Subtle transparent Red */
+    border-color: #ef4444 !important;                /* Bright Red border accent */
+    color: #ef4444 !important;                         /* Red index text clarity */
+}
+
+/* 3. Refined hover effect for selected cells */
+.label-grid-cell:not(:empty):hover {
+    background-color: #047857 !important; /* Slightly darker Green on hover */
+}
+
+/* 4. Refined hover effect for unselected cells */
+.label-grid-cell:empty:hover {
+    background-color: rgba(185, 28, 28, 0.25) !important; /* Slightly brighter Red on hover */
+}
 }
 /* Custom Select Dropdown List Formatting Overrides */
 select.form-control {
