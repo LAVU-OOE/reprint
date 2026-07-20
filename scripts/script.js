@@ -10,7 +10,6 @@
     let locationsData = [];
     let deferredPrompt;
     let currentZoom = 1;
-    let firstClickPosition = null; // Reference anchor tracking for range selection
 
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -29,7 +28,6 @@
     async function initApp() {
         updateNetworkStatus('netLoading');
         await loadExternalData();
-        // Ensure we have at least hardcoded data if everything else failed
         if (!a2 || a2.length === 0) {
             loadEmbeddedSortimentFallbacks();
         }
@@ -55,11 +53,6 @@
         }
     }
 
-    /* ==========================================================================
-       Dedicated Cloudflare Worker API Endpoints
-       - Sortiment & Locations: root URL returns the data
-       - Product (formats): must call /formats path
-       ========================================================================== */
     async function loadExternalData() {
         const rawSortimentApi = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
         const rawLocationsApi = localStorage.getItem('locationsApiBase') || 'https://locations-api.lavu-ooe.workers.dev';
@@ -102,7 +95,6 @@
                 loadEmbeddedFormatsFallbacks();
             }
 
-            // Sortiment cache invalidation
             const cacheTimestamp = localStorage.getItem('lavu_studio_sortiment_timestamp');
             if (cacheTimestamp && (Date.now() - parseInt(cacheTimestamp, 10) > CACHE_TTL_MS)) {
                 localStorage.removeItem('lavu_studio_sortiment_v9');
@@ -130,7 +122,6 @@
                 }
             }
 
-            // Locations cache invalidation
             const locCacheTimestamp = localStorage.getItem('lavu_studio_locations_timestamp');
             if (locCacheTimestamp && (Date.now() - parseInt(locCacheTimestamp, 10) > CACHE_TTL_MS)) {
                 localStorage.removeItem('lavu_studio_locations_v9');
@@ -158,7 +149,6 @@
                 }
             }
 
-            // Update status badge
             if (sortimentRes.ok || locationsRes.ok || formatsRes.ok) {
                 updateNetworkStatus('netSuccessLocal');
             } else {
@@ -215,7 +205,6 @@
         }
     }
 
-    // --- Hardcoded fallback for sortiment (last resort) ---
     function loadEmbeddedSortimentFallbacks() {
         a2 = [
             { artNr: "1001", bez: "Bürocontainer 240 l", geb: "blau" },
@@ -228,7 +217,6 @@
         localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
     }
 
-    // --- Hardcoded fallback for locations ---
     function loadEmbeddedLocationsFallbacks() {
         locationsData = [
             { id: "loc1", name: "Linz - Hauptlager" },
@@ -436,7 +424,6 @@
             });
         }
 
-        // Sync location dropdown changes to trigger preview update
         document.getElementById('select-location')?.addEventListener('change', renderPrintSheetPreview);
 
         const syncTriggers = ['select-artnr', 'select-bezeichnung', 'input-count', 'input-startpos', 'select-format', 'select-location'];
@@ -462,7 +449,6 @@
                     countInput.value = '';
                     startPosInput.value = 1;
                 }
-                firstClickPosition = null; // Clear range anchor on template switch
                 renderPrintSheetPreview();
             });
         }
@@ -661,7 +647,7 @@
         locDropdown.innerHTML = '<option value="">-- Standort wählen --</option>';
         locationsData.forEach(loc => {
             const opt = document.createElement('option');
-            opt.value = loc.id || loc.name; // use id if available, else name
+            opt.value = loc.id || loc.name;
             opt.textContent = loc.name || loc;
             locDropdown.appendChild(opt);
         });
@@ -765,33 +751,46 @@
                 gridCell.textContent = `Leer (${cellPosition})`;
             }
 
-            // Click range builder interaction logic
+            // ------------------------------------------------------------
+            // NEW CLICK LOGIC (matches your requested behaviour)
+            // ------------------------------------------------------------
             gridCell.addEventListener('click', () => {
-                if (startPosInput && countInput) {
-                    if (firstClickPosition === null) {
-                        // First click sets reference anchor
-                        firstClickPosition = cellPosition;
-                        startPosInput.value = cellPosition;
-                        countInput.value = 1;
-                    } else {
-                        // Second click fills labels in between relative to the first click reference
-                        const start = Math.min(firstClickPosition, cellPosition);
-                        const end = Math.max(firstClickPosition, cellPosition);
-                        
-                        startPosInput.value = start;
-                        countInput.value = (end - start) + 1;
-                        
-                        // Reset selection tracker context state for next cycle sequence
-                        firstClickPosition = null;
-                    }
+                if (!startPosInput || !countInput) return;
 
-                    countInput.dataset.userModified = "true";
+                const currentStart = parseInt(startPosInput.value, 10) || 1;
+                const currentCount = parseInt(countInput.value, 10) || 1;
+                const currentEnd = currentStart + currentCount - 1;
 
-                    startPosInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    countInput.dispatchEvent(new Event('change', { bubbles: true }));
+                let newStart = currentStart;
+                let newCount = currentCount;
 
-                    renderPrintSheetPreview();
+                if (cellPosition < currentStart) {
+                    // Clicked before current start → extend to the left
+                    newStart = cellPosition;
+                    newCount = currentEnd - cellPosition + 1;
+                } else if (cellPosition > currentEnd) {
+                    // Clicked after current end → extend to the right
+                    newStart = currentStart;
+                    newCount = cellPosition - currentStart + 1;
+                } else {
+                    // Clicked inside the active range → set start to here, keep end fixed
+                    newStart = cellPosition;
+                    newCount = currentEnd - cellPosition + 1;
                 }
+
+                // Clamp to valid range
+                newStart = Math.max(1, Math.min(newStart, totalCells));
+                newCount = Math.max(1, Math.min(newCount, totalCells - newStart + 1));
+
+                startPosInput.value = newStart;
+                countInput.value = newCount;
+                countInput.dataset.userModified = "true";
+
+                // Trigger re‑render via events
+                startPosInput.dispatchEvent(new Event('change', { bubbles: true }));
+                countInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+                renderPrintSheetPreview();
             });
 
             targetSheet.appendChild(gridCell);
