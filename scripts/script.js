@@ -383,6 +383,9 @@ function renderSelectionDropdowns() {
 /**
  * Computes grid measurements and maps visual classes to the interactive preview targets
  */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
 function renderPrintSheetPreview() {
     const targetSheet = document.getElementById('interactive-sheet-preview');
     if (!targetSheet) return;
@@ -422,9 +425,11 @@ function renderPrintSheetPreview() {
 
         const cellPosition = i + 1;
 
+        // Label is in the active printing range context
         if (cellPosition >= inputStartPos && cellPosition < (inputStartPos + inputCount)) {
-            gridCell.className = 'label-grid-cell state-selected';
             if (activeItem) {
+                // Active Print Zone AND Article Selected -> Turns Emerald Green (#059669)
+                gridCell.className = 'label-grid-cell state-selected has-article';
                 gridCell.innerHTML = `
                     <div class="print-label-content" style="text-align: center; padding: 4px;">
                         <strong style="display: block; font-size: 1rem;">${activeItem.artNr}</strong>
@@ -433,9 +438,12 @@ function renderPrintSheetPreview() {
                     </div>
                 `;
             } else {
-                gridCell.innerHTML = `<span style="opacity:0.7;">Bereit (Kein Artikel)</span>`;
+                // Active Print Zone but NO Article Selected -> Turns Default Slate Grey (#334155)
+                gridCell.className = 'label-grid-cell state-selected';
+                gridCell.innerHTML = `<span style="opacity: 0.9;">Bereit (Kein Artikel)</span>`;
             }
         } else {
+            // Label is outside printing scope / deselected by user -> Turns Vibrant Red (#ee1111)
             gridCell.className = 'label-grid-cell state-neutral';
             gridCell.textContent = `Leer (${cellPosition})`;
         }
