@@ -372,36 +372,65 @@ label {
 /* ==========================================================================
    Print Overrides (Calculations Engine Context Mapping for A4 Outputs)
    ========================================================================== */
+/* ==========================================================================
+   Print Overrides (Calculations Engine Context Mapping for A4 Outputs)
+   ========================================================================== */
 @media print {
-    .app-header, .selection-panel, .panel-header, .modal-overlay, .pwa-banner, .zoom-controls {
+    /* 1. Force strict A4 physical margins and eliminate browser headers/footers */
+    @page {
+        size: A4 portrait;
+        margin: 0 !important;
+    }
+
+    /* 2. Hide all non-printable UI components entirely */
+    .app-header, .selection-panel, .panel-header, .modal-overlay, 
+    .pwa-banner, .zoom-controls, #btn-print-trigger {
         display: none !important;
     }
     
-    body {
+    /* 3. Reset structural containers to eliminate offsets, margins, and flex/grid alignment */
+    html, body {
         background-color: white !important;
+        color: #000000 !important;
         padding: 0 !important;
         margin: 0 !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        display: block !important;
+        overflow: hidden !important; /* Forces layout confinement to exactly 1 page */
     }
     
+    /* 4. Strip layout wrappers so the sheet prints starting from the absolute top-left (0,0) */
     .workspace-container, .preview-panel, .sheet-scroller {
         display: block !important;
+        position: static !important;
         margin: 0 !important;
         padding: 0 !important;
         border: none !important;
         background: transparent !important;
+        width: 210mm !important;
+        height: 297mm !important;
     }
 
+    /* 5. Clean up sheet presentation bounds, eliminating screen drop-shadows */
     .a4-sheet-container {
         transform: none !important;
         box-shadow: none !important;
         margin: 0 !important;
-        page-break-inside: avoid;
-        page-break-after: always;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
     }
 
+    /* 6. High contrast borders optimized for ink/toner transfer output precision */
     .label-grid-cell {
-        border: 1px solid #e2e8f0 !important; /* Extremely clean baseline fallback markers */
+        border: 1px solid #cbd5e1 !important;
         background-color: transparent !important;
+        color: #000000 !important;
     }
 }
 /* Custom Select Dropdown List Formatting Overrides */
