@@ -300,34 +300,13 @@ function initUiElements() {
     document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
 
     // 8. Unified Grid Click & Synchronization Logic
-    const targetSheetContainer = document.getElementById('interactive-sheet-preview');
-    const startPosInput = document.getElementById('input-startpos');
+    // FIXED: Removed old conflicting behavior to avoid locking selection count to 1!
     const countInput = document.getElementById('input-count');
-
-    if (targetSheetContainer && startPosInput && countInput) {
-        targetSheetContainer.addEventListener('click', (e) => {
-            const cell = e.target.closest('.label-grid-cell');
-            if (!cell) return;
-
-            // Set marker flag for customized updates
+    const startPosInput = document.getElementById('input-startpos');
+    if (startPosInput && countInput) {
+        // Track manual changes via direct form inputs
+        countInput.addEventListener('input', () => {
             countInput.dataset.userModified = "true";
-
-            const chosenPosition = parseInt(cell.dataset.index, 10) + 1;
-            const currentStart = parseInt(startPosInput.value, 10) || 1;
-            const currentCount = parseInt(countInput.value, 10) || 1;
-
-            if (chosenPosition < currentStart || (currentCount <= 1 && chosenPosition === currentStart)) {
-                startPosInput.value = chosenPosition;
-                countInput.value = 1;
-            } 
-            else if (chosenPosition === currentStart && currentCount > 1) {
-                countInput.value = 1;
-            }
-            else {
-                countInput.value = (chosenPosition - currentStart) + 1;
-            }
-
-            renderPrintSheetPreview();
         });
     }
 
@@ -383,9 +362,6 @@ function renderSelectionDropdowns() {
 /**
  * Computes grid measurements and maps visual classes to the interactive preview targets
  */
-/**
- * Computes grid measurements and maps visual classes to the interactive preview targets
- */
 function renderPrintSheetPreview() {
     const targetSheet = document.getElementById('interactive-sheet-preview');
     if (!targetSheet) return;
@@ -419,7 +395,7 @@ function renderPrintSheetPreview() {
     targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
     targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
 
-for (let i = 0; i < totalCells; i++) {
+    for (let i = 0; i < totalCells; i++) {
         const gridCell = document.createElement('div');
         gridCell.dataset.index = i;
 
@@ -448,8 +424,8 @@ for (let i = 0; i < totalCells; i++) {
             gridCell.textContent = `Leer (${cellPosition})`;
         }
 
-        // --- NEW: INTERACTIVE SHEET CLICK HANDLER ---
-        // Clicking any label cell changes the starting position input field
+        // INTERACTIVE SHEET CLICK HANDLER
+        // Clicking any label cell safely changes the starting position input field
         gridCell.addEventListener('click', () => {
             if (startPosInput) {
                 startPosInput.value = cellPosition;
