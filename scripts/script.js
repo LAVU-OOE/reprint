@@ -3,563 +3,562 @@
  * Core Application Logic & Data Management
  */
 
-// Global App State
-let i18n = {};
-let formats = {};
-let a2 = []; // Local Workspace Database Cache
-let fallbackSortiment = []; // Fallback inventory array if everything fails
+(function () {
+    // Global App State
+    let i18n = {};
+    let formats = {};
+    let a2 = []; // Local Workspace Database Cache
+    const fallbackSortiment = []; // Fallback inventory array if everything fails
+    let deferredPrompt;
 
-// Initialize Configuration on Page Load
-document.addEventListener('DOMContentLoaded', () => {
-    initApp();
-});
+    // Initialize Configuration on Page Load
+    document.addEventListener('DOMContentLoaded', () => {
+        initApp();
+    });
 
-/**
- * Main application entry point
- */
-async function initApp() {
-    updateNetworkStatus('netLoading');
-    
-    // Load local workspace data or pull from remote API if configured
-    await loadExternalData();
-    
-    // Initialize UI Elements, event listeners, and default selections
-    initUiElements();
-    renderSelectionDropdowns();
-    renderPrintSheetPreview();
-}
+    /**
+     * Main application entry point
+     */
+    async function initApp() {
+        updateNetworkStatus('netLoading');
+        
+        // Load local workspace data or pull from remote API if configured
+        await loadExternalData();
+        
+        // Initialize UI Elements, event listeners, and default selections
+        initUiElements();
+        renderSelectionDropdowns();
+        renderPrintSheetPreview();
+    }
 
-/**
- * Loads external JSON resources safely with robust workspace cache preservation
- */
-async function loadExternalData() {
-    try {
-        const [i18nRes, formatsRes, sortimentRes] = await Promise.all([
-            fetch('scripts/i18n.json'),
-            fetch('scripts/formats.json'),
-            fetch('scripts/sortiment.json')
-        ]);
-        
-        if (!i18nRes.ok || !formatsRes.ok || !sortimentRes.ok) {
-            throw new Error('One or more JSON files not found');
-        }
-        
-        i18n = await i18nRes.json();
-        formats = await formatsRes.json();
-        const sortimentData = await sortimentRes.json();
-        
-        if (Array.isArray(sortimentData) && sortimentData.length > 0) {
-            a2 = sortimentData;
-            localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
-            updateNetworkStatus('netSuccessLocal');
-        } else {
-            throw new Error('Invalid sortiment data structure');
-        }
-    } catch (err) {
-        console.warn('External data load failed, using fallbacks and local cache:', err);
-        
-        // Hardcoded i18n Localization Fallbacks
-        i18n = {
-            de: {
-                studioV9: "Etiketten-Studio v9",
-                loadingFormat: "Format wird geladen...",
-                printLayout: "Druck-Layout",
-                artNr: "Art.Nr.",
-                bezeichnung: "Bezeichnung",
-                printNow: "Jetzt Drucken",
-                options: "Optionen",
-                modal1Title: "Druck- & Standorteinstellungen",
-                lblLocation: "Standort (ASZ Niederlassung OÖ):",
-                lblFormat: "Etiketten-Hersteller & Format:",
-                lblCount: "Anzahl Etiketten",
-                lblStartPos: "Start-Position",
-                tabSelect: "LAVU Service-Worker",
-                tabManage: "Datenbank verwalten",
-                lblUrl: "Sortiment API:",
-                lblLocationsUrl: "Locations API:",
-                btnUpdate: "Aktualisieren",
-                btnUpdateLocations: "Aktualisieren",
-                lblDbSuffix: "Gebinde / Suffix:",
-                lblDbBez: "Bezeichnung:",
-                btnSave: "💾 Ändern",
-                btnAddNew: "➕ Neu hinzufügen",
-                btnCancel: "Abbrechen",
-                btnDownloadJson: "📥 Aktuelle Datenbank als JSON herunterladen",
-                lblCurrentEntries: "Aktuelle Einträge im lokalen Workspace:",
-                btnSaveDefault: "Standard sichern",
-                btnDone: "Fertig",
-                modal2Title: "Interaktiver A4-Druckbogen",
-                btnModalPrint: "Drucken",
-                btnModalClose: "Schließen",
-                txtPwaTitle: "Als App installieren",
-                txtPwaSub: "Schnellerer Zugriff & Offline-Nutzung",
-                btnPwaInstall: "Installieren",
-                layoutTitleAttr: "Klicken für vollständige A4-Großansicht",
-                alertSaved: "Aktuelle Einstellungen wurden als Standard im Browser gespeichert!",
-                confirmDelete: "Möchten Sie diesen Eintrag wirklich löschen?",
-                alertFillForm: "Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.",
-                alertErrorChange: "Fehler beim Ändern.",
-                alertDuplicate: "Diese Artikelnummer existiert bereits!",
-                netLoading: "⏳ Verbinde...",
-                netSuccessLocal: "🟢 Lokale sortiment.json erfolgreich aktiv",
-                netSuccessRemote: "🟢 Verbunden mit externem JSON Repository",
-                netFallbackLocal: "⚠️ Keine lokale sortiment.json gefunden. Cache geladen.",
-                netFallbackRemote: "⚠️ Remote JSON Offline! Lokaler Cache geladen.",
-                txtZoom: "Zoom",
-                locationLoading: "Standorte werden geladen...",
-                locationError: "Fehler beim Laden der Standorte",
-                locUrlSaved: "📍 Locations-URL gespeichert.",
-                locUrlUpdated: "✅ Locations-URL aktualisiert!",
-                locUrlInvalid: "❌ Bitte gültige URL eingeben."
-            },
-            en: {
-                studioV9: "Label Studio v9",
-                loadingFormat: "Loading format...",
-                printLayout: "Print Layout",
-                artNr: "Item No.",
-                bezeichnung: "Description",
-                printNow: "Print Now",
-                options: "Options",
-                modal1Title: "Print & Location Settings",
-                lblLocation: "Location (ASZ Branch OÖ):",
-                lblFormat: "Label Manufacturer & Format:",
-                lblCount: "Number of Labels",
-                lblStartPos: "Start Position",
-                tabSelect: "LAVU Service-Worker",
-                tabManage: "Manage Database",
-                lblUrl: "Sortiment API:",
-                lblLocationsUrl: "Locations API:",
-                btnUpdate: "Update",
-                btnUpdateLocations: "Update",
-                lblDbSuffix: "Container / Suffix:",
-                lblDbBez: "Description:",
-                btnSave: "💾 Change",
-                btnAddNew: "➕ Add New",
-                btnCancel: "Cancel",
-                btnDownloadJson: "📥 Download Current Database as JSON",
-                lblCurrentEntries: "Current entries in local workspace:",
-                btnSaveDefault: "Save Defaults",
-                btnDone: "Done",
-                modal2Title: "Interactive A4 Print Sheet",
-                btnModalPrint: "Print",
-                btnModalClose: "Close",
-                txtPwaTitle: "Install as App",
-                txtPwaSub: "Faster access & offline usage",
-                btnPwaInstall: "Install",
-                layoutTitleAttr: "Click for full A4 sheet preview",
-                alertSaved: "Current settings saved as defaults in browser!",
-                confirmDelete: "Do you really want to delete this entry?",
-                alertFillForm: "Please fill in at least Item No. and Description.",
-                alertErrorChange: "Error applying changes.",
-                alertDuplicate: "This Article Number already exists!",
-                netLoading: "⏳ Connecting...",
-                netSuccessLocal: "🟢 Local sortiment.json active successfully",
-                netSuccessRemote: "🟢 Connected to remote JSON Repository",
-                netFallbackLocal: "⚠️ No local sortiment.json found. Cache loaded.",
-                netFallbackRemote: "⚠️ Remote JSON Offline! Local cache loaded.",
-                txtZoom: "Zoom",
-                locationLoading: "Loading locations...",
-                locationError: "Error loading locations",
-                locUrlSaved: "📍 Locations URL saved.",
-                locUrlUpdated: "✅ Locations URL updated!",
-                locUrlInvalid: "❌ Please enter a valid URL."
+    /**
+     * Loads external JSON resources safely with robust workspace cache preservation
+     */
+    async function loadExternalData() {
+        try {
+            const [i18nRes, formatsRes, sortimentRes] = await Promise.all([
+                fetch('scripts/i18n.json'),
+                fetch('scripts/formats.json'),
+                fetch('scripts/sortiment.json')
+            ]);
+            
+            if (!i18nRes.ok || !formatsRes.ok || !sortimentRes.ok) {
+                throw new Error('One or more JSON files not found');
             }
-        };
+            
+            i18n = await i18nRes.json();
+            formats = await formatsRes.json();
+            const sortimentData = await sortimentRes.json();
+            
+            if (Array.isArray(sortimentData) && sortimentData.length > 0) {
+                a2 = sortimentData;
+                localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
+                updateNetworkStatus('netSuccessLocal');
+            } else {
+                throw new Error('Invalid sortiment data structure');
+            }
+        } catch (err) {
+            console.warn('External data load failed, using fallbacks and local cache:', err);
+            
+            // Hardcoded i18n Localization Fallbacks
+            i18n = {
+                de: {
+                    studioV9: "Etiketten-Studio v9",
+                    loadingFormat: "Format wird geladen...",
+                    printLayout: "Druck-Layout",
+                    artNr: "Art.Nr.",
+                    bezeichnung: "Bezeichnung",
+                    printNow: "Jetzt Drucken",
+                    options: "Optionen",
+                    modal1Title: "Druck- & Standorteinstellungen",
+                    lblLocation: "Standort (ASZ Niederlassung OÖ):",
+                    lblFormat: "Etiketten-Hersteller & Format:",
+                    lblCount: "Anzahl Etiketten",
+                    lblStartPos: "Start-Position",
+                    tabSelect: "LAVU Service-Worker",
+                    tabManage: "Datenbank verwalten",
+                    lblUrl: "Sortiment API:",
+                    lblLocationsUrl: "Locations API:",
+                    btnUpdate: "Aktualisieren",
+                    btnUpdateLocations: "Aktualisieren",
+                    lblDbSuffix: "Gebinde / Suffix:",
+                    lblDbBez: "Bezeichnung:",
+                    btnSave: "💾 Ändern",
+                    btnAddNew: "➕ Neu hinzufügen",
+                    btnCancel: "Abbrechen",
+                    btnDownloadJson: "📥 Aktuelle Datenbank als JSON herunterladen",
+                    lblCurrentEntries: "Aktuelle Einträge im lokalen Workspace:",
+                    btnSaveDefault: "Standard sichern",
+                    btnDone: "Fertig",
+                    modal2Title: "Interaktiver A4-Druckbogen",
+                    btnModalPrint: "Drucken",
+                    btnModalClose: "Schließen",
+                    txtPwaTitle: "Als App installieren",
+                    txtPwaSub: "Schnellerer Zugriff & Offline-Nutzung",
+                    btnPwaInstall: "Installieren",
+                    layoutTitleAttr: "Klicken für vollständige A4-Großansicht",
+                    alertSaved: "Aktuelle Einstellungen wurden als Standard im Browser gespeichert!",
+                    confirmDelete: "Möchten Sie diesen Eintrag wirklich löschen?",
+                    alertFillForm: "Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.",
+                    alertErrorChange: "Fehler beim Ändern.",
+                    alertDuplicate: "Diese Artikelnummer existiert bereits!",
+                    netLoading: "⏳ Verbinde...",
+                    netSuccessLocal: "🟢 Lokale sortiment.json erfolgreich aktiv",
+                    netSuccessRemote: "🟢 Verbunden mit externem JSON Repository",
+                    netFallbackLocal: "⚠️ Keine lokale sortiment.json gefunden. Cache geladen.",
+                    netFallbackRemote: "⚠️ Remote JSON Offline! Lokaler Cache geladen.",
+                    txtZoom: "Zoom",
+                    locationLoading: "Standorte werden geladen...",
+                    locationError: "Fehler beim Laden der Standorte",
+                    locUrlSaved: "📍 Locations-URL gespeichert.",
+                    locUrlUpdated: "✅ Locations-URL aktualisiert!",
+                    locUrlInvalid: "❌ Bitte gültige URL eingeben."
+                },
+                en: {
+                    studioV9: "Label Studio v9",
+                    loadingFormat: "Loading format...",
+                    printLayout: "Print Layout",
+                    artNr: "Item No.",
+                    bezeichnung: "Description",
+                    printNow: "Print Now",
+                    options: "Options",
+                    modal1Title: "Print & Location Settings",
+                    lblLocation: "Location (ASZ Branch OÖ):",
+                    lblFormat: "Label Manufacturer & Format:",
+                    lblCount: "Number of Labels",
+                    lblStartPos: "Start Position",
+                    tabSelect: "LAVU Service-Worker",
+                    tabManage: "Manage Database",
+                    lblUrl: "Sortiment API:",
+                    lblLocationsUrl: "Locations API:",
+                    btnUpdate: "Update",
+                    btnUpdateLocations: "Update",
+                    lblDbSuffix: "Container / Suffix:",
+                    lblDbBez: "Description:",
+                    btnSave: "💾 Change",
+                    btnAddNew: "➕ Add New",
+                    btnCancel: "Cancel",
+                    btnDownloadJson: "📥 Download Current Database as JSON",
+                    lblCurrentEntries: "Current entries in local workspace:",
+                    btnSaveDefault: "Save Defaults",
+                    btnDone: "Done",
+                    modal2Title: "Interactive A4 Print Sheet",
+                    btnModalPrint: "Print",
+                    btnModalClose: "Close",
+                    txtPwaTitle: "Install as App",
+                    txtPwaSub: "Faster access & offline usage",
+                    btnPwaInstall: "Install",
+                    layoutTitleAttr: "Click for full A4 sheet preview",
+                    alertSaved: "Current settings saved as defaults in browser!",
+                    confirmDelete: "Do you really want to delete this entry?",
+                    alertFillForm: "Please fill in at least Item No. and Description.",
+                    alertErrorChange: "Error applying changes.",
+                    alertDuplicate: "This Article Number already exists!",
+                    netLoading: "⏳ Connecting...",
+                    netSuccessLocal: "🟢 Local sortiment.json active successfully",
+                    netSuccessRemote: "🟢 Connected to remote JSON Repository",
+                    netFallbackLocal: "⚠️ No local sortiment.json found. Cache loaded.",
+                    netFallbackRemote: "⚠️ Remote JSON Offline! Local cache loaded.",
+                    txtZoom: "Zoom",
+                    locationLoading: "Loading locations...",
+                    locationError: "Error loading locations",
+                    locUrlSaved: "📍 Locations URL saved.",
+                    locUrlUpdated: "✅ Locations URL updated!",
+                    locUrlInvalid: "❌ Please enter a valid URL."
+                }
+            };
 
-        // Hardcoded Label Dimension Formats Fallbacks
-        formats = {
-            "4473": { cols: 3, rows: 8, name: "HERMA 4473 (70 x 36 mm)" },
-            "4428": { cols: 2, rows: 4, name: "HERMA 4428 (105 x 68 mm)" },
-            "4276": { cols: 2, rows: 6, name: "HERMA 4276 (99,1 x 42,3 mm)" },
-            "5077": { cols: 2, rows: 4, name: "HERMA 5077 (99,1 x 67,7 mm)" },
-            "4459": { cols: 3, rows: 17, name: "HERMA 4459 (70 x 16,9 mm)" },
-            "4456": { cols: 3, rows: 10, name: "HERMA 4456 (70 x 29,7 mm)" },
-            "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" }
-        };
+            // Hardcoded Label Dimension Formats Fallbacks
+            formats = {
+                "4473": { cols: 3, rows: 8, name: "HERMA 4473 (70 x 36 mm)" },
+                "4428": { cols: 2, rows: 4, name: "HERMA 4428 (105 x 68 mm)" },
+                "4276": { cols: 2, rows: 6, name: "HERMA 4276 (99,1 x 42,3 mm)" },
+                "5077": { cols: 2, rows: 4, name: "HERMA 5077 (99,1 x 67,7 mm)" },
+                "4459": { cols: 3, rows: 17, name: "HERMA 4459 (70 x 16,9 mm)" },
+                "4456": { cols: 3, rows: 10, name: "HERMA 4456 (70 x 29,7 mm)" },
+                "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" }
+            };
 
-        const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
-        if (localCache) {
-            try {
-                a2 = JSON.parse(localCache);
-                updateNetworkStatus('netFallbackRemote');
-            } catch (e) {
+            const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
+            if (localCache) {
+                try {
+                    a2 = JSON.parse(localCache);
+                    updateNetworkStatus('netFallbackRemote');
+                } catch (e) {
+                    a2 = fallbackSortiment.slice();
+                    localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
+                    updateNetworkStatus('netFallbackLocal');
+                }
+            } else {
                 a2 = fallbackSortiment.slice();
                 localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 updateNetworkStatus('netFallbackLocal');
             }
-        } else {
-            a2 = fallbackSortiment.slice();
-            localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
-            updateNetworkStatus('netFallbackLocal');
         }
     }
-}
 
-/**
- * Updates the network diagnostic status message in the UI
- */
-function updateNetworkStatus(statusKey) {
-    const currentLang = document.documentElement.lang || 'de';
-    const statusText = i18n[currentLang] ? i18n[currentLang][statusKey] : "Connecting...";
-    const badge = document.getElementById('network-status-badge');
-    if (badge) {
-        badge.textContent = statusText;
-    }
-}
-
-/**
- * Configures event listeners, sliders, and sets up settings triggers
- */
-function initUiElements() {
-    // 1. Zoom Handler Setup
-    const zoomSlider = document.getElementById('zoom-range');
-    if (zoomSlider) {
-        zoomSlider.addEventListener('input', (e) => {
-            const previewSheet = document.getElementById('interactive-sheet-preview');
-            if (previewSheet) {
-                previewSheet.style.transform = `scale(${e.target.value})`;
-            }
-        });
+    /**
+     * Updates the network diagnostic status message in the UI
+     */
+    function updateNetworkStatus(statusKey) {
+        const currentLang = document.documentElement.lang || 'de';
+        const statusText = i18n[currentLang] ? i18n[currentLang][statusKey] : "Connecting...";
+        const badge = document.getElementById('network-status-badge');
+        if (badge) {
+            badge.textContent = statusText;
+        }
     }
 
-    // 2. Language Toggle Setup
-    const langBtn = document.getElementById('language-toggle');
-    if (langBtn) {
-        langBtn.addEventListener('click', () => {
-            const newLang = document.documentElement.lang === 'de' ? 'en' : 'de';
-            document.documentElement.lang = newLang;
-            translateUi(newLang);
-        });
-    }
+    /**
+     * Configures event listeners, sliders, and sets up settings triggers
+     */
+    function initUiElements() {
+        // 1. Zoom Handler Setup
+        const zoomSlider = document.getElementById('zoom-range');
+        if (zoomSlider) {
+            zoomSlider.addEventListener('input', (e) => {
+                const previewSheet = document.getElementById('interactive-sheet-preview');
+                if (previewSheet) {
+                    previewSheet.style.transform = `scale(${e.target.value})`;
+                }
+            });
+        }
 
-    // 3. Modal Open & Close Event Listeners
-    const optionsBtn = document.getElementById('btn-options-modal');
-    const settingsModal = document.getElementById('settings-modal');
-    const closeTriggers = document.querySelectorAll('.modal-close-trigger');
+        // 2. Language Toggle Setup
+        const langBtn = document.getElementById('language-toggle');
+        if (langBtn) {
+            langBtn.addEventListener('click', () => {
+                const newLang = document.documentElement.lang === 'de' ? 'en' : 'de';
+                document.documentElement.lang = newLang;
+                translateUi(newLang);
+            });
+        }
 
-    if (optionsBtn && settingsModal) {
-        optionsBtn.addEventListener('click', () => {
-            settingsModal.classList.remove('hidden');
-        });
+        // 3. Modal Open & Close Event Listeners
+        const optionsBtn = document.getElementById('btn-options-modal');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeTriggers = document.querySelectorAll('.modal-close-trigger');
 
-        closeTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                settingsModal.classList.add('hidden');
+        if (optionsBtn && settingsModal) {
+            optionsBtn.addEventListener('click', () => {
+                settingsModal.classList.remove('hidden');
+            });
+
+            closeTriggers.forEach(trigger => {
+                trigger.addEventListener('click', () => {
+                    settingsModal.classList.add('hidden');
+                });
+            });
+        }
+
+        // 4. Set Default API URL Values
+        const sortimentInput = document.getElementById('input-sortiment-api');
+        const locationsInput = document.getElementById('input-location-api');
+
+        if (sortimentInput && !sortimentInput.value) {
+            sortimentInput.value = 'https://sortiment-api.lavu-ooe.workers.dev/';
+        }
+        if (locationsInput && !locationsInput.value) {
+            locationsInput.value = 'https://locations-api.lavu-ooe.workers.dev/';
+        }
+
+        // 5. Interactive Tab Navigation Logic
+        const tabButtons = document.querySelectorAll('.tab-navigation .tab-btn');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                const contentPanels = document.querySelectorAll('.tab-content-panel');
+                contentPanels.forEach(panel => panel.classList.remove('active'));
+
+                button.classList.add('active');
+                const targetId = button.getAttribute('data-target');
+                const targetPanel = document.getElementById(targetId);
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                }
             });
         });
-    }
 
-    // 4. Set Default API URL Values
-    const sortimentInput = document.getElementById('input-sortiment-api');
-    const locationsInput = document.getElementById('input-location-api');
+        // 6. Sync Art.Nr. and Bezeichnung Dropdowns
+        const artNrDropdown = document.getElementById('select-artnr');
+        const bezDropdown = document.getElementById('select-bezeichnung');
 
-    if (sortimentInput && !sortimentInput.value) {
-        sortimentInput.value = 'https://sortiment-api.lavu-ooe.workers.dev/';
-    }
-    if (locationsInput && !locationsInput.value) {
-        locationsInput.value = 'https://locations-api.lavu-ooe.workers.dev/';
-    }
+        if (artNrDropdown && bezDropdown) {
+            artNrDropdown.addEventListener('change', () => {
+                bezDropdown.selectedIndex = artNrDropdown.selectedIndex;
+            });
 
-    // 5. Interactive Tab Navigation Logic
-    const tabButtons = document.querySelectorAll('.tab-navigation .tab-btn');
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            const contentPanels = document.querySelectorAll('.tab-content-panel');
-            contentPanels.forEach(panel => panel.classList.remove('active'));
-
-            button.classList.add('active');
-            const targetId = button.getAttribute('data-target');
-            const targetPanel = document.getElementById(targetId);
-            if (targetPanel) {
-                targetPanel.classList.add('active');
-            }
-        });
-    });
-
-    // 6. Sync Art.Nr. and Bezeichnung Dropdowns
-    const artNrDropdown = document.getElementById('select-artnr');
-    const bezDropdown = document.getElementById('select-bezeichnung');
-
-    if (artNrDropdown && bezDropdown) {
-        artNrDropdown.addEventListener('change', () => {
-            bezDropdown.selectedIndex = artNrDropdown.selectedIndex;
-        });
-
-        bezDropdown.addEventListener('change', () => {
-            artNrDropdown.selectedIndex = bezDropdown.selectedIndex;
-        });
-    }
-
-    // 7. Re-trigger layout calculations on value adjustment updates
-    const syncTriggers = ['select-artnr', 'select-bezeichnung', 'input-count', 'input-startpos'];
-    syncTriggers.forEach(id => {
-        document.getElementById(id)?.addEventListener('change', renderPrintSheetPreview);
-    });
-    document.getElementById('input-count')?.addEventListener('input', renderPrintSheetPreview);
-    document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
-
-    // 8. Unified Grid Click & Synchronization Logic
-    const countInput = document.getElementById('input-count');
-    const startPosInput = document.getElementById('input-startpos');
-    if (startPosInput && countInput) {
-        countInput.addEventListener('input', () => {
-            countInput.dataset.userModified = "true";
-        });
-    }
-
-    // 9. Format Selector Auto-Bounds Reset
-    const formatSelect = document.getElementById('select-format');
-    if (formatSelect) {
-        formatSelect.addEventListener('change', () => {
-            if (countInput && startPosInput) {
-                delete countInput.dataset.userModified; 
-                countInput.value = '';
-                startPosInput.value = 1;
-            }
-            renderPrintSheetPreview();
-        });
-    }
-
-    // 10. Native Print Execution Trigger
-    const printBtn = document.getElementById('btn-print-trigger');
-    if (printBtn) {
-        printBtn.addEventListener('click', () => {
-            window.print();
-        });
-    }
-
-    // 11. Database Management Logic Validation (Fixed)
-    const btnDbAdd = document.getElementById('btn-db-add');
-    const btnDbSave = document.getElementById('btn-db-save');
-    const dbArtNr = document.getElementById('db-input-artnr');
-    const dbBez = document.getElementById('db-input-bez');
-    const dbSuffix = document.getElementById('db-input-suffix');
-
-    function getAlertText(key, fallback) {
-        const currentLang = document.documentElement.lang || 'de';
-        return (i18n[currentLang] && i18n[currentLang][key]) ? i18n[currentLang][key] : fallback;
-    }
-
-    function validateDbInputs() {
-        if (!dbArtNr.value.trim() || !dbBez.value.trim()) {
-            alert(getAlertText('alertFillForm', 'Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.'));
-            return false;
+            bezDropdown.addEventListener('change', () => {
+                artNrDropdown.selectedIndex = bezDropdown.selectedIndex;
+            });
         }
-        return true;
-    }
 
-    if (btnDbAdd) {
-        btnDbAdd.addEventListener('click', () => {
-            if (!validateDbInputs()) return;
-            const newArtNr = dbArtNr.value.trim();
-            if (a2.some(item => String(item.artNr) === newArtNr)) {
-                alert(getAlertText('alertDuplicate', 'Diese Artikelnummer existiert bereits!'));
-                return;
-            }
-            a2.push({ artNr: newArtNr, bez: dbBez.value.trim(), geb: dbSuffix.value.trim() });
-            localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
-            renderSelectionDropdowns();
-            dbArtNr.value = ''; dbBez.value = ''; dbSuffix.value = '';
+        // 7. Re-trigger layout calculations on value adjustment updates
+        const syncTriggers = ['select-artnr', 'select-bezeichnung', 'input-count', 'input-startpos'];
+        syncTriggers.forEach(id => {
+            document.getElementById(id)?.addEventListener('change', renderPrintSheetPreview);
         });
-    }
+        document.getElementById('input-count')?.addEventListener('input', renderPrintSheetPreview);
+        document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
 
-    if (btnDbSave) {
-        btnDbSave.addEventListener('click', () => {
-            if (!validateDbInputs()) return;
-            const targetArtNr = dbArtNr.value.trim();
-            const index = a2.findIndex(item => String(item.artNr) === targetArtNr);
-            if (index === -1) {
-                alert("Artikelnummer nicht gefunden. Bitte stattdessen 'Neu hinzufügen' verwenden.");
-                return;
-            }
-            a2[index].bez = dbBez.value.trim();
-            a2[index].geb = dbSuffix.value.trim();
-            localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
-            renderSelectionDropdowns();
-        });
-    }
+        // 8. Unified Grid Click & Synchronization Logic
+        const countInput = document.getElementById('input-count');
+        const startPosInput = document.getElementById('input-startpos');
+        if (startPosInput && countInput) {
+            countInput.addEventListener('input', () => {
+                countInput.dataset.userModified = "true";
+            });
+        }
 
-    // 12. PWA Installation Triggers
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        const pwaBanner = document.getElementById('pwa-install-banner');
-        if (pwaBanner) pwaBanner.classList.remove('hidden');
-    });
-
-    const btnPwaInstall = document.getElementById('btn-pwa-install-trigger');
-    if (btnPwaInstall) {
-        btnPwaInstall.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    document.getElementById('pwa-install-banner').classList.add('hidden');
+        // 9. Format Selector Auto-Bounds Reset
+        const formatSelect = document.getElementById('select-format');
+        if (formatSelect) {
+            formatSelect.addEventListener('change', () => {
+                if (countInput && startPosInput) {
+                    delete countInput.dataset.userModified; 
+                    countInput.value = '';
+                    startPosInput.value = 1;
                 }
-                deferredPrompt = null;
+                renderPrintSheetPreview();
+            });
+        }
+
+        // 10. Native Print Execution Trigger
+        const printBtn = document.getElementById('btn-print-trigger');
+        if (printBtn) {
+            printBtn.addEventListener('click', () => {
+                window.print();
+            });
+        }
+
+        // 11. Database Management Logic Validation
+        const btnDbAdd = document.getElementById('btn-db-add');
+        const btnDbSave = document.getElementById('btn-db-save');
+        const dbArtNr = document.getElementById('db-input-artnr');
+        const dbBez = document.getElementById('db-input-bez');
+        const dbSuffix = document.getElementById('db-input-suffix');
+
+        function getAlertText(key, fallback) {
+            const currentLang = document.documentElement.lang || 'de';
+            return (i18n[currentLang] && i18n[currentLang][key]) ? i18n[currentLang][key] : fallback;
+        }
+
+        function validateDbInputs() {
+            if (!dbArtNr.value.trim() || !dbBez.value.trim()) {
+                alert(getAlertText('alertFillForm', 'Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.'));
+                return false;
             }
+            return true;
+        }
+
+        if (btnDbAdd) {
+            btnDbAdd.addEventListener('click', () => {
+                if (!validateDbInputs()) return;
+                const newArtNr = dbArtNr.value.trim();
+                if (a2.some(item => String(item.artNr) === newArtNr)) {
+                    alert(getAlertText('alertDuplicate', 'Diese Artikelnummer existiert bereits!'));
+                    return;
+                }
+                a2.push({ artNr: newArtNr, bez: dbBez.value.trim(), geb: dbSuffix.value.trim() });
+                localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
+                renderSelectionDropdowns();
+                dbArtNr.value = ''; dbBez.value = ''; dbSuffix.value = '';
+            });
+        }
+
+        if (btnDbSave) {
+            btnDbSave.addEventListener('click', () => {
+                if (!validateDbInputs()) return;
+                const targetArtNr = dbArtNr.value.trim();
+                const index = a2.findIndex(item => String(item.artNr) === targetArtNr);
+                if (index === -1) {
+                    alert("Artikelnummer nicht gefunden. Bitte stattdessen 'Neu hinzufügen' verwenden.");
+                    return;
+                }
+                a2[index].bez = dbBez.value.trim();
+                a2[index].geb = dbSuffix.value.trim();
+                localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
+                renderSelectionDropdowns();
+            });
+        }
+
+        // 12. PWA Installation Triggers
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const pwaBanner = document.getElementById('pwa-install-banner');
+            if (pwaBanner) pwaBanner.classList.remove('hidden');
+        });
+
+        const btnPwaInstall = document.getElementById('btn-pwa-install-trigger');
+        if (btnPwaInstall) {
+            btnPwaInstall.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        document.getElementById('pwa-install-banner').classList.add('hidden');
+                    }
+                    deferredPrompt = null;
+                }
+            });
+        }
+    }
+
+    /**
+     * Parses and displays selection dropdown menus alphabetized dynamically
+     */
+    function renderSelectionDropdowns() {
+        const artNrDropdown = document.getElementById('select-artnr');
+        const bezDropdown = document.getElementById('select-bezeichnung');
+        
+        if (!artNrDropdown || !bezDropdown) return;
+
+        artNrDropdown.innerHTML = '<option value="">-- Wähle Art.Nr. --</option>';
+        bezDropdown.innerHTML = '<option value="">-- Wähle Bezeichnung --</option>';
+
+        const sortedData = [...a2].sort((a, b) => String(a.artNr).localeCompare(String(b.artNr)));
+
+        sortedData.forEach(item => {
+            let opt1 = document.createElement('option');
+            opt1.value = item.artNr;
+            opt1.textContent = item.artNr;
+            artNrDropdown.appendChild(opt1);
+
+            let opt2 = document.createElement('option');
+            opt2.value = item.artNr;
+            opt2.textContent = `${item.bez} ${item.geb || ''}`.trim(); 
+            bezDropdown.appendChild(opt2);
         });
     }
-}
 
-/**
- * Parses and displays selection dropdown menus alphabetized dynamically
- */
-function renderSelectionDropdowns() {
-    const artNrDropdown = document.getElementById('select-artnr');
-    const bezDropdown = document.getElementById('select-bezeichnung');
-    
-    if (!artNrDropdown || !bezDropdown) return;
+    /**
+     * Computes grid measurements and maps visual classes to the interactive preview targets
+     */
+    function renderPrintSheetPreview() {
+        const targetSheet = document.getElementById('interactive-sheet-preview');
+        if (!targetSheet) return;
 
-    artNrDropdown.innerHTML = '<option value="">-- Wähle Art.Nr. --</option>';
-    bezDropdown.innerHTML = '<option value="">-- Wähle Bezeichnung --</option>';
+        const selectedFormatKey = document.getElementById('select-format')?.value || "4473";
+        const formatConfig = formats[selectedFormatKey];
 
-    const sortedData = [...a2].sort((a, b) => String(a.artNr).localeCompare(String(b.artNr)));
+        if (!formatConfig) return;
 
-    sortedData.forEach(item => {
-        let opt1 = document.createElement('option');
-        opt1.value = item.artNr;
-        opt1.textContent = item.artNr;
-        artNrDropdown.appendChild(opt1);
+        const totalCells = formatConfig.cols * formatConfig.rows;
+        const startPosInput = document.getElementById('input-startpos');
+        const countInput = document.getElementById('input-count');
 
-        let opt2 = document.createElement('option');
-        opt2.value = item.artNr;
-        opt2.textContent = `${item.bez} ${item.geb || ''}`.trim(); 
-        bezDropdown.appendChild(opt2);
-    });
-}
+        // Force default fallbacks safely if fields are cleared out
+        if (startPosInput && !startPosInput.value) {
+            startPosInput.value = 1;
+        }
 
-/**
- * Computes grid measurements and maps visual classes to the interactive preview targets
- */
-function renderPrintSheetPreview() {
-    const targetSheet = document.getElementById('interactive-sheet-preview');
-    if (!targetSheet) return;
+        // ENFORCED DEFAULT: If there is no user-modified flag, always default to using every possible label
+        if (countInput && (!countInput.value || !countInput.dataset.userModified)) {
+            const currentStart = parseInt(startPosInput?.value, 10) || 1;
+            countInput.value = (totalCells - currentStart) + 1;
+        }
 
-    const selectedFormatKey = document.getElementById('select-format')?.value || "4473";
-    const formatConfig = formats[selectedFormatKey];
+        const inputCount = parseInt(countInput?.value, 10) || totalCells;
+        const inputStartPos = parseInt(startPosInput?.value, 10) || 1;
 
-    if (!formatConfig) return;
+        const artNrDropdown = document.getElementById('select-artnr');
+        const selectedArtNr = artNrDropdown?.value;
+        const activeItem = a2.find(item => String(item.artNr) === String(selectedArtNr));
 
-    const totalCells = formatConfig.cols * formatConfig.rows;
-    const startPosInput = document.getElementById('input-startpos');
-    const countInput = document.getElementById('input-count');
+        targetSheet.innerHTML = '';
+        targetSheet.style.display = 'grid';
+        targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
+        targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
 
-    // Force default fallbacks safely if fields are cleared out
-    if (startPosInput && !startPosInput.value) {
-        startPosInput.value = 1;
-    }
+        // Calculate boundary explicitly to avoid off-by-one window shifting
+        const lastActivePosition = (inputStartPos + inputCount) - 1;
 
-    // ENFORCED DEFAULT: If there is no user-modified flag, always default to using every possible label
-    if (countInput && (!countInput.value || !countInput.dataset.userModified)) {
-        const currentStart = parseInt(startPosInput?.value, 10) || 1;
-        countInput.value = (totalCells - currentStart) + 1;
-    }
+        for (let i = 0; i < totalCells; i++) {
+            const gridCell = document.createElement('div');
+            gridCell.dataset.index = i;
+            const cellPosition = i + 1;
 
-    const inputCount = parseInt(countInput?.value, 10) || totalCells;
-    const inputStartPos = parseInt(startPosInput?.value, 10) || 1;
-
-    const artNrDropdown = document.getElementById('select-artnr');
-    const selectedArtNr = artNrDropdown?.value;
-    const activeItem = a2.find(item => String(item.artNr) === String(selectedArtNr));
-
-    targetSheet.innerHTML = '';
-    targetSheet.style.display = 'grid';
-    targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
-    targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
-
-    // Calculate boundary explicitly to avoid off-by-one window shifting
-    const lastActivePosition = (inputStartPos + inputCount) - 1;
-
-    for (let i = 0; i < totalCells; i++) {
-        const gridCell = document.createElement('div');
-        gridCell.dataset.index = i;
-        const cellPosition = i + 1;
-
-        // Label check against exact print window boundaries
-        if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
-            if (activeItem) {
-                // Active Zone + Chosen Article -> Emerald Green (#059669)
-                gridCell.className = 'label-grid-cell state-selected has-article';
-                gridCell.innerHTML = `
-                    <div class="print-label-content" style="text-align: center; padding: 4px;">
-                        <strong style="display: block; font-size: 1rem;">${activeItem.artNr}</strong>
-                        <span class="cell-desc" style="display: block; font-size: 0.8rem; margin-top: 2px;">${activeItem.bez}</span>
-                        <small style="font-size: 0.7rem; opacity: 0.8;">${activeItem.geb || ''}</small>
-                    </div>
-                `;
+            // Label check against exact print window boundaries
+            if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
+                if (activeItem) {
+                    // Active Zone + Chosen Article -> Emerald Green (#059669)
+                    gridCell.className = 'label-grid-cell state-selected has-article';
+                    gridCell.innerHTML = `
+                        <div class="print-label-content" style="text-align: center; padding: 4px;">
+                            <strong style="display: block; font-size: 1rem;">${activeItem.artNr}</strong>
+                            <span class="cell-desc" style="display: block; font-size: 0.8rem; margin-top: 2px;">${activeItem.bez}</span>
+                            <small style="font-size: 0.7rem; opacity: 0.8;">${activeItem.geb || ''}</small>
+                        </div>
+                    `;
+                } else {
+                    // Active Zone but NO Article -> Default Slate Grey (#334155)
+                    gridCell.className = 'label-grid-cell state-selected';
+                    gridCell.innerHTML = `<span style="opacity: 0.9;">Bereit (Kein Artikel)</span>`;
+                }
             } else {
-                // Active Zone but NO Article -> Default Slate Grey (#334155)
-                gridCell.className = 'label-grid-cell state-selected';
-                gridCell.innerHTML = `<span style="opacity: 0.9;">Bereit (Kein Artikel)</span>`;
+                // Outside target window range -> Turns Vibrant Red (#ee1111)
+                gridCell.className = 'label-grid-cell state-neutral';
+                gridCell.textContent = `Leer (${cellPosition})`;
             }
-        } else {
-            // Outside target window range -> Turns Vibrant Red (#ee1111)
-            gridCell.className = 'label-grid-cell state-neutral';
-            gridCell.textContent = `Leer (${cellPosition})`;
-        }
 
-        // CORRECTED CLICK INTERACTION PIPELINE
-        gridCell.addEventListener('click', () => {
-            if (startPosInput && countInput) {
-                // If user clicks a label BEFORE the current starting position, shift start backward
-                if (cellPosition < inputStartPos) {
-                    startPosInput.value = cellPosition;
-                    countInput.value = (lastActivePosition - cellPosition) + 1;
-                }
-                // If user clicks an active element, slice the print range boundary right there
-                else if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
-                    // Toggling the very first active item shifts start forward by 1 (unless it's the only one left)
-                    if (cellPosition === inputStartPos) {
-                        if (inputCount <= 1) {
-                            // Bug fixed: Don't explosively fill the sheet; just leave it as is if it's the only block.
-                            countInput.value = 1;
+            // CORRECTED CLICK INTERACTION PIPELINE
+            gridCell.addEventListener('click', () => {
+                if (startPosInput && countInput) {
+                    // If user clicks a label BEFORE the current starting position, shift start backward
+                    if (cellPosition < inputStartPos) {
+                        startPosInput.value = cellPosition;
+                        countInput.value = (lastActivePosition - cellPosition) + 1;
+                    }
+                    // If user clicks an active element, slice the print range boundary right there
+                    else if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
+                        if (cellPosition === inputStartPos) {
+                            if (inputCount <= 1) {
+                                countInput.value = 1;
+                            } else {
+                                startPosInput.value = inputStartPos + 1;
+                                countInput.value = inputCount - 1;
+                            }
                         } else {
-                            startPosInput.value = inputStartPos + 1;
-                            countInput.value = inputCount - 1;
+                            countInput.value = (cellPosition - inputStartPos) + 1;
                         }
-                    } else {
-                        // Slices print count to end exactly at this cell location
+                    }
+                    // If user clicks a red cell down the line, expand the active block selection down to it
+                    else {
                         countInput.value = (cellPosition - inputStartPos) + 1;
                     }
+
+                    // Protect setting adjustments from format clear handlers
+                    countInput.dataset.userModified = "true";
+
+                    // Broadcast mutations to system forms
+                    startPosInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    countInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+                    renderPrintSheetPreview();
                 }
-                // If user clicks a red cell down the line, expand the active block selection down to it
-                else {
-                    countInput.value = (cellPosition - inputStartPos) + 1;
+            });
+
+            targetSheet.appendChild(gridCell);
+        }
+    }
+
+    /**
+     * Re-maps text components based on selected language locales
+     */
+    function translateUi(lang) {
+        if (!i18n[lang]) return;
+        
+        const elementsToTranslate = document.querySelectorAll('[data-i18n]');
+        elementsToTranslate.forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (i18n[lang][key]) {
+                if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
+                    el.value = i18n[lang][key];
+                } else {
+                    el.textContent = i18n[lang][key];
                 }
-
-                // Protect setting adjustments from format clear handlers
-                countInput.dataset.userModified = "true";
-
-                // Broadcast mutations to system forms
-                startPosInput.dispatchEvent(new Event('change', { bubbles: true }));
-                countInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-                renderPrintSheetPreview();
             }
         });
-
-        targetSheet.appendChild(gridCell);
     }
-}
-
-/**
- * Re-maps text components based on selected language locales
- */
-function translateUi(lang) {
-    if (!i18n[lang]) return;
-    
-    const elementsToTranslate = document.querySelectorAll('[data-i18n]');
-    elementsToTranslate.forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (i18n[lang][key]) {
-            if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
-                el.value = i18n[lang][key];
-            } else {
-                el.textContent = i18n[lang][key];
-            }
-        }
-    });
-}
+})();

@@ -480,4 +480,9 @@ select.form-control option {
         background-color: transparent !important;
         color: #000000 !important;
     }
+/* Safeguard: Hide control elements and headers completely */
+    .app-header, .selection-panel, .panel-header, .modal-overlay, 
+    .pwa-banner, .zoom-controls, #btn-print-trigger, #controls {
+        display: none !important;
+    }
 }
