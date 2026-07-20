@@ -7,7 +7,7 @@
     let i18n = {};
     let formats = {};
     let a2 = []; 
-    const fallbackSortiment = []; 
+    let locationsData = [];
     let deferredPrompt;
 
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Hours Cache TTL
@@ -17,7 +17,6 @@
         setupStoragePersistence();
     });
 
-    // Fallback execution check if module loads post-DOMContentLoaded
     if (document.readyState === 'interactive' || document.readyState === 'complete') {
         initApp();
         setupStoragePersistence();
@@ -31,9 +30,6 @@
         renderPrintSheetPreview();
     }
 
-    /* ==========================================================================
-       Safe Storage Persistence Handler (Fix #1)
-       ========================================================================== */
     async function setupStoragePersistence() {
         try {
             if (navigator && typeof navigator.storage !== 'undefined' && typeof navigator.storage.persist === 'function') {
@@ -48,19 +44,23 @@
     }
 
     /* ==========================================================================
-       Robust API & Asset Loader (Fix #2)
+       External Loader for scripts/sortiment.json & scripts/locations.json
        ========================================================================== */
     async function loadExternalData() {
-        const rawApiBase = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
+        const rawApiBase = localStorage.getItem('apiBase') || '';
         const apiBase = rawApiBase.replace(/\/+$/, '');
-        const sortimentUrl = `${apiBase}/sortiment.json`;
+        
+        // Target external files in the scripts folder or custom API endpoint
+        const sortimentUrl = apiBase ? `${apiBase}/sortiment.json` : 'scripts/sortiment.json';
+        const locationsUrl = apiBase ? `${apiBase}/locations.json` : 'scripts/locations.json';
 
         try {
-            const [manifestRes, i18nRes, formatsRes, sortimentRes] = await Promise.all([
+            const [manifestRes, i18nRes, formatsRes, sortimentRes, locationsRes] = await Promise.all([
                 fetch('manifest.json').catch(() => ({ ok: false })),
                 fetch('scripts/i18n.json').catch(() => ({ ok: false })),
                 fetch('scripts/formats.json').catch(() => ({ ok: false })),
-                fetch(sortimentUrl).catch(() => ({ ok: false }))
+                fetch(sortimentUrl).catch(() => ({ ok: false })),
+                fetch(locationsUrl).catch(() => ({ ok: false }))
             ]);
             
             if (manifestRes && manifestRes.ok) {
@@ -79,46 +79,83 @@
                 loadEmbeddedFormatsFallbacks();
             }
 
+            // 1. Process Sortiment JSON (External -> Cache fallback -> Empty safety)
             let sortimentData = [];
             if (sortimentRes.ok) {
                 const contentType = sortimentRes.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
                     sortimentData = await sortimentRes.json();
+                } else {
+                    sortimentData = await sortimentRes.json().catch(() => []);
                 }
             }
-            
+
             if (Array.isArray(sortimentData) && sortimentData.length > 0) {
                 a2 = sortimentData;
                 localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
-                updateNetworkStatus('netSuccessLocal');
-                hideLoadingScreen();
             } else {
-                throw new Error('Invalid or empty sortiment data payload from API');
+                const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
+                if (localCache) {
+                    try {
+                        a2 = JSON.parse(localCache);
+                        console.warn('External sortiment.json unreachable. Loaded modifications from device local storage cache.');
+                    } catch (e) {
+                        a2 = [];
+                    }
+                } else {
+                    a2 = [];
+                }
             }
+
+            // 2. Process Locations JSON (External -> Cache fallback -> Empty safety)
+            let locData = [];
+            if (locationsRes.ok) {
+                const contentType = locationsRes.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    locData = await locationsRes.json();
+                } else {
+                    locData = await locationsRes.json().catch(() => []);
+                }
+            }
+
+            if (Array.isArray(locData) && locData.length > 0) {
+                locationsData = locData;
+                localStorage.setItem('lavu_studio_locations_v9', JSON.stringify(locationsData));
+                localStorage.setItem('lavu_studio_locations_timestamp', Date.now().toString());
+            } else {
+                const localLocCache = localStorage.getItem('lavu_studio_locations_v9');
+                if (localLocCache) {
+                    try {
+                        locationsData = JSON.parse(localLocCache);
+                        console.warn('External locations.json unreachable. Loaded modifications from device local storage cache.');
+                    } catch (e) {
+                        locationsData = [];
+                    }
+                } else {
+                    locationsData = [];
+                }
+            }
+
+            if (sortimentRes.ok || locationsRes.ok) {
+                updateNetworkStatus('netSuccessLocal');
+            } else {
+                updateNetworkStatus('netFallbackLocal');
+            }
+            hideLoadingScreen();
+
         } catch (err) {
-            console.warn('External data load failed, checking local cache storage:', err);
+            console.warn('External files load failed completely, falling back to local storage modifications:', err);
             loadEmbeddedI18nFallbacks();
             loadEmbeddedFormatsFallbacks();
 
             const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
-            const cacheTimestamp = localStorage.getItem('lavu_studio_sortiment_timestamp');
-            const now = Date.now();
+            a2 = localCache ? JSON.parse(localCache) : [];
 
-            if (localCache && cacheTimestamp && (now - parseInt(cacheTimestamp, 10) < CACHE_TTL_MS)) {
-                try {
-                    a2 = JSON.parse(localCache);
-                    updateNetworkStatus('netFallbackLocal');
-                } catch (e) {
-                    a2 = fallbackSortiment.slice();
-                    updateNetworkStatus('netFallbackLocal');
-                }
-            } else {
-                localStorage.removeItem('lavu_studio_sortiment_v9');
-                localStorage.removeItem('lavu_studio_sortiment_timestamp');
-                a2 = fallbackSortiment.slice();
-                showApiErrorBanner(err.message);
-            }
+            const localLocCache = localStorage.getItem('lavu_studio_locations_v9');
+            locationsData = localLocCache ? JSON.parse(localLocCache) : [];
+
+            updateNetworkStatus('netFallbackLocal');
             hideLoadingScreen();
         }
     }
@@ -128,15 +165,6 @@
         if (loader) {
             loader.classList.add('hidden');
         }
-    }
-
-    function showApiErrorBanner(message) {
-        const badge = document.getElementById('network-status-badge') || document.querySelector('.status-badge');
-        if (badge) {
-            badge.textContent = 'API Connection Error (Offline Mode)';
-            badge.style.backgroundColor = 'var(--warning-amber, #f59e0b)';
-        }
-        console.warn(`Application running with fallback data due to: ${message}`);
     }
 
     function loadEmbeddedFormatsFallbacks() {
@@ -189,8 +217,8 @@
                 alertFillForm: "Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.",
                 alertDuplicate: "Diese Artikelnummer existiert bereits!",
                 netLoading: "⏳ Verbinde...",
-                netSuccessLocal: "🟢 Lokale sortiment.json erfolgreich aktiv",
-                netFallbackLocal: "⚠️ Keine Verbindung. Cache geladen.",
+                netSuccessLocal: "🟢 Externe JSON-Dateien aktiv",
+                netFallbackLocal: "⚠️ Offline. Lokaler Gerätespeicher aktiv.",
                 txtZoom: "Zoom"
             },
             en: {
@@ -229,8 +257,8 @@
                 alertFillForm: "Please fill in at least Item No. and Description.",
                 alertDuplicate: "This Article Number already exists!",
                 netLoading: "⏳ Connecting...",
-                netSuccessLocal: "🟢 Local sortiment.json active successfully",
-                netFallbackLocal: "⚠️ Offline. Cache loaded.",
+                netSuccessLocal: "🟢 External JSON files active",
+                netFallbackLocal: "⚠️ Offline. Local device cache active.",
                 txtZoom: "Zoom"
             }
         };
@@ -245,9 +273,6 @@
         }
     }
 
-    /* ==========================================================================
-       UI Event Bindings & Interaction Handlers
-       ========================================================================== */
     function initUiElements() {
         const zoomSlider = document.getElementById('zoom-range');
         if (zoomSlider) {
@@ -340,7 +365,6 @@
             });
         }
 
-        // Print Trigger with safety delay timeout (Fix #6)
         const printBtn = document.getElementById('btn-print-trigger');
         if (printBtn) {
             printBtn.addEventListener('click', () => {
@@ -406,6 +430,7 @@
                     bez: dbBez.value.trim(), 
                     geb: dbSuffix ? dbSuffix.value.trim() : '' 
                 });
+                // Persist changes directly to device local storage device cache during session/offline changes
                 localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
                 renderSelectionDropdowns();
@@ -424,6 +449,7 @@
                 }
                 a2[index].bez = dbBez.value.trim();
                 if (dbSuffix) a2[index].geb = dbSuffix.value.trim();
+                // Persist updates to device local storage device cache
                 localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
                 renderSelectionDropdowns();
@@ -483,9 +509,6 @@
         });
     }
 
-    /* ==========================================================================
-       Interactive Print Sheet Preview Engine (Fix #3 XSS prevention & Fix #7 NaN safeguards)
-       ========================================================================== */
     function renderPrintSheetPreview() {
         const targetSheet = document.getElementById('interactive-sheet-preview') || document.getElementById('previewContainer');
         if (!targetSheet) return;
