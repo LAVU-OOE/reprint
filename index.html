@@ -49,7 +49,7 @@
             <div class="form-group-row adjustments">
                 <div class="form-group">
                     <label for="select-format" data-i18n="lblFormat">Etiketten-Hersteller & Format:</label>
-                    <select id="select-format" class="form-control" onchange="renderPrintSheetPreview()">
+                    <select id="select-format" class="form-control">
                         <option value="4473">HERMA 4473 (70 x 36 mm)</option>
                         <option value="4428">HERMA 4428 (105 x 68 mm)</option>
                         <option value="4276">HERMA 4276 (99,1 x 42,3 mm)</option>
@@ -67,13 +67,13 @@
                     <label for="input-startpos" data-i18n="lblStartPos">Start-Position</label>
                     <input type="number" id="input-startpos" class="form-control" value="1" min="1">
                 </div>
-            <!--button id="btn-print-trigger" class="btn-success btn-large" data-i18n="printNow">Jetzt Drucken</button-->
             </div>
         </section>
-<!-- Interactive Visual Layout Workspace Overlay -->
+
+        <!-- Interactive Visual Layout Workspace Overlay -->
         <section class="preview-panel card">
             <div class="panel-header">
-                <h3 data-i18n="modal2Title" data-i18n-attr="title" layoutTitleAttr="Klicken für vollständige A4-Großansicht">Interaktiver A4-Druckbogen</h3>
+                <h3 data-i18n="modal2Title" layoutTitleAttr="Klicken für vollständige A4-Großansicht">Interaktiver A4-Druckbogen</h3>
                 <div class="zoom-controls">
                     <span data-i18n="txtZoom">Zoom</span>
                     <input type="range" id="zoom-range" min="0.5" max="1.5" step="0.1" value="1">
@@ -85,7 +85,6 @@
             </div>
             <button id="btn-print-trigger" class="btn-success btn-large" data-i18n="printNow">Jetzt Drucken</button>
         </section>
-    </main>
     </main>
 
     <!-- Configuration Settings Overlay Modal (Modal 1) -->
@@ -159,8 +158,6 @@
     </div>
 
     <!-- Application Engine Script Attachments -->
-    
-    <!--script src="https://sweet-sun-2cd6.lavu-ooe.workers.dev/"></script-->
     <script src="scripts/script.js"></script>
 </body>
 </html>

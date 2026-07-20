@@ -169,31 +169,14 @@ async function loadExternalData() {
         // Hardcoded Label Dimension Formats Fallbacks
         formats = {
             "4473": { cols: 3, rows: 8, name: "HERMA 4473 (70 x 36 mm)" },
-            "4273": { cols: 3, rows: 8, name: "HERMA 4273 (70 x 36 mm)" },
-            "4676": { cols: 3, rows: 8, name: "HERMA 4676 (70 x 36 mm)" },
-            "5074": { cols: 3, rows: 8, name: "HERMA 5074 (70 x 36 mm)" },
             "4428": { cols: 2, rows: 4, name: "HERMA 4428 (105 x 68 mm)" },
-            "4282": { cols: 2, rows: 4, name: "HERMA 4282 (105 x 68 mm)" },
-            "4463": { cols: 2, rows: 4, name: "HERMA 4463 (105 x 68 mm)" },
             "4276": { cols: 2, rows: 6, name: "HERMA 4276 (99,1 x 42,3 mm)" },
-            "4465": { cols: 2, rows: 6, name: "HERMA 4465 (99,1 x 42,3 mm)" },
             "5077": { cols: 2, rows: 4, name: "HERMA 5077 (99,1 x 67,7 mm)" },
-            "4269": { cols: 2, rows: 4, name: "HERMA 4269 (99,1 x 67,7 mm)" },
             "4459": { cols: 3, rows: 17, name: "HERMA 4459 (70 x 16,9 mm)" },
-            "4278": { cols: 3, rows: 5, name: "HERMA 4278 (70 x 50,8 mm)" },
-            "5055": { cols: 3, rows: 5, name: "HERMA 5055 (70 x 50,8 mm)" },
             "4456": { cols: 3, rows: 10, name: "HERMA 4456 (70 x 29,7 mm)" },
-            "4441": { cols: 3, rows: 7, name: "HERMA 4441 (70 x 42 mm)" },
-            "4623": { cols: 2, rows: 7, name: "HERMA 4623 (97 x 42,3 mm)" },
-            "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" },
-            "5062": { cols: 2, rows: 4, name: "HERMA 5062 (105 x 74 mm)" },
-            "4626": { cols: 2, rows: 4, name: "HERMA 4626 (105 x 74 mm)" },
-            "4470": { cols: 2, rows: 4, name: "HERMA 4470 (105 x 74 mm)" },
-            "4462": { cols: 2, rows: 8, name: "HERMA 4462 (105 x 37 mm)" },
-            "4359": { cols: 2, rows: 4, name: "HERMA 4359 (97 x 67,7 mm)" }
+            "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" }
         };
 
-        // CRITICAL FIX: Safe Cache Lookup prevents overwriting existing user data during outages
         const localCache = localStorage.getItem('lavu_studio_sortiment_v8');
         if (localCache) {
             try {
@@ -299,11 +282,11 @@ function initUiElements() {
     const bezDropdown = document.getElementById('select-bezeichnung');
 
     if (artNrDropdown && bezDropdown) {
-        artNrDropdown.addEventListener('change', (e) => {
+        artNrDropdown.addEventListener('change', () => {
             bezDropdown.selectedIndex = artNrDropdown.selectedIndex;
         });
 
-        bezDropdown.addEventListener('change', (e) => {
+        bezDropdown.addEventListener('change', () => {
             artNrDropdown.selectedIndex = bezDropdown.selectedIndex;
         });
     }
@@ -316,7 +299,7 @@ function initUiElements() {
     document.getElementById('input-count')?.addEventListener('input', renderPrintSheetPreview);
     document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
 
-    // 8. Grid Click Synchronization Logic
+    // 8. Unified Grid Click & Synchronization Logic
     const targetSheetContainer = document.getElementById('interactive-sheet-preview');
     const startPosInput = document.getElementById('input-startpos');
     const countInput = document.getElementById('input-count');
@@ -326,11 +309,14 @@ function initUiElements() {
             const cell = e.target.closest('.label-grid-cell');
             if (!cell) return;
 
+            // Set marker flag for customized updates
+            countInput.dataset.userModified = "true";
+
             const chosenPosition = parseInt(cell.dataset.index, 10) + 1;
             const currentStart = parseInt(startPosInput.value, 10) || 1;
             const currentCount = parseInt(countInput.value, 10) || 1;
 
-            if (chosenPosition < currentStart || currentCount <= 1 && chosenPosition === currentStart) {
+            if (chosenPosition < currentStart || (currentCount <= 1 && chosenPosition === currentStart)) {
                 startPosInput.value = chosenPosition;
                 countInput.value = 1;
             } 
@@ -345,23 +331,12 @@ function initUiElements() {
         });
     }
 
-
-    // =========================================================================
-    // PLACE IT RIGHT HERE AT THE BOTTOM OF THE FUNCTION
-    // =========================================================================
-
-    // --- ADD THIS: Format Selector Updates Entire Selection Span ---
+    // 9. Format Selector Auto-Bounds Reset
     const formatSelect = document.getElementById('select-format');
     if (formatSelect) {
         formatSelect.addEventListener('change', () => {
-            const countInput = document.getElementById('input-count');
-            const startPosInput = document.getElementById('input-startpos');
-            
             if (countInput && startPosInput) {
-                // Remove the manual user marker flag to let it auto-calculate max size
                 delete countInput.dataset.userModified; 
-                
-                // Clear values temporarily to force renderPrintSheetPreview to calculate maximum bounds
                 countInput.value = '';
                 startPosInput.value = 1;
             }
@@ -369,26 +344,14 @@ function initUiElements() {
         });
     }
 
-    // --- Adjust Grid Click Handler to Track Manual Changes ---
-    const targetSheet = document.getElementById('interactive-sheet-preview');
-    if (targetSheet) {
-        targetSheet.addEventListener('click', () => {
-            const countInput = document.getElementById('input-count');
-            if (countInput) {
-                // Set a marker flag when the user starts customizing manually
-                countInput.dataset.userModified = "true";
-            }
-        });
-    }
-// --- ADD THIS: Native Print Dialogue Execution Trigger ---
+    // 10. Native Print Execution Trigger
     const printBtn = document.getElementById('btn-print-trigger');
     if (printBtn) {
         printBtn.addEventListener('click', () => {
             window.print();
         });
     }
-} // <--- This closes the initUiElements function
-
+}
 
 /**
  * Parses and displays selection dropdown menus alphabetized dynamically
@@ -399,11 +362,9 @@ function renderSelectionDropdowns() {
     
     if (!artNrDropdown || !bezDropdown) return;
 
-    // Clear and add styled placeholder options first
     artNrDropdown.innerHTML = '<option value="">-- Wähle Art.Nr. --</option>';
     bezDropdown.innerHTML = '<option value="">-- Wähle Bezeichnung --</option>';
 
-    // Alphabetical Sorting based on Article Numbers
     const sortedData = [...a2].sort((a, b) => String(a.artNr).localeCompare(String(b.artNr)));
 
     sortedData.forEach(item => {
@@ -420,13 +381,7 @@ function renderSelectionDropdowns() {
 }
 
 /**
- * Computes grid measurements and prints visual overlays inside the interactive target
- */
-/**
- * Computes grid measurements and prints visual overlays inside the interactive target
- */
-/**
- * Computes grid measurements and prints visual overlays inside the interactive target
+ * Computes grid measurements and maps visual classes to the interactive preview targets
  */
 function renderPrintSheetPreview() {
     const targetSheet = document.getElementById('interactive-sheet-preview');
@@ -438,8 +393,6 @@ function renderPrintSheetPreview() {
     if (!formatConfig) return;
 
     const totalCells = formatConfig.cols * formatConfig.rows;
-
-    // --- ADDED: Auto-fallback inputs to fill the entire template layout context ---
     const startPosInput = document.getElementById('input-startpos');
     const countInput = document.getElementById('input-count');
 
@@ -447,8 +400,7 @@ function renderPrintSheetPreview() {
         startPosInput.value = 1;
     }
 
-    // Force the label count to the absolute maximum grid allocation if empty or out-of-bounds
-    if (countInput && (!countInput.value || parseInt(countInput.value, 10) === 1 && !countInput.dataset.userModified)) {
+    if (countInput && (!countInput.value || (parseInt(countInput.value, 10) === 1 && !countInput.dataset.userModified))) {
         countInput.value = totalCells;
     }
 
@@ -466,26 +418,26 @@ function renderPrintSheetPreview() {
 
     for (let i = 0; i < totalCells; i++) {
         const gridCell = document.createElement('div');
-        gridCell.className = 'label-grid-cell';
         gridCell.dataset.index = i;
 
         const cellPosition = i + 1;
 
         if (cellPosition >= inputStartPos && cellPosition < (inputStartPos + inputCount)) {
+            gridCell.className = 'label-grid-cell state-selected';
             if (activeItem) {
                 gridCell.innerHTML = `
                     <div class="print-label-content" style="text-align: center; padding: 4px;">
                         <strong style="display: block; font-size: 1rem;">${activeItem.artNr}</strong>
-                        <span style="display: block; font-size: 0.8rem; margin-top: 2px;">${activeItem.bez}</span>
-                        <small style="font-size: 0.7rem; color: #64748b;">${activeItem.geb || ''}</small>
+                        <span class="cell-desc" style="display: block; font-size: 0.8rem; margin-top: 2px;">${activeItem.bez}</span>
+                        <small style="font-size: 0.7rem; opacity: 0.8;">${activeItem.geb || ''}</small>
                     </div>
                 `;
             } else {
-                gridCell.textContent = `Bereit (Kein Artikel)`;
+                gridCell.innerHTML = `<span style="opacity:0.7;">Bereit (Kein Artikel)</span>`;
             }
         } else {
+            gridCell.className = 'label-grid-cell state-neutral';
             gridCell.textContent = `Leer (${cellPosition})`;
-            gridCell.style.opacity = '0.4';
         }
 
         targetSheet.appendChild(gridCell);
