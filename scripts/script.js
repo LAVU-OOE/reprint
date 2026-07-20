@@ -1,381 +1,502 @@
-// ─── Global state ──────────────────────────────────────────────
+/**
+ * LAVU OÖ - Label Studio v9
+ * Core Application Logic & Data Management
+ */
 
-let apiBase = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
-let currentLang = localStorage.getItem('lang') || 'de';
-let sortimentData = [];          // still mutable (reloaded from API)
-let selectedItems = [];          // user's current label list
+// Global App State
+let i18n = {};
+let formats = {};
+let a2 = []; // Local Workspace Database Cache
+let fallbackSortiment = []; // Fallback inventory array if everything fails
 
-// ─── #13: load static resources with top‑level await, store as const ──
-
-const [manifest, i18nData, formatsData] = await Promise.all([
-  fetch('manifest.json').then(r => r.json()),
-  fetch('i18n.json').then(r => r.json()),
-  fetch('formats.json').then(r => r.json())
-]).catch(err => {
-  console.error('Critical: failed to load static resources', err);
-  // fallback empty objects to prevent total crash
-  return [{}, {}, {}];
+// Initialize Configuration on Page Load
+document.addEventListener('DOMContentLoaded', () => {
+    initApp();
 });
 
-// ─── Translation helper ────────────────────────────────────────
-
-function t(key) {
-  const keys = key.split('.');
-  let val = i18nData[currentLang] || i18nData['de'] || {};
-  for (const k of keys) {
-    if (val && typeof val === 'object' && k in val) val = val[k];
-    else return key;
-  }
-  return val;
-}
-
-// ─── DOM refs ──────────────────────────────────────────────────
-
-const articleInput = document.getElementById('articleInput');
-const addBtn = document.getElementById('addBtn');
-const formatSelect = document.getElementById('formatSelect');
-const countInput = document.getElementById('countInput');
-const startPosInput = document.getElementById('startPosInput');
-const printBtn = document.getElementById('printBtn');
-const optionsBtn = document.getElementById('optionsBtn');
-const clearBtn = document.getElementById('clearBtn');
-const previewContainer = document.getElementById('previewContainer');
-const optionsModal = document.getElementById('optionsModal');
-const closeModal = document.getElementById('closeModal');
-const apiInput = document.getElementById('apiInput');
-const saveApiBtn = document.getElementById('saveApiBtn');
-const langSelect = document.getElementById('langSelect');
-const clearCacheBtn = document.getElementById('clearCacheBtn');
-const reloadDataBtn = document.getElementById('reloadDataBtn');
-const appTitle = document.getElementById('appTitle');
-
-// ─── Load sortiment (from configurable API) ──────────────────
-
-async function loadSortiment() {
-  try {
-    const url = `${apiBase}/sortiment.json`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    sortimentData = data;
-    localStorage.setItem('cachedSortiment', JSON.stringify(data));
-    return data;
-  } catch (err) {
-    console.error('Failed to load sortiment:', err);
-    // try cached
-    const cached = localStorage.getItem('cachedSortiment');
-    if (cached) {
-      try {
-        sortimentData = JSON.parse(cached);
-        return sortimentData;
-      } catch (_) { /* ignore */ }
-    }
-    alert(t('error.loadSortiment') || 'Fehler beim Laden der Artikel-Daten.');
-    return [];
-  }
-}
-
-// ─── Preview rendering ────────────────────────────────────────
-
-function updatePreview() {
-  const format = formatSelect.value;
-  if (!format) {
-    previewContainer.innerHTML = `<p style="color:#94a3b8;padding:2rem;">${t('preview.selectFormat') || 'Bitte wählen Sie ein Format.'}</p>`;
-    return;
-  }
-  const formatData = formatsData[format];
-  if (!formatData) {
-    previewContainer.innerHTML = `<p style="color:#ef4444;">${t('preview.invalidFormat') || 'Ungültiges Format.'}</p>`;
-    return;
-  }
-
-  const labelsPerPage = formatData.labelsPerPage || 10;
-  const startPos = parseInt(startPosInput.value, 10) || 1;
-  const count = parseInt(countInput.value, 10) || 1;
-
-  // Clamp start position
-  const clampedStart = Math.max(1, Math.min(startPos, labelsPerPage));
-
-  // Build label list (full items, repeat according to count)
-  let allLabels = [];
-  for (const item of selectedItems) {
-    for (let i = 0; i < count; i++) {
-      allLabels.push(item);
-    }
-  }
-
-  // Slice from start position – but we need to offset by (startPos-1) blanks
-  const totalSlots = labelsPerPage * Math.ceil((allLabels.length + clampedStart - 1) / labelsPerPage);
-  const filledSlots = [];
-  let labelIdx = 0;
-  for (let i = 1; i <= totalSlots; i++) {
-    if (i >= clampedStart && labelIdx < allLabels.length) {
-      filledSlots.push(allLabels[labelIdx]);
-      labelIdx++;
-    } else {
-      filledSlots.push(null); // empty slot
-    }
-  }
-
-  // Render grid
-  let html = `<div style="display:grid;grid-template-columns:repeat(${formatData.columns || 3},1fr);gap:0.3rem;">`;
-  for (const slot of filledSlots) {
-    if (slot) {
-      const art = slot['Art.Nr.'] || slot.artNr || '';
-      const desc = slot.Bezeichnung || slot.description || '';
-      html += `<div class="label-card"><span class="art">${art}</span><span class="desc">${desc}</span></div>`;
-    } else {
-      html += `<div class="label-card" style="border-color:#e9edf3;background:#f8fafc;">&nbsp;</div>`;
-    }
-  }
-  html += '</div>';
-  previewContainer.innerHTML = html;
-}
-
-// ─── #15: Print with iframe removal ──────────────────────────
-
-function printLabels() {
-  if (selectedItems.length === 0) {
-    alert(t('error.noItems') || 'Keine Artikel in der Liste.');
-    return;
-  }
-  const format = formatSelect.value;
-  if (!format) {
-    alert(t('error.noFormat') || 'Bitte wählen Sie ein Format.');
-    return;
-  }
-  const formatData = formatsData[format];
-  if (!formatData) {
-    alert(t('error.invalidFormat') || 'Format-Daten fehlen.');
-    return;
-  }
-
-  // Build the same label grid as preview, but in a clean iframe
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'absolute';
-  iframe.style.left = '-9999px';
-  iframe.style.top = '-9999px';
-  iframe.style.width = '210mm';
-  iframe.style.height = '297mm';
-  document.body.appendChild(iframe);
-
-  const doc = iframe.contentDocument || iframe.contentWindow.document;
-  doc.open();
-  doc.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        * { box-sizing:border-box; margin:0; padding:0; }
-        body { background:#fff; padding:0; margin:0; }
-        .grid {
-          display: grid;
-          grid-template-columns: repeat(${formatData.columns || 3}, 1fr);
-          gap: 0.2rem;
-          padding: 0.2rem;
-          width: 100%;
-        }
-        .label {
-          border: 1px solid #000;
-          aspect-ratio: 3 / 2;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          text-align: center;
-          font-size: 0.55rem;
-          padding: 0.1rem;
-          page-break-inside: avoid;
-          word-break: break-word;
-        }
-        .label .art { font-weight:600; }
-        .label .desc { font-size:0.5rem; }
-        .empty { border-color:#ccc; background:#f9f9f9; }
-        @page { margin:0; }
-      </style>
-    </head>
-    <body>
-      <div class="grid" id="printGrid"></div>
-    </body>
-    </html>
-  `);
-  doc.close();
-
-  // Re‑use the same logic as preview to fill the grid
-  const labelsPerPage = formatData.labelsPerPage || 10;
-  const startPos = parseInt(startPosInput.value, 10) || 1;
-  const count = parseInt(countInput.value, 10) || 1;
-  const clampedStart = Math.max(1, Math.min(startPos, labelsPerPage));
-
-  let allLabels = [];
-  for (const item of selectedItems) {
-    for (let i = 0; i < count; i++) {
-      allLabels.push(item);
-    }
-  }
-  const totalSlots = labelsPerPage * Math.ceil((allLabels.length + clampedStart - 1) / labelsPerPage);
-  const filledSlots = [];
-  let labelIdx = 0;
-  for (let i = 1; i <= totalSlots; i++) {
-    if (i >= clampedStart && labelIdx < allLabels.length) {
-      filledSlots.push(allLabels[labelIdx]);
-      labelIdx++;
-    } else {
-      filledSlots.push(null);
-    }
-  }
-
-  const grid = doc.getElementById('printGrid');
-  for (const slot of filledSlots) {
-    const div = doc.createElement('div');
-    div.className = 'label' + (slot ? '' : ' empty');
-    if (slot) {
-      const art = slot['Art.Nr.'] || slot.artNr || '';
-      const desc = slot.Bezeichnung || slot.description || '';
-      const artSpan = doc.createElement('span');
-      artSpan.className = 'art';
-      artSpan.textContent = art;
-      const descSpan = doc.createElement('span');
-      descSpan.className = 'desc';
-      descSpan.textContent = desc;
-      div.appendChild(artSpan);
-      div.appendChild(descSpan);
-    } else {
-      div.innerHTML = '&nbsp;';
-    }
-    grid.appendChild(div);
-  }
-
-  // ── #15: remove iframe after print ──
-  const printWindow = iframe.contentWindow;
-  printWindow.addEventListener('afterprint', () => {
-    iframe.remove();
-  });
-
-  // Trigger print
-  printWindow.print();
-}
-
-// ─── UI helpers ────────────────────────────────────────────────
-
-function populateFormats() {
-  formatSelect.innerHTML = `<option value="">${t('preview.selectFormat') || 'Bitte Format wählen'}</option>`;
-  for (const [key, data] of Object.entries(formatsData)) {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = data.name || key;
-    formatSelect.appendChild(opt);
-  }
-}
-
-function updateTitle() {
-  appTitle.textContent = manifest?.name || 'Label Studio v9';
-}
-
-function addItem() {
-  const query = articleInput.value.trim();
-  if (!query) return;
-  const found = sortimentData.find(item =>
-    (item['Art.Nr.'] && item['Art.Nr.'].toLowerCase().includes(query.toLowerCase())) ||
-    (item.Bezeichnung && item.Bezeichnung.toLowerCase().includes(query.toLowerCase()))
-  );
-  if (found) {
-    selectedItems.push(found);
-    articleInput.value = '';
-    updatePreview();
-  } else {
-    alert(t('error.notFound') || 'Artikel nicht gefunden.');
-  }
-}
-
-function clearItems() {
-  if (selectedItems.length === 0) return;
-  if (confirm(t('confirm.clear') || 'Alle Artikel aus der Liste entfernen?')) {
-    selectedItems = [];
-    updatePreview();
-  }
-}
-
-// ─── Options modal ────────────────────────────────────────────
-
-function openOptions() {
-  apiInput.value = apiBase;
-  langSelect.value = currentLang;
-  optionsModal.classList.remove('hidden');
-}
-
-function closeOptions() {
-  optionsModal.classList.add('hidden');
-}
-
-function saveApi() {
-  const val = apiInput.value.trim();
-  if (val) {
-    apiBase = val;
-    localStorage.setItem('apiBase', val);
-    alert(t('options.saved') || 'Gespeichert.');
-  }
-}
-
-function saveLang() {
-  currentLang = langSelect.value;
-  localStorage.setItem('lang', currentLang);
-  // update UI texts
-  populateFormats();
-  updateTitle();
-  updatePreview();
-}
-
-function clearCache() {
-  if (confirm(t('confirm.clearCache') || 'Gesamten Cache leeren?')) {
-    localStorage.clear();
-    alert(t('options.cacheCleared') || 'Cache geleert.');
-  }
-}
-
-async function reloadData() {
-  await loadSortiment();
-  updatePreview();
-  alert(t('options.reloaded') || 'Daten neu geladen.');
-}
-
-// ─── Event binding ─────────────────────────────────────────────
-
-addBtn.addEventListener('click', addItem);
-articleInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') addItem();
-});
-printBtn.addEventListener('click', printLabels);
-clearBtn.addEventListener('click', clearItems);
-optionsBtn.addEventListener('click', openOptions);
-closeModal.addEventListener('click', closeOptions);
-optionsModal.addEventListener('click', (e) => {
-  if (e.target === optionsModal) closeOptions();
-});
-saveApiBtn.addEventListener('click', saveApi);
-langSelect.addEventListener('change', saveLang);
-clearCacheBtn.addEventListener('click', clearCache);
-reloadDataBtn.addEventListener('click', reloadData);
-
-formatSelect.addEventListener('change', updatePreview);
-countInput.addEventListener('input', updatePreview);
-startPosInput.addEventListener('input', updatePreview);
-
-// ─── Init app ──────────────────────────────────────────────────
-
+/**
+ * Main application entry point
+ */
 async function initApp() {
-  await loadSortiment();
-  populateFormats();
-  updateTitle();
-  // set initial API input
-  apiInput.value = apiBase;
-  langSelect.value = currentLang;
-  updatePreview();
+    updateNetworkStatus('netLoading');
+    
+    // Load local workspace data or pull from remote API if configured
+    await loadExternalData();
+    
+    // Initialize UI Elements, event listeners, and default selections
+    initUiElements();
+    renderSelectionDropdowns();
+    renderPrintSheetPreview();
 }
 
-// Wait for DOM to be ready (module script may run before DOM is fully parsed)
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
+/**
+ * Loads external JSON resources safely with robust workspace cache preservation
+ */
+async function loadExternalData() {
+    try {
+        const [i18nRes, formatsRes, sortimentRes] = await Promise.all([
+            fetch('scripts/i18n.json'),
+            fetch('scripts/formats.json'),
+            fetch('scripts/sortiment.json')
+        ]);
+        
+        if (!i18nRes.ok || !formatsRes.ok || !sortimentRes.ok) {
+            throw new Error('One or more JSON files not found');
+        }
+        
+        i18n = await i18nRes.json();
+        formats = await formatsRes.json();
+        const sortimentData = await sortimentRes.json();
+        
+        if (Array.isArray(sortimentData) && sortimentData.length > 0) {
+            a2 = sortimentData;
+            localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+            updateNetworkStatus('netSuccessLocal');
+        } else {
+            throw new Error('Invalid sortiment data structure');
+        }
+    } catch (err) {
+        console.warn('External data load failed, using fallbacks and local cache:', err);
+        
+        // Hardcoded i18n Localization Fallbacks
+        i18n = {
+            de: {
+                studioV9: "Etiketten-Studio v9",
+                loadingFormat: "Format wird geladen...",
+                printLayout: "Druck-Layout",
+                artNr: "Art.Nr.",
+                bezeichnung: "Bezeichnung",
+                printNow: "Jetzt Drucken",
+                options: "Optionen",
+                modal1Title: "Druck- & Standorteinstellungen",
+                lblLocation: "Standort (ASZ Niederlassung OÖ):",
+                lblFormat: "Etiketten-Hersteller & Format:",
+                lblCount: "Anzahl Etiketten",
+                lblStartPos: "Start-Position",
+                tabSelect: "LAVU Service-Worker",
+                tabManage: "Datenbank verwalten",
+                lblUrl: "Sortiment API:",
+                lblLocationsUrl: "Locations API:",
+                btnUpdate: "Aktualisieren",
+                btnUpdateLocations: "Aktualisieren",
+                lblDbSuffix: "Gebinde / Suffix:",
+                lblDbBez: "Bezeichnung:",
+                btnSave: "💾 Ändern",
+                btnAddNew: "➕ Neu hinzufügen",
+                btnCancel: "Abbrechen",
+                btnDownloadJson: "📥 Aktuelle Datenbank als JSON herunterladen",
+                lblCurrentEntries: "Aktuelle Einträge im lokalen Workspace:",
+                btnSaveDefault: "Standard sichern",
+                btnDone: "Fertig",
+                modal2Title: "Interaktiver A4-Druckbogen",
+                btnModalPrint: "Drucken",
+                btnModalClose: "Schließen",
+                txtPwaTitle: "Als App installieren",
+                txtPwaSub: "Schnellerer Zugriff & Offline-Nutzung",
+                btnPwaInstall: "Installieren",
+                layoutTitleAttr: "Klicken für vollständige A4-Großansicht",
+                alertSaved: "Aktuelle Einstellungen wurden als Standard im Browser gespeichert!",
+                confirmDelete: "Möchten Sie diesen Eintrag wirklich löschen?",
+                alertFillForm: "Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.",
+                alertErrorChange: "Fehler beim Ändern.",
+                alertDuplicate: "Diese Artikelnummer existiert bereits!",
+                netLoading: "⏳ Verbinde...",
+                netSuccessLocal: "🟢 Lokale sortiment.json erfolgreich aktiv",
+                netSuccessRemote: "🟢 Verbunden mit externem JSON Repository",
+                netFallbackLocal: "⚠️ Keine lokale sortiment.json gefunden. Cache geladen.",
+                netFallbackRemote: "⚠️ Remote JSON Offline! Lokaler Cache geladen.",
+                txtZoom: "Zoom",
+                locationLoading: "Standorte werden geladen...",
+                locationError: "Fehler beim Laden der Standorte",
+                locUrlSaved: "📍 Locations-URL gespeichert.",
+                locUrlUpdated: "✅ Locations-URL aktualisiert!",
+                locUrlInvalid: "❌ Bitte gültige URL eingeben."
+            },
+            en: {
+                studioV9: "Label Studio v9",
+                loadingFormat: "Loading format...",
+                printLayout: "Print Layout",
+                artNr: "Item No.",
+                bezeichnung: "Description",
+                printNow: "Print Now",
+                options: "Options",
+                modal1Title: "Print & Location Settings",
+                lblLocation: "Location (ASZ Branch OÖ):",
+                lblFormat: "Label Manufacturer & Format:",
+                lblCount: "Number of Labels",
+                lblStartPos: "Start Position",
+                tabSelect: "LAVU Service-Worker",
+                tabManage: "Manage Database",
+                lblUrl: "Sortiment API:",
+                lblLocationsUrl: "Locations API:",
+                btnUpdate: "Update",
+                btnUpdateLocations: "Update",
+                lblDbSuffix: "Container / Suffix:",
+                lblDbBez: "Description:",
+                btnSave: "💾 Change",
+                btnAddNew: "➕ Add New",
+                btnCancel: "Cancel",
+                btnDownloadJson: "📥 Download Current Database as JSON",
+                lblCurrentEntries: "Current entries in local workspace:",
+                btnSaveDefault: "Save Defaults",
+                btnDone: "Done",
+                modal2Title: "Interactive A4 Print Sheet",
+                btnModalPrint: "Print",
+                btnModalClose: "Close",
+                txtPwaTitle: "Install as App",
+                txtPwaSub: "Faster access & offline usage",
+                btnPwaInstall: "Install",
+                layoutTitleAttr: "Click for full A4 sheet preview",
+                alertSaved: "Current settings saved as defaults in browser!",
+                confirmDelete: "Do you really want to delete this entry?",
+                alertFillForm: "Please fill in at least Item No. and Description.",
+                alertErrorChange: "Error applying changes.",
+                alertDuplicate: "This Article Number already exists!",
+                netLoading: "⏳ Connecting...",
+                netSuccessLocal: "🟢 Local sortiment.json active successfully",
+                netSuccessRemote: "🟢 Connected to remote JSON Repository",
+                netFallbackLocal: "⚠️ No local sortiment.json found. Cache loaded.",
+                netFallbackRemote: "⚠️ Remote JSON Offline! Local cache loaded.",
+                txtZoom: "Zoom",
+                locationLoading: "Loading locations...",
+                locationError: "Error loading locations",
+                locUrlSaved: "📍 Locations URL saved.",
+                locUrlUpdated: "✅ Locations URL updated!",
+                locUrlInvalid: "❌ Please enter a valid URL."
+            }
+        };
+
+        // Hardcoded Label Dimension Formats Fallbacks
+        formats = {
+            "4473": { cols: 3, rows: 8, name: "HERMA 4473 (70 x 36 mm)" },
+            "4428": { cols: 2, rows: 4, name: "HERMA 4428 (105 x 68 mm)" },
+            "4276": { cols: 2, rows: 6, name: "HERMA 4276 (99,1 x 42,3 mm)" },
+            "5077": { cols: 2, rows: 4, name: "HERMA 5077 (99,1 x 67,7 mm)" },
+            "4459": { cols: 3, rows: 17, name: "HERMA 4459 (70 x 16,9 mm)" },
+            "4456": { cols: 3, rows: 10, name: "HERMA 4456 (70 x 29,7 mm)" },
+            "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" }
+        };
+
+        const localCache = localStorage.getItem('lavu_studio_sortiment_v8');
+        if (localCache) {
+            try {
+                a2 = JSON.parse(localCache);
+                updateNetworkStatus('netFallbackRemote');
+            } catch (e) {
+                a2 = fallbackSortiment.slice();
+                localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+                updateNetworkStatus('netFallbackLocal');
+            }
+        } else {
+            a2 = fallbackSortiment.slice();
+            localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+            updateNetworkStatus('netFallbackLocal');
+        }
+    }
+}
+
+/**
+ * Updates the network diagnostic status message in the UI
+ */
+function updateNetworkStatus(statusKey) {
+    const currentLang = document.documentElement.lang || 'de';
+    const statusText = i18n[currentLang] ? i18n[currentLang][statusKey] : "Connecting...";
+    const badge = document.getElementById('network-status-badge');
+    if (badge) {
+        badge.textContent = statusText;
+    }
+}
+
+/**
+ * Configures event listeners, sliders, and sets up settings triggers
+ */
+function initUiElements() {
+    // 1. Zoom Handler Setup
+    const zoomSlider = document.getElementById('zoom-range');
+    if (zoomSlider) {
+        zoomSlider.addEventListener('input', (e) => {
+            const previewSheet = document.getElementById('interactive-sheet-preview');
+            if (previewSheet) {
+                previewSheet.style.transform = `scale(${e.target.value})`;
+            }
+        });
+    }
+
+    // 2. Language Toggle Setup
+    const langBtn = document.getElementById('language-toggle');
+    if (langBtn) {
+        langBtn.addEventListener('click', () => {
+            const newLang = document.documentElement.lang === 'de' ? 'en' : 'de';
+            document.documentElement.lang = newLang;
+            translateUi(newLang);
+        });
+    }
+
+    // 3. Modal Open & Close Event Listeners
+    const optionsBtn = document.getElementById('btn-options-modal');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeTriggers = document.querySelectorAll('.modal-close-trigger');
+
+    if (optionsBtn && settingsModal) {
+        optionsBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('hidden');
+        });
+
+        closeTriggers.forEach(trigger => {
+            trigger.addEventListener('click', () => {
+                settingsModal.classList.add('hidden');
+            });
+        });
+    }
+
+    // 4. Set Default API URL Values
+    const sortimentInput = document.getElementById('input-sortiment-api');
+    const locationsInput = document.getElementById('input-location-api');
+
+    if (sortimentInput && !sortimentInput.value) {
+        sortimentInput.value = 'https://sortiment-api.lavu-ooe.workers.dev/';
+    }
+    if (locationsInput && !locationsInput.value) {
+        locationsInput.value = 'https://locations-api.lavu-ooe.workers.dev/';
+    }
+
+    // 5. Interactive Tab Navigation Logic
+    const tabButtons = document.querySelectorAll('.tab-navigation .tab-btn');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            const contentPanels = document.querySelectorAll('.tab-content-panel');
+            contentPanels.forEach(panel => panel.classList.remove('active'));
+
+            button.classList.add('active');
+            const targetId = button.getAttribute('data-target');
+            const targetPanel = document.getElementById(targetId);
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
+        });
+    });
+
+    // 6. Sync Art.Nr. and Bezeichnung Dropdowns
+    const artNrDropdown = document.getElementById('select-artnr');
+    const bezDropdown = document.getElementById('select-bezeichnung');
+
+    if (artNrDropdown && bezDropdown) {
+        artNrDropdown.addEventListener('change', () => {
+            bezDropdown.selectedIndex = artNrDropdown.selectedIndex;
+        });
+
+        bezDropdown.addEventListener('change', () => {
+            artNrDropdown.selectedIndex = bezDropdown.selectedIndex;
+        });
+    }
+
+    // 7. Re-trigger layout calculations on value adjustment updates
+    const syncTriggers = ['select-artnr', 'select-bezeichnung', 'input-count', 'input-startpos'];
+    syncTriggers.forEach(id => {
+        document.getElementById(id)?.addEventListener('change', renderPrintSheetPreview);
+    });
+    document.getElementById('input-count')?.addEventListener('input', renderPrintSheetPreview);
+    document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
+
+    // 8. Unified Grid Click & Synchronization Logic
+    // FIXED: Removed old conflicting behavior to avoid locking selection count to 1!
+    const countInput = document.getElementById('input-count');
+    const startPosInput = document.getElementById('input-startpos');
+    if (startPosInput && countInput) {
+        // Track manual changes via direct form inputs
+        countInput.addEventListener('input', () => {
+            countInput.dataset.userModified = "true";
+        });
+    }
+
+    // 9. Format Selector Auto-Bounds Reset
+    const formatSelect = document.getElementById('select-format');
+    if (formatSelect) {
+        formatSelect.addEventListener('change', () => {
+            if (countInput && startPosInput) {
+                delete countInput.dataset.userModified; 
+                countInput.value = '';
+                startPosInput.value = 1;
+            }
+            renderPrintSheetPreview();
+        });
+    }
+
+    // 10. Native Print Execution Trigger
+    const printBtn = document.getElementById('btn-print-trigger');
+    if (printBtn) {
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+    }
+}
+
+/**
+ * Parses and displays selection dropdown menus alphabetized dynamically
+ */
+function renderSelectionDropdowns() {
+    const artNrDropdown = document.getElementById('select-artnr');
+    const bezDropdown = document.getElementById('select-bezeichnung');
+    
+    if (!artNrDropdown || !bezDropdown) return;
+
+    artNrDropdown.innerHTML = '<option value="">-- Wähle Art.Nr. --</option>';
+    bezDropdown.innerHTML = '<option value="">-- Wähle Bezeichnung --</option>';
+
+    const sortedData = [...a2].sort((a, b) => String(a.artNr).localeCompare(String(b.artNr)));
+
+    sortedData.forEach(item => {
+        let opt1 = document.createElement('option');
+        opt1.value = item.artNr;
+        opt1.textContent = item.artNr;
+        artNrDropdown.appendChild(opt1);
+
+        let opt2 = document.createElement('option');
+        opt2.value = item.artNr;
+        opt2.textContent = `${item.bez} ${item.geb || ''}`.trim(); 
+        bezDropdown.appendChild(opt2);
+    });
+}
+
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
+function renderPrintSheetPreview() {
+    const targetSheet = document.getElementById('interactive-sheet-preview');
+    if (!targetSheet) return;
+
+    const selectedFormatKey = document.getElementById('select-format')?.value || "4473";
+    const formatConfig = formats[selectedFormatKey];
+
+    if (!formatConfig) return;
+
+    const totalCells = formatConfig.cols * formatConfig.rows;
+    const startPosInput = document.getElementById('input-startpos');
+    const countInput = document.getElementById('input-count');
+
+    // Force default fallbacks safely if fields are cleared out
+    if (startPosInput && !startPosInput.value) {
+        startPosInput.value = 1;
+    }
+
+    // ENFORCED DEFAULT: If there is no user-modified flag, always default to using every possible label
+    if (countInput && (!countInput.value || !countInput.dataset.userModified)) {
+        const currentStart = parseInt(startPosInput?.value, 10) || 1;
+        countInput.value = (totalCells - currentStart) + 1;
+    }
+
+    const inputCount = parseInt(countInput?.value, 10) || totalCells;
+    const inputStartPos = parseInt(startPosInput?.value, 10) || 1;
+
+    const artNrDropdown = document.getElementById('select-artnr');
+    const selectedArtNr = artNrDropdown?.value;
+    const activeItem = a2.find(item => String(item.artNr) === String(selectedArtNr));
+
+    targetSheet.innerHTML = '';
+    targetSheet.style.display = 'grid';
+    targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
+    targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
+
+    // Calculate boundary explicitly to avoid off-by-one window shifting
+    const lastActivePosition = (inputStartPos + inputCount) - 1;
+
+    for (let i = 0; i < totalCells; i++) {
+        const gridCell = document.createElement('div');
+        gridCell.dataset.index = i;
+        const cellPosition = i + 1;
+
+        // Label check against exact print window boundaries
+        if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
+            if (activeItem) {
+                // Active Zone + Chosen Article -> Emerald Green (#059669)
+                gridCell.className = 'label-grid-cell state-selected has-article';
+                gridCell.innerHTML = `
+                    <div class="print-label-content" style="text-align: center; padding: 4px;">
+                        <strong style="display: block; font-size: 1rem;">${activeItem.artNr}</strong>
+                        <span class="cell-desc" style="display: block; font-size: 0.8rem; margin-top: 2px;">${activeItem.bez}</span>
+                        <small style="font-size: 0.7rem; opacity: 0.8;">${activeItem.geb || ''}</small>
+                    </div>
+                `;
+            } else {
+                // Active Zone but NO Article -> Default Slate Grey (#334155)
+                gridCell.className = 'label-grid-cell state-selected';
+                gridCell.innerHTML = `<span style="opacity: 0.9;">Bereit (Kein Artikel)</span>`;
+            }
+        } else {
+            // Outside target window range -> Turns Vibrant Red (#ee1111)
+            gridCell.className = 'label-grid-cell state-neutral';
+            gridCell.textContent = `Leer (${cellPosition})`;
+        }
+
+        // CORRECTED CLICK INTERACTION PIPELINE
+        gridCell.addEventListener('click', () => {
+            if (startPosInput && countInput) {
+                // If user clicks a label BEFORE the current starting position, shift start backward
+                if (cellPosition < inputStartPos) {
+                    startPosInput.value = cellPosition;
+                    countInput.value = (lastActivePosition - cellPosition) + 1;
+                }
+                // If user clicks an active element, slice the print range boundary right there
+                else if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
+                    // Toggling the very first active item shifts start forward by 1
+                    if (cellPosition === inputStartPos) {
+                        if (inputCount <= 1) {
+                            startPosInput.value = 1;
+                            countInput.value = totalCells;
+                        } else {
+                            startPosInput.value = inputStartPos + 1;
+                            countInput.value = inputCount - 1;
+                        }
+                    } else {
+                        // Slices print count to end exactly at this cell location
+                        countInput.value = (cellPosition - inputStartPos) + 1;
+                    }
+                }
+                // If user clicks a red cell down the line, expand the active block selection down to it
+                else {
+                    countInput.value = (cellPosition - inputStartPos) + 1;
+                }
+
+                // Protect setting adjustments from format clear handlers
+                countInput.dataset.userModified = "true";
+
+                // Broadcast mutations to system forms
+                startPosInput.dispatchEvent(new Event('change', { bubbles: true }));
+                countInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+                renderPrintSheetPreview();
+            }
+        });
+
+        targetSheet.appendChild(gridCell);
+    }
+}
+
+/**
+ * Re-maps text components based on selected language locales
+ */
+function translateUi(lang) {
+    if (!i18n[lang]) return;
+    
+    const elementsToTranslate = document.querySelectorAll('[data-i18n]');
+    elementsToTranslate.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang][key]) {
+            if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
+                el.value = i18n[lang][key];
+            } else {
+                el.textContent = i18n[lang][key];
+            }
+        }
+    });
 }
