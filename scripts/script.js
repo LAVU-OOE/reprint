@@ -50,7 +50,7 @@ async function loadExternalData() {
         
         if (Array.isArray(sortimentData) && sortimentData.length > 0) {
             a2 = sortimentData;
-            localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+            localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
             updateNetworkStatus('netSuccessLocal');
         } else {
             throw new Error('Invalid sortiment data structure');
@@ -177,19 +177,19 @@ async function loadExternalData() {
             "8645": { cols: 2, rows: 4, name: "HERMA 8645 (105 x 74 mm)" }
         };
 
-        const localCache = localStorage.getItem('lavu_studio_sortiment_v8');
+        const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
         if (localCache) {
             try {
                 a2 = JSON.parse(localCache);
                 updateNetworkStatus('netFallbackRemote');
             } catch (e) {
                 a2 = fallbackSortiment.slice();
-                localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+                localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
                 updateNetworkStatus('netFallbackLocal');
             }
         } else {
             a2 = fallbackSortiment.slice();
-            localStorage.setItem('lavu_studio_sortiment_v8', JSON.stringify(a2));
+            localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
             updateNetworkStatus('netFallbackLocal');
         }
     }
@@ -300,11 +300,9 @@ function initUiElements() {
     document.getElementById('input-startpos')?.addEventListener('input', renderPrintSheetPreview);
 
     // 8. Unified Grid Click & Synchronization Logic
-    // FIXED: Removed old conflicting behavior to avoid locking selection count to 1!
     const countInput = document.getElementById('input-count');
     const startPosInput = document.getElementById('input-startpos');
     if (startPosInput && countInput) {
-        // Track manual changes via direct form inputs
         countInput.addEventListener('input', () => {
             countInput.dataset.userModified = "true";
         });
@@ -328,6 +326,80 @@ function initUiElements() {
     if (printBtn) {
         printBtn.addEventListener('click', () => {
             window.print();
+        });
+    }
+
+    // 11. Database Management Logic Validation (Fixed)
+    const btnDbAdd = document.getElementById('btn-db-add');
+    const btnDbSave = document.getElementById('btn-db-save');
+    const dbArtNr = document.getElementById('db-input-artnr');
+    const dbBez = document.getElementById('db-input-bez');
+    const dbSuffix = document.getElementById('db-input-suffix');
+
+    function getAlertText(key, fallback) {
+        const currentLang = document.documentElement.lang || 'de';
+        return (i18n[currentLang] && i18n[currentLang][key]) ? i18n[currentLang][key] : fallback;
+    }
+
+    function validateDbInputs() {
+        if (!dbArtNr.value.trim() || !dbBez.value.trim()) {
+            alert(getAlertText('alertFillForm', 'Bitte zumindest Art.Nr. und Bezeichnung ausfüllen.'));
+            return false;
+        }
+        return true;
+    }
+
+    if (btnDbAdd) {
+        btnDbAdd.addEventListener('click', () => {
+            if (!validateDbInputs()) return;
+            const newArtNr = dbArtNr.value.trim();
+            if (a2.some(item => String(item.artNr) === newArtNr)) {
+                alert(getAlertText('alertDuplicate', 'Diese Artikelnummer existiert bereits!'));
+                return;
+            }
+            a2.push({ artNr: newArtNr, bez: dbBez.value.trim(), geb: dbSuffix.value.trim() });
+            localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
+            renderSelectionDropdowns();
+            dbArtNr.value = ''; dbBez.value = ''; dbSuffix.value = '';
+        });
+    }
+
+    if (btnDbSave) {
+        btnDbSave.addEventListener('click', () => {
+            if (!validateDbInputs()) return;
+            const targetArtNr = dbArtNr.value.trim();
+            const index = a2.findIndex(item => String(item.artNr) === targetArtNr);
+            if (index === -1) {
+                alert("Artikelnummer nicht gefunden. Bitte stattdessen 'Neu hinzufügen' verwenden.");
+                return;
+            }
+            a2[index].bez = dbBez.value.trim();
+            a2[index].geb = dbSuffix.value.trim();
+            localStorage.setItem('lavu_studio_sortiment_v9', JSON.stringify(a2));
+            renderSelectionDropdowns();
+        });
+    }
+
+    // 12. PWA Installation Triggers
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const pwaBanner = document.getElementById('pwa-install-banner');
+        if (pwaBanner) pwaBanner.classList.remove('hidden');
+    });
+
+    const btnPwaInstall = document.getElementById('btn-pwa-install-trigger');
+    if (btnPwaInstall) {
+        btnPwaInstall.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('pwa-install-banner').classList.add('hidden');
+                }
+                deferredPrompt = null;
+            }
         });
     }
 }
@@ -359,15 +431,6 @@ function renderSelectionDropdowns() {
     });
 }
 
-/**
- * Computes grid measurements and maps visual classes to the interactive preview targets
- */
-/**
- * Computes grid measurements and maps visual classes to the interactive preview targets
- */
-/**
- * Computes grid measurements and maps visual classes to the interactive preview targets
- */
 /**
  * Computes grid measurements and maps visual classes to the interactive preview targets
  */
@@ -448,11 +511,11 @@ function renderPrintSheetPreview() {
                 }
                 // If user clicks an active element, slice the print range boundary right there
                 else if (cellPosition >= inputStartPos && cellPosition <= lastActivePosition) {
-                    // Toggling the very first active item shifts start forward by 1
+                    // Toggling the very first active item shifts start forward by 1 (unless it's the only one left)
                     if (cellPosition === inputStartPos) {
                         if (inputCount <= 1) {
-                            startPosInput.value = 1;
-                            countInput.value = totalCells;
+                            // Bug fixed: Don't explosively fill the sheet; just leave it as is if it's the only block.
+                            countInput.value = 1;
                         } else {
                             startPosInput.value = inputStartPos + 1;
                             countInput.value = inputCount - 1;

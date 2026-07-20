@@ -7,9 +7,9 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e293b">
-    <!-- PWA Icons -->
-    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <!-- PWA Icons Fixed Paths -->
+    <link rel="icon" type="image/png" sizes="192x192" href="images/web-app-manifest-192x192.png">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 </head>
 <body>
 
@@ -123,6 +123,11 @@
                 <!-- Tab content for database changes -->
                 <div id="tab-database" class="tab-content-panel">
                     <div class="form-group-row">
+                        <!-- Added ArtNr input field to complete validation logic -->
+                        <div class="form-group compact">
+                            <label for="db-input-artnr" data-i18n="artNr">Art.Nr.:</label>
+                            <input type="text" id="db-input-artnr" class="form-control">
+                        </div>
                         <div class="form-group">
                             <label for="db-input-bez" data-i18n="lblDbBez">Bezeichnung:</label>
                             <input type="text" id="db-input-bez" class="form-control">
@@ -157,6 +162,16 @@
         <button id="btn-pwa-install-trigger" class="btn-primary compact" data-i18n="btnPwaInstall">Installieren</button>
     </div>
 
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('ServiceWorker registered:', reg.scope))
+                    .catch(err => console.warn('ServiceWorker error:', err));
+            });
+        }
+    </script>
     <!-- Application Engine Script Attachments -->
     <script src="scripts/script.js"></script>
 </body>
