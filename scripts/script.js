@@ -362,6 +362,9 @@ function renderSelectionDropdowns() {
 /**
  * Computes grid measurements and maps visual classes to the interactive preview targets
  */
+/**
+ * Computes grid measurements and maps visual classes to the interactive preview targets
+ */
 function renderPrintSheetPreview() {
     const targetSheet = document.getElementById('interactive-sheet-preview');
     if (!targetSheet) return;
@@ -379,8 +382,10 @@ function renderPrintSheetPreview() {
         startPosInput.value = 1;
     }
 
+    // Default to filling the rest of the sheet if no count is set
     if (countInput && (!countInput.value || (parseInt(countInput.value, 10) === 1 && !countInput.dataset.userModified))) {
-        countInput.value = totalCells;
+        const currentStart = parseInt(startPosInput.value, 10) || 1;
+        countInput.value = (totalCells - currentStart) + 1;
     }
 
     const artNrDropdown = document.getElementById('select-artnr');
@@ -425,15 +430,22 @@ function renderPrintSheetPreview() {
         }
 
         // INTERACTIVE SHEET CLICK HANDLER
-        // Clicking any label cell safely changes the starting position input field
         gridCell.addEventListener('click', () => {
-            if (startPosInput) {
+            if (startPosInput && countInput) {
+                // Set the new start position to the clicked cell
                 startPosInput.value = cellPosition;
                 
-                // Dispatch input event to notify any other calculations tracking changes
-                startPosInput.dispatchEvent(new Event('input', { bubbles: true }));
+                // Automatically recalculate count to print from this cell to the end of the sheet
+                countInput.value = (totalCells - cellPosition) + 1;
                 
-                // Instantly re-render the sheet to showcase the new layout shift
+                // Mark as modified so defaults don't overwrite it
+                countInput.dataset.userModified = "true";
+                
+                // Dispatch input events to notify the rest of the application form controls
+                startPosInput.dispatchEvent(new Event('input', { bubbles: true }));
+                countInput.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                // Instantly re-render the sheet layout updates
                 renderPrintSheetPreview();
             }
         });
