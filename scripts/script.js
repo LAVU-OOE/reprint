@@ -419,7 +419,7 @@ function renderPrintSheetPreview() {
     targetSheet.style.gridTemplateColumns = `repeat(${formatConfig.cols}, 1fr)`;
     targetSheet.style.gridTemplateRows = `repeat(${formatConfig.rows}, 1fr)`;
 
-    for (let i = 0; i < totalCells; i++) {
+for (let i = 0; i < totalCells; i++) {
         const gridCell = document.createElement('div');
         gridCell.dataset.index = i;
 
@@ -447,6 +447,20 @@ function renderPrintSheetPreview() {
             gridCell.className = 'label-grid-cell state-neutral';
             gridCell.textContent = `Leer (${cellPosition})`;
         }
+
+        // --- NEW: INTERACTIVE SHEET CLICK HANDLER ---
+        // Clicking any label cell changes the starting position input field
+        gridCell.addEventListener('click', () => {
+            if (startPosInput) {
+                startPosInput.value = cellPosition;
+                
+                // Dispatch input event to notify any other calculations tracking changes
+                startPosInput.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                // Instantly re-render the sheet to showcase the new layout shift
+                renderPrintSheetPreview();
+            }
+        });
 
         targetSheet.appendChild(gridCell);
     }
