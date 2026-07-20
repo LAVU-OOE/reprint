@@ -51,17 +51,22 @@
     }
 
     /* ==========================================================================
-       Dedicated Cloudflare Worker API Endpoints (Root URLs – no appended filenames)
+       Dedicated Cloudflare Worker API Endpoints
+       - Sortiment & Locations: root URL returns the data
+       - Product (formats): must call /formats path
        ========================================================================== */
     async function loadExternalData() {
         const rawSortimentApi = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
         const rawLocationsApi = localStorage.getItem('locationsApiBase') || 'https://locations-api.lavu-ooe.workers.dev';
         const rawProductApi = localStorage.getItem('productApiBase') || 'https://product-api.lavu-ooe.workers.dev';
 
-        // Use the base URLs directly – the worker handles the routing internally
+        // Build URLs:
+        // - Sortiment: just the base URL
+        // - Locations: just the base URL
+        // - Product: base URL + /formats (because the worker uses path as KV key)
         const sortimentUrl = rawSortimentApi.replace(/\/+$/, '');
         const locationsUrl = rawLocationsApi.replace(/\/+$/, '');
-        const productUrl = rawProductApi.replace(/\/+$/, '');
+        const productUrl = rawProductApi.replace(/\/+$/, '') + '/formats';
 
         try {
             const [manifestRes, i18nRes, formatsRes, sortimentRes, locationsRes] = await Promise.all([
