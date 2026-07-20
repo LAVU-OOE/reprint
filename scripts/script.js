@@ -12,16 +12,16 @@
 
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Hours Cache TTL
 
-    document.addEventListener('DOMContentLoaded', async () => {
-        await initApp();
-        setupStoragePersistence();
+    function runInitialization() {
         initApiInputValues();
-    });
-
-    if (document.readyState === 'interactive' || document.readyState === 'complete') {
         initApp();
         setupStoragePersistence();
-        initApiInputValues();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runInitialization);
+    } else {
+        runInitialization();
     }
 
     async function initApp() {
@@ -92,12 +92,7 @@
 
             let sortimentData = [];
             if (sortimentRes && sortimentRes.ok) {
-                const contentType = sortimentRes.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    sortimentData = await sortimentRes.json().catch(() => []);
-                } else {
-                    sortimentData = await sortimentRes.json().catch(() => []);
-                }
+                sortimentData = await sortimentRes.json().catch(() => []);
             }
 
             if (Array.isArray(sortimentData) && sortimentData.length > 0) {
@@ -106,25 +101,16 @@
                 localStorage.setItem('lavu_studio_sortiment_timestamp', Date.now().toString());
             } else {
                 const localCache = localStorage.getItem('lavu_studio_sortiment_v9');
-                if (localCache) {
-                    try {
-                        a2 = JSON.parse(localCache);
-                    } catch (e) {
-                        a2 = [];
-                    }
-                } else {
+                try {
+                    a2 = localCache ? JSON.parse(localCache) : [];
+                } catch (e) {
                     a2 = [];
                 }
             }
 
             let locData = [];
             if (locationsRes && locationsRes.ok) {
-                const contentType = locationsRes.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    locData = await locationsRes.json().catch(() => []);
-                } else {
-                    locData = await locationsRes.json().catch(() => []);
-                }
+                locData = await locationsRes.json().catch(() => []);
             }
 
             if (Array.isArray(locData) && locData.length > 0) {
@@ -133,13 +119,9 @@
                 localStorage.setItem('lavu_studio_locations_timestamp', Date.now().toString());
             } else {
                 const localLocCache = localStorage.getItem('lavu_studio_locations_v9');
-                if (localLocCache) {
-                    try {
-                        locationsData = JSON.parse(localLocCache);
-                    } catch (e) {
-                        locationsData = [];
-                    }
-                } else {
+                try {
+                    locationsData = localLocCache ? JSON.parse(localLocCache) : [];
+                } catch (e) {
                     locationsData = [];
                 }
             }
@@ -168,7 +150,6 @@
     }
 
     function initApiInputValues() {
-        // Pre-populate input fields inside settings modal with current localStorage values or defaults
         const sortimentInput = document.getElementById('input-sortiment-api') || document.getElementById('input-url');
         const locationsInput = document.getElementById('input-location-api');
         const productInput = document.getElementById('input-product-api');
@@ -333,7 +314,6 @@
             });
         }
 
-        // --- Bind API Update Buttons / Inputs Saving Handlers ---
         setupApiUpdateHandlers();
 
         const tabButtons = document.querySelectorAll('.tab-navigation .tab-btn');
@@ -414,7 +394,6 @@
     }
 
     function setupApiUpdateHandlers() {
-        // Generic helper to bind API save action buttons (e.g. btn-update, btn-update-locations, or generic save buttons)
         const updateButtons = document.querySelectorAll('button[id*="update"], button[id*="save"], .btn-update-api');
         
         updateButtons.forEach(btn => {
