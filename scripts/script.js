@@ -15,11 +15,13 @@
     document.addEventListener('DOMContentLoaded', async () => {
         await initApp();
         setupStoragePersistence();
+        initApiInputValues();
     });
 
     if (document.readyState === 'interactive' || document.readyState === 'complete') {
         initApp();
         setupStoragePersistence();
+        initApiInputValues();
     }
 
     async function initApp() {
@@ -47,7 +49,6 @@
        Dedicated Cloudflare Worker API Endpoints & Local Fallback Handlers
        ========================================================================== */
     async function loadExternalData() {
-        // Retrieve custom API base endpoints or use the dedicated production workers
         const rawSortimentApi = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
         const rawLocationsApi = localStorage.getItem('locationsApiBase') || 'https://locations-api.lavu-ooe.workers.dev';
         const rawProductApi = localStorage.getItem('productApiBase') || 'https://product-api.lavu-ooe.workers.dev';
@@ -75,7 +76,6 @@
                 loadEmbeddedI18nFallbacks();
             }
 
-            // 1. Process Formats (Product API -> Local scripts/formats.json fallback)
             let formatsData = null;
             if (formatsRes && formatsRes.ok) {
                 const contentType = formatsRes.headers.get('content-type');
@@ -90,7 +90,6 @@
                 loadEmbeddedFormatsFallbacks();
             }
 
-            // 2. Process Sortiment JSON (Sortiment API -> Cache fallback -> Empty safety)
             let sortimentData = [];
             if (sortimentRes && sortimentRes.ok) {
                 const contentType = sortimentRes.headers.get('content-type');
@@ -110,7 +109,6 @@
                 if (localCache) {
                     try {
                         a2 = JSON.parse(localCache);
-                        console.warn('Sortiment API unreachable. Loaded modifications from device local storage cache.');
                     } catch (e) {
                         a2 = [];
                     }
@@ -119,7 +117,6 @@
                 }
             }
 
-            // 3. Process Locations JSON (Locations API -> Cache fallback -> Empty safety)
             let locData = [];
             if (locationsRes && locationsRes.ok) {
                 const contentType = locationsRes.headers.get('content-type');
@@ -139,7 +136,6 @@
                 if (localLocCache) {
                     try {
                         locationsData = JSON.parse(localLocCache);
-                        console.warn('Locations API unreachable. Loaded modifications from device local storage cache.');
                     } catch (e) {
                         locationsData = [];
                     }
@@ -168,6 +164,23 @@
 
             updateNetworkStatus('netFallbackLocal');
             hideLoadingScreen();
+        }
+    }
+
+    function initApiInputValues() {
+        // Pre-populate input fields inside settings modal with current localStorage values or defaults
+        const sortimentInput = document.getElementById('input-sortiment-api') || document.getElementById('input-url');
+        const locationsInput = document.getElementById('input-location-api');
+        const productInput = document.getElementById('input-product-api');
+
+        if (sortimentInput) {
+            sortimentInput.value = localStorage.getItem('apiBase') || 'https://sortiment-api.lavu-ooe.workers.dev';
+        }
+        if (locationsInput) {
+            locationsInput.value = localStorage.getItem('locationsApiBase') || 'https://locations-api.lavu-ooe.workers.dev';
+        }
+        if (productInput) {
+            productInput.value = localStorage.getItem('productApiBase') || 'https://product-api.lavu-ooe.workers.dev';
         }
     }
 
@@ -320,6 +333,9 @@
             });
         }
 
+        // --- Bind API Update Buttons / Inputs Saving Handlers ---
+        setupApiUpdateHandlers();
+
         const tabButtons = document.querySelectorAll('.tab-navigation .tab-btn');
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -395,6 +411,32 @@
 
         setupDatabaseManagementHandlers();
         setupPwaHandlers();
+    }
+
+    function setupApiUpdateHandlers() {
+        // Generic helper to bind API save action buttons (e.g. btn-update, btn-update-locations, or generic save buttons)
+        const updateButtons = document.querySelectorAll('button[id*="update"], button[id*="save"], .btn-update-api');
+        
+        updateButtons.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const sortimentInput = document.getElementById('input-sortiment-api') || document.getElementById('input-url');
+                const locationsInput = document.getElementById('input-location-api');
+                const productInput = document.getElementById('input-product-api');
+
+                if (sortimentInput) {
+                    localStorage.setItem('apiBase', sortimentInput.value.trim());
+                }
+                if (locationsInput) {
+                    localStorage.setItem('locationsApiBase', locationsInput.value.trim());
+                }
+                if (productInput) {
+                    localStorage.setItem('productApiBase', productInput.value.trim());
+                }
+
+                alert("API-Einstellungen erfolgreich gespeichert. Daten werden neu geladen...");
+                await initApp();
+            });
+        });
     }
 
     function setupDatabaseManagementHandlers() {
