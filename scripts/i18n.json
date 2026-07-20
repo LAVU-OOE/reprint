@@ -1,6 +1,6 @@
 {
   "de": {
-    "studioV9": "Etiketten-Studio v9",
+    "studioV9": "Druck-Studio v9",
     "loadingFormat": "Format wird geladen...",
     "printLayout": "Druck-Layout",
     "artNr": "Art.Nr.",
@@ -52,7 +52,7 @@
     "locUrlInvalid": "❌ Bitte gültige URL eingeben."
   },
   "en": {
-    "studioV9": "Label Studio v9",
+    "studioV9": "Print-Studio v9",
     "loadingFormat": "Loading format...",
     "printLayout": "Print Layout",
     "artNr": "Item No.",
