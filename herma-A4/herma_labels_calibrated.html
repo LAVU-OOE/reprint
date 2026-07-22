@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Pluggable Dual-Panel Mobile Engine</title>
+      <base href="/reprint/">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    #appView {
+      width: 100%;
+      padding: 12px;
+      padding-bottom: calc(320px + env(safe-area-inset-bottom, 16px));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: auto;
+    }
+
+    /* DUAL CARD DRAWER SYSTEM */
+    .mobile-drawer-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10000;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .drawer-panel {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1e293b;
+      border-top: 2px solid #3b82f6;
+      box-shadow: 0 -12px 30px rgba(0,0,0,0.6);
+      padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 12px)) 16px;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      will-change: transform;
+      transform-origin: bottom center;
+    }
+
+    .drawer-panel.animating {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* State Positions */
+    .drawer-panel.is-primary {
+      z-index: 10;
+      transform: translateY(0px) scale(1);
+    }
+
+    .drawer-panel.is-secondary {
+      z-index: 5;
+      background: #0f172a;
+      border-top-color: #10b981;
+      transform: translateY(-44px) scale(0.95);
+    }
+
+    .drawer-panel.slide-out-down {
+      transform: translateY(120%) scale(0.95) !important;
+      z-index: 4 !important;
+    }
+
+    .card-label {
+      font-size: 8pt;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #38bdf8;
+      margin-bottom: 2px;
+      text-align: center;
+    }
+
+    .drawer-panel.is-secondary .card-label {
+      color: #34d399;
+    }
+
+    .drawer-handle-zone {
+      width: 100%;
+      padding: 6px 0 10px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .drawer-handle {
+      width: 48px;
+      height: 5px;
+      background: #64748b;
+      border-radius: 3px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-group.full-width { grid-column: span 2; }
+
+    .control-group label {
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      font-weight: bold;
+    }
+
+    select, input {
+      width: 100%;
+      height: 44px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: white;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .print-btn {
+      width: 100%;
+      height: 48px;
+      margin-top: 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    @media print {
+      body { background: none; }
+      .mobile-drawer-container { display: none !important; }
+      #appView { padding: 0 !important; overflow: visible; }
+    }
+  </style>
+
+  <style id="engine-styles">
+    @page { size: A4 portrait; margin: 0; }
+
+    .a4-page {
+      width: 210mm;
+      height: 297mm;
+      background: white;
+      position: relative;
+      page-break-after: always;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      border-radius: 2px;
+      transform-origin: top center;
+      margin-bottom: 20px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    @media print {
+      .a4-page {
+        margin: 0;
+        box-shadow: none;
+        page-break-after: always;
+        transform: scale(1) !important;
+      }
+    }
+
+    .calibration-header {
+      position: absolute;
+      top: 1mm; left: 5mm; right: 5mm;
+      height: 8mm;
+      border: 1px solid #dc2626;
+      background-color: #fef2f2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4mm;
+      font-size: 6pt;
+      color: #991b1b;
+      z-index: 100;
+    }
+
+    .calibration-box {
+      width: 50mm; height: 4mm;
+      border: 1px solid #991b1b;
+      background: #ffffff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 5.5pt;
+    }
+
+    .label {
+      position: absolute;
+      border: 0.5pt dashed #9ca3af;
+      background-color: #ffffff;
+      overflow: hidden;
+    }
+
+    .label.round { border-radius: 50%; }
+
+    .label-content {
+      position: absolute;
+      top: 1.5mm; bottom: 1.5mm; left: 1.5mm; right: 1.5mm;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center;
+      border: 0.5pt dotted #e5e7eb;
+      background-color: #fafafa;
+    }
+
+    .label-sku { font-weight: bold; font-size: 7.5pt; color: #111827; }
+    .label-dim { font-size: 6pt; color: #6b7280; }
+
+    /* CSS Variable Template Mappings */
+    .sheet-4270 { --top: 10.7mm; --left: 8.2mm; --w: 38.1mm; --h: 21.2mm; --gx: 0mm; --gy: 0mm; }
+    .sheet-4473 { --top: 10.0mm; --left: 0mm; --w: 70.0mm; --h: 41.0mm; --gx: 0mm; --gy: 0mm; }
+    .sheet-10790 { --top: 13.5mm; --left: 8.5mm; --w: 35.0mm; --h: 35.0mm; --gx: 4.0mm; --gy: 3.8mm; }
+  </style>
+</head>
+<body>
+
+  <div id="appView"></div>
+
+  <div class="mobile-drawer-container" id="drawerContainer">
+    
+    <div class="drawer-panel animating is-secondary" id="panel2">
+      <div class="drawer-handle-zone">
+        <div class="card-label">Secondary Controls</div>
+        <div class="drawer-handle"></div>
+      </div>
+      
+      <div class="form-grid" id="panel2-controls">
+        </div>
+
+      <button class="print-btn" style="background:#059669;" onclick="window.print()">
+        <span>🖨️ Print Batch</span>
+      </button>
+    </div>
+
+    <div class="drawer-panel animating is-primary" id="panel1">
+      <div class="drawer-handle-zone">
+        <div class="card-label">Primary Options</div>
+        <div class="drawer-handle"></div>
+      </div>
+
+      <div class="form-grid" id="panel1-controls">
+        </div>
+
+      <button class="print-btn" onclick="window.print()">
+        <span>🖨️ Print Document</span>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    const DrawerUIController = (() => {
+      let startY = 0;
+      let currentDeltaY = 0;
+      let isDragging = false;
+      let isAnimatingSwap = false;
+
+      function executeSwapSequence() {
+        if (isAnimatingSwap) return;
+        isAnimatingSwap = true;
+
+        const primaryCard = document.querySelector('.drawer-panel.is-primary');
+        const secondaryCard = document.querySelector('.drawer-panel.is-secondary');
+
+        primaryCard.classList.add('animating', 'slide-out-down');
+
+        setTimeout(() => {
+          secondaryCard.classList.remove('is-secondary');
+          secondaryCard.classList.add('is-primary');
+
+          primaryCard.classList.remove('is-primary', 'slide-out-down');
+          primaryCard.classList.add('is-secondary');
+
+          setTimeout(() => {
+            isAnimatingSwap = false;
+          }, 400);
+        }, 250);
+      }
+
+      function setupDrag(handleZone) {
+        handleZone.addEventListener('touchstart', (e) => {
+          if (isAnimatingSwap) return;
+          startY = e.touches[0].clientY;
+          currentDeltaY = 0;
+          isDragging = true;
+
+          const primaryCard = document.querySelector('.drawer-panel.is-primary');
+          primaryCard.classList.remove('animating');
+        }, { passive: true });
+
+        handleZone.addEventListener('touchmove', (e) => {
+          if (!isDragging || isAnimatingSwap) return;
+          const currentY = e.touches[0].clientY;
+          currentDeltaY = currentY - startY;
+
+          const primaryCard = document.querySelector('.drawer-panel.is-primary');
+          if (currentDeltaY > 0) {
+            primaryCard.style.transform = `translateY(${currentDeltaY}px)`;
+          }
+        }, { passive: true });
+
+        handleZone.addEventListener('touchend', () => {
+          if (!isDragging || isAnimatingSwap) return;
+          isDragging = false;
+
+          const primaryCard = document.querySelector('.drawer-panel.is-primary');
+          primaryCard.style.transform = '';
+
+          if (currentDeltaY > 30 || Math.abs(currentDeltaY) <= 3) {
+            executeSwapSequence();
+          } else {
+            primaryCard.classList.add('animating');
+          }
+        });
+      }
+
+      function init() {
+        document.querySelectorAll('.drawer-handle-zone').forEach(setupDrag);
+      }
+
+      return { init, swap: executeSwapSequence };
+    })();
+  </script>
+
+  <script>
+    const HermaLabelEngine = (() => {
+      const database = [
+        { sku: '4270', cat: 'SMALL', cols: 5, rows: 13, w: 38.1, h: 21.2, round: false },
+        { sku: '4473', cat: 'MEDIUM', cols: 3, rows: 7,  w: 70.0, h: 41.0, round: false },
+        { sku: '10790', cat: 'ROUND', cols: 5, rows: 7,  w: 35.0, h: 35.0, round: true }
+      ];
+
+      function mountControls() {
+        const slot1 = document.getElementById('panel1-controls');
+        const slot2 = document.getElementById('panel2-controls');
+
+        slot1.innerHTML = `
+          <div class="control-group">
+            <label for="categoryFilter">Filter</label>
+            <select id="categoryFilter">
+              <option value="ALL">All Categories</option>
+              <option value="SMALL">Small / Micro</option>
+              <option value="MEDIUM">Medium / Mailing</option>
+              <option value="ROUND">Round</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="pageCount">Copies</label>
+            <input type="number" id="pageCount" value="1" min="1" max="50">
+          </div>
+          <div class="control-group full-width">
+            <label for="skuSelect">Template</label>
+            <select id="skuSelect"></select>
+          </div>
+        `;
+
+        slot2.innerHTML = `
+          <div class="control-group full-width">
+            <label>Batch Configuration</label>
+            <input type="text" placeholder="Batch Note / Custom Text" style="text-align:center;">
+          </div>
+          <div class="control-group">
+            <label>Offset X (mm)</label>
+            <input type="number" value="0" step="0.5">
+          </div>
+          <div class="control-group">
+            <label>Offset Y (mm)</label>
+            <input type="number" value="0" step="0.5">
+          </div>
+        `;
+
+        document.getElementById('categoryFilter').addEventListener('change', filterSKUs);
+        document.getElementById('pageCount').addEventListener('change', render);
+        document.getElementById('skuSelect').addEventListener('change', render);
+
+        filterSKUs();
+      }
+
+      function filterSKUs() {
+        const cat = document.getElementById('categoryFilter').value;
+        const skuSelect = document.getElementById('skuSelect');
+        skuSelect.innerHTML = '';
+
+        const filtered = cat === 'ALL' ? database : database.filter(item => item.cat === cat);
+
+        filtered.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.sku;
+          opt.textContent = `${item.sku} (${item.w}x${item.h}mm - ${item.cols * item.rows}/sheet)`;
+          if (item.sku === '4473') opt.selected = true;
+          skuSelect.appendChild(opt);
+        });
+
+        render();
+      }
+
+      function autoScaleViewport() {
+        const screenWidth = window.innerWidth - 24;
+        const a4WidthPx = (210 * 96) / 25.4;
+        const scaleRatio = Math.min(screenWidth / a4WidthPx, 1);
+
+        document.querySelectorAll('.a4-page').forEach(page => {
+          page.style.transform = `scale(${scaleRatio})`;
+          page.style.marginBottom = `-${(1 - scaleRatio) * ((297 * 96) / 25.4)}px`;
+        });
+      }
+
+      function render() {
+        const selectedSKU = document.getElementById('skuSelect').value;
+        const copies = parseInt(document.getElementById('pageCount').value) || 1;
+        const config = database.find(item => item.sku === selectedSKU);
+        const appView = document.getElementById('appView');
+
+        appView.innerHTML = '';
+        if (!config) return;
+
+        for (let p = 0; p < copies; p++) {
+          const pageDiv = document.createElement('div');
+          pageDiv.className = `a4-page sheet-${config.sku}`;
+
+          pageDiv.innerHTML = `
+            <div class="calibration-header">
+              <span><strong>PRINT RULE:</strong> Scale must be "100%" or "Actual Size".</span>
+              <div class="calibration-box">MUST MEASURE 50mm</div>
+            </div>
+          `;
+
+          for (let r = 0; r < config.rows; r++) {
+            for (let c = 0; c < config.cols; c++) {
+              const label = document.createElement('div');
+              label.className = `label ${config.round ? 'round' : ''}`;
+              label.style.left = `calc(var(--left) + ${c} * (var(--w) + var(--gx)))`;
+              label.style.top = `calc(var(--top) + ${r} * (var(--h) + var(--gy)))`;
+              label.style.width = `var(--w)`;
+              label.style.height = `var(--h)`;
+
+              label.innerHTML = `
+                <div class="label-content">
+                  <div class="label-sku">${config.sku}</div>
+                  <div class="label-dim">${config.w}x${config.h}mm</div>
+                </div>
+              `;
+
+              pageDiv.appendChild(label);
+            }
+          }
+          appView.appendChild(pageDiv);
+        }
+
+        autoScaleViewport();
+      }
+
+      function init() {
+        mountControls();
+        window.addEventListener('resize', autoScaleViewport);
+      }
+
+      return { init };
+    })();
+
+    // BOOTSTRAP APPLICATION
+    document.addEventListener('DOMContentLoaded', () => {
+      DrawerUIController.init();
+      HermaLabelEngine.init();
+    });
+  </script>
+
+</body>
+</html>
