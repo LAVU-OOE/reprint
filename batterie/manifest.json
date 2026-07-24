@@ -1,0 +1,17 @@
+{
+  "name": "ASZ Batterie-Sortierer",
+  "short_name": "ASZ Sortierer",
+  "description": "Kamera-Sortierhilfe für Batterien nach O.Ö. LAVU Richtlinien",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#8bc34a",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
