@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1a4b60" />
+    <title>LAVU OÖ - Label Studio</title>
+    <link class="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
+    <link rel="manifest" href="manifest.json" />
+
+    <style>
+        /* =========================================================
+           1. CORE & RESET STYLES
+           ========================================================= */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* =========================================================
+           2. MAIN DASHBOARD CARD
+           ========================================================= */
+        .crd {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(15, 34, 43, 0.1);
+            width: 100%;
+            max-width: 600px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 16px;
+        }
+
+        .hdr-l {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lg {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .hdr-ttl {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1a4b60;
+            line-height: 1.2;
+        }
+
+        .hdr-sub {
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .hdr-r {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sel-hdr, .sel-modal-hdr {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #1a4b60;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px 24px 6px 10px;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231a4b60' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: calc(100% - 8px) center;
+            max-width: 160px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn-lang-toggle {
+            background: #e2e8f0;
+            color: #1a4b60;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .fps select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1a4b60;
+        }
+
+        .sb {
+            background: #ffffff;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 120px;
+            justify-content: space-between;
+        }
+
+        .ab {
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .bp {
+            background-color: #27ae60;
+            color: white;
+            flex: 2;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+        }
+
+        .bp:hover {
+            background-color: #219653;
+        }
+
+        .bs {
+            background-color: #e2e8f0;
+            color: #1a4b60;
+            flex: 1;
+        }
+
+        .bs:hover {
+            background-color: #cbd5e1;
+        }
+
+        .ftr {
+            margin-top: 16px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        /* Status & Error Notification Banner */
+        .toast-banner {
+            display: none;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .toast-banner.show {
+            display: block;
+        }
+
+        /* =========================================================
+           3. MODAL DIALOGS
+           ========================================================= */
+        .mb {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 34, 43, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .mc {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 580px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mpc {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            border-radius: 0 !important;
+            padding: 20px 30px;
+            overflow: hidden;
+            background: #e2e8f0;
+        }
+
+        .mh {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1a4b60;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .bx {
+            background: transparent;
+            font-size: 1.8rem;
+            color: #ef4444;
+            border: none;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .mbs {
+            position: relative;
+            overflow: auto;
+            flex: 1;
+            padding: 20px;
+            background: #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 300px;
+        }
+
+        .mf {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 16px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 12px;
+            flex-shrink: 0;
+        }
+
+        .bcn { background-color: #1a4b60; color: white; }
+        .bsd { background-color: #cbd5e1; color: #1a4b60; }
+
+        /* =========================================================
+           4. PRINT SHEET & LABEL LAYOUT (SCREEN PREVIEW)
+           ========================================================= */
+        .pc {
+            background: #ffffff;
+            width: 210mm;
+            height: 297mm;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+            box-sizing: border-box;
+            flex-shrink: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+        }
+
+        .psh {
+            width: 210mm;
+            height: 297mm;
+            box-sizing: border-box;
+            padding: 5mm 2mm 5mm 2mm;
+            display: grid;
+            gap: 0;
+            background: white;
+        }
+
+        .lb {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            border: 0.3px dashed #cbd5e1;
+            border-radius: 2px;
+            position: relative;
+            background: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 2mm 3mm;
+            transition: background-color 0.15s ease;
+        }
+
+        .lb:hover {
+            background-color: #e8f8f5;
+            border-color: #27ae60;
+        }
+
+        .lb.e {
+            border: 0.3px dashed #e2e8f0;
+            background: #fafafa;
+        }
+
+        .lb.e * {
+            display: none !important;
+        }
+
+        .lb.marked {
+            border: 0.8px solid #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .lb.round { border-radius: 50% !important; }
+
+        .lbt {
+            font-size: 7pt;
+            font-weight: bold;
+            color: #4a5568;
+            text-transform: uppercase;
+            border-bottom: 0.8px solid #cbd5e1;
+            padding-bottom: 1mm;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lbm {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2mm;
+            flex: 1;
+            padding: 1mm 0;
+            overflow: hidden;
+        }
+
+        .lba {
+            font-size: 18pt;
+            font-weight: 900;
+            color: #000000;
+            font-family: 'Arial Black', Impact, sans-serif;
+            line-height: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lbs {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #4a5568;
+            border: 1.5px solid #000;
+            padding: 0.4mm 1.5mm;
+            border-radius: 3px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            background: #fff;
+        }
+
+        .lbb {
+            font-size: 9pt;
+            font-weight: 800;
+            color: #000000;
+            line-height: 1.2;
+            word-break: break-word;
+            text-transform: uppercase;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .lbf {
+            font-size: 5pt;
+            opacity: 0.5;
+            color: #000;
+            text-align: right;
+            padding-top: 1mm;
+            border-top: 0.5px solid rgba(0,0,0,0.08);
+            margin-top: auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .zoom-toggle-btn {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.8);
+            border: 1px solid rgba(26,75,96,0.2);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        .zoom-container {
+            display: none;
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.95);
+            padding: 12px 8px;
+            border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .zoom-container.visible { display: flex; }
+
+        .zoom-slider-wrapper {
+            height: 140px;
+            display: flex;
+            align-items: center;
+        }
+
+        .zoom-slider {
+            writing-mode: vertical-lr;
+            direction: rtl;
+            width: 6px;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .zoom-label {
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #1a4b60;
+        }
+
+        /* =========================================================
+           5. ACCURATE PRINT CSS (@media print)
+           ========================================================= */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0 !important;
+            }
+
+            *, *::before, *::after {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                overflow: hidden !important;
+            }
+
+            .crd, .hdr, .ftr, .mh, .mf, .pwb, #m1, .zoom-toggle-btn, .zoom-container {
+                display: none !important;
+            }
+
+            .mb, #modalContainer {
+                position: static !important;
+                background: none !important;
+                backdrop-filter: none !important;
+                padding: 0 !important;
+                display: block !important;
+                width: 210mm !important;
+                height: 297mm !important;
+            }
+
+            .mpc {
+                padding: 0 !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                background: white !important;
+                overflow: hidden !important;
+            }
+
+            .mbs {
+                padding: 0 !important;
+                background: white !important;
+                box-shadow: none !important;
+                overflow: hidden !important;
+                width: 210mm !important;
+                height: 297mm !important;
+            }
+
+            .pc, #pageContainer {
+                position: relative !important;
+                top: 0 !important;
+                left: 0 !important;
+                transform: none !important;
+                box-shadow: none !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                margin: 0 !important;
+            }
+
+            .psh, #sheetContainer {
+                width: 210mm !important;
+                height: 297mm !important;
+                padding: 5mm 2mm 5mm 2mm !important;
+                box-sizing: border-box !important;
+                display: grid !important;
+                background: white !important;
+            }
+
+            .lb {
+                border: 0.3px solid #ccc !important;
+                background: white !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .lb.marked {
+                border: 0.8px solid #000 !important;
+                background: white !important;
+            }
+
+            .lb.e {
+                background: white !important;
+                border: 0.3px dashed #e2e8f0 !important;
+            }
+
+            .lb.e * {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <input type="hidden" id="i5" value="" />
+    <input type="hidden" id="i6" value="" />
+    <input type="hidden" id="i7" value="" />
+
+    <div class="crd">
+        <div id="toastBanner" class="toast-banner"></div>
+
+        <div class="hdr">
+            <div class="hdr-l">
+                <img src="logo.png" alt="LAVU Logo" class="lg"
+                    onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%231a4b60\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'10\'/><path d=\'M8 14s1.5 2 4 2 4-2 4-2\'/><line x1=\'9\' y1=\'9\' x2=\'9.01\' y2=\'9\'/><line x1=\'15\' y1=\'9\' x2=\'15.01\' y2=\'9\'/></svg>'">
+                <div>
+                    <div class="hdr-ttl">LAVU OÖ</div>
+                    <div class="hdr-sub" id="txt-studio-v9">Etiketten-Studio v9</div>
+                </div>
+            </div>
+            <div class="hdr-r">
+                <select id="s1" class="sel-hdr">
+                    <option value="" disabled selected>Standorte laden...</option>
+                </select>
+                <button id="langToggleBtn" class="btn-lang-toggle" aria-label="Toggle language">EN</button>
+            </div>
+        </div>
+
+        <div class="fps">
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">HERMA Vorlage</label>
+                <select id="templateSelectMain"></select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; width: 100%;">
+                <div>
+                    <span id="txt-art-nr" style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Art.Nr.</span>
+                    <select id="s2_art"></select>
+                </div>
+                <div>
+                    <span id="txt-bezeichnung" style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Bezeichnung</span>
+                    <select id="s2_name"></select>
+                </div>
+            </div>
+        </div>
+
+        <div class="sb">
+            <div class="lbt" id="d0">-</div>
+            <div class="lbm">
+                <div class="lba" id="d2">-</div>
+                <div class="lbs" id="d3">-</div>
+            </div>
+            <div class="lbb" id="d1">-</div>
+            <div style="font-size: 0.75rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 6px; text-transform: uppercase; font-weight: bold;" id="d4">-</div>
+        </div>
+
+        <div class="ab">
+            <button class="bp" id="btn-print-now">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="6 9 6 2 18 2 18 9" />
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                    <rect x="6" y="14" width="12" height="8" />
+                </svg>
+                Jetzt Drucken
+            </button>
+            <button class="bs" id="btn-options">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                Optionen
+            </button>
+        </div>
+    </div>
+
+    <div id="m1" class="mb" style="display:none;">
+        <div class="mc">
+            <div class="mh">
+                <span>Druck- & Standorteinstellungen</span>
+                <button class="bx" id="modal1CloseBtn">&times;</button>
+            </div>
+            <div style="padding: 10px 0;">
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; font-size: 0.85rem;">Sortiment-Worker:</label>
+                    <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        <input type="text" id="i4" placeholder="https://..." style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;" />
+                        <button class="bsd" id="btn-update">Aktualisieren</button>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+                    <label style="font-weight: bold; font-size: 0.85rem;">Locations-Worker:</label>
+                    <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        <input type="text" id="i8" placeholder="https://..." style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;" />
+                        <button class="bsd" id="btn-update-locations">Aktualisieren</button>
+                    </div>
+                </div>
+            </div>
+            <div class="mf">
+                <button class="bcn" id="btn-done">Fertig</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb" id="modalContainer" style="display:none;">
+        <div class="mc mpc">
+            <div class="mh">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span>🏷️ HERMA</span>
+                    <select id="templateSelect" class="sel-modal-hdr"></select>
+                    <select id="sortimentArtNrSelect" class="sel-modal-hdr"></select>
+                    <select id="sortimentBezSelect" class="sel-modal-hdr"></select>
+                    <select id="locationSelect" class="sel-modal-hdr"></select>
+                    <label style="font-size: 0.75rem; font-weight: 600; cursor: pointer;">
+                        <input type="checkbox" id="memoryCheckbox" checked /> Merken
+                    </label>
+                </div>
+                <button class="bx" id="closeBtn">✕</button>
+            </div>
+
+            <div class="mbs" id="previewArea">
+                <button id="zoomToggleBtn" class="zoom-toggle-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        <line x1="8" y1="11" x2="14" y2="11" />
+                    </svg>
+                </button>
+
+                <div class="zoom-container" id="zoomContainer">
+                    <div class="zoom-slider-wrapper">
+                        <input type="range" id="zoomSlider" class="zoom-slider" min="50" max="300" value="100" />
+                    </div>
+                    <div class="zoom-label"><span id="zoomVal">100%</span></div>
+                </div>
+
+                <div class="pc" id="pageContainer">
+                    <div class="psh" id="sheetContainer"></div>
+                </div>
+            </div>
+
+            <div class="mf">
+                <button class="bp" id="printBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="6 9 6 2 18 2 18 9" />
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                        <rect x="6" y="14" width="12" height="8" />
+                    </svg>
+                    Drucken
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // INLINE FALLBACK DATA
+        // ==========================================
+        const FALLBACK_SORTIMENT = [
+            {"artNr":"4040","bez":"Elektro-Kleingeräte","geb":"AB"},
+            {"artNr":"4041","bez":"Elektro-Kleingeräte,schadst. f.","geb":"Qbox"},
+            {"artNr":"4010","bez":"Elektro-Großgeräte","geb":"EUP"},
+            {"artNr":"4020","bez":"Kühlgeräte","geb":"FP"},
+            {"artNr":"4030","bez":"Bildschirmgeräte","geb":"TPg"},
+            {"artNr":"4031","bez":"Flachbildschirmgeräte","geb":"AB"}
+        ];
+
+        const FALLBACK_LOCATIONS = [
+            {"siteCode":"106","name":"ASZ Asten","zipCode":"4481","region":"Linz-Land & Linz Stadt"},
+            {"siteCode":"N/G","name":"ASZ Ansfelden","zipCode":"4053","region":"Linz-Land & Linz Stadt"}
+        ];
+
+        const FALLBACK_TEMPLATES = [
+            {"sku":"4473","category":"Standard","cols":3,"rows":8,"width_mm":70.0,"height_mm":36.0,"round":false}
+        ];
+
+        // ==========================================
+        // SAFE STORAGE & NETWORK UTILITIES
+        // ==========================================
+        const Storage = {
+            get(key) {
+                try { return localStorage.getItem(key); }
+                catch(e) { console.warn(`[Storage] Cannot read ${key}`, e); return null; }
+            },
+            set(key, val) {
+                try { localStorage.setItem(key, val); }
+                catch(e) { console.warn(`[Storage] Cannot set ${key}`, e); }
+            },
+            remove(key) {
+                try { localStorage.removeItem(key); }
+                catch(e) { console.warn(`[Storage] Cannot remove ${key}`, e); }
+            }
+        };
+
+        function showNotification(msg) {
+            const banner = document.getElementById('toastBanner');
+            if (banner) {
+                banner.textContent = msg;
+                banner.classList.add('show');
+                setTimeout(() => banner.classList.remove('show'), 4000);
+            }
+        }
+
+        async function fetchJsonSafe(url, timeoutMs = 4000) {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const res = await fetch(url, { signal: controller.signal });
+                clearTimeout(tid);
+                if (!res.ok) throw new Error(`Status ${res.status}`);
+                return await res.json();
+            } catch (err) {
+                clearTimeout(tid);
+                throw err;
+            }
+        }
+
+        // ==========================================
+        // STATE VARIABLES
+        // ==========================================
+        let allTemplates = [];
+        let sortimentList = [];
+        let locationsList = [];
+        let selectedSortimentItem = null;
+        let selectedLocationItem = null;
+        let currentSku = '4473';
+
+        // DOM References
+        const sheetContainer = document.getElementById('sheetContainer');
+        const templateSelect = document.getElementById('templateSelect');
+        const templateSelectMain = document.getElementById('templateSelectMain');
+        const sortimentArtNrSelect = document.getElementById('sortimentArtNrSelect');
+        const sortimentBezSelect = document.getElementById('sortimentBezSelect');
+        const locationSelect = document.getElementById('locationSelect');
+        const headerLocationSelect = document.getElementById('s1');
+        const s2Art = document.getElementById('s2_art');
+        const s2Name = document.getElementById('s2_name');
+
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomVal = document.getElementById('zoomVal');
+        const zoomToggleBtn = document.getElementById('zoomToggleBtn');
+        const zoomContainer = document.getElementById('zoomContainer');
+        const previewArea = document.getElementById('previewArea');
+        const printBtn = document.getElementById('printBtn');
+        const closeBtn = document.getElementById('closeBtn');
+        const modal = document.getElementById('modalContainer');
+        const optionsModal = document.getElementById('m1');
+
+        function updateSingleLabelCard() {
+            const d0 = document.getElementById('d0');
+            const d1 = document.getElementById('d1');
+            const d2 = document.getElementById('d2');
+            const d3 = document.getElementById('d3');
+            const d4 = document.getElementById('d4');
+
+            const topText = selectedLocationItem ? `${selectedLocationItem.siteCode} • ${selectedLocationItem.name}` : 'LAVU OÖ';
+            const artNr = selectedSortimentItem ? selectedSortimentItem.artNr : '-';
+            const geb = selectedSortimentItem ? selectedSortimentItem.geb : '-';
+            const bez = selectedSortimentItem ? selectedSortimentItem.bez : '-';
+
+            if (d0) d0.textContent = topText;
+            if (d1) d1.textContent = bez;
+            if (d2) d2.textContent = artNr;
+            if (d3) d3.textContent = geb;
+            if (d4) d4.textContent = selectedLocationItem ? selectedLocationItem.region || 'OÖ' : '-';
+        }
+
+        function populateLocations() {
+            const optionsHtml = locationsList.map((loc, idx) => {
+                const label = loc.siteCode && loc.siteCode !== "N/G" ? `${loc.siteCode} - ${loc.name}` : loc.name;
+                return `<option value="${idx}">${label}</option>`;
+            }).join('');
+
+            if (headerLocationSelect) {
+                headerLocationSelect.innerHTML = `<option value="" disabled selected>Standort wählen...</option>` + optionsHtml;
+            }
+            if (locationSelect) {
+                locationSelect.innerHTML = `<option value="">-- Standort --</option>` + optionsHtml;
+            }
+        }
+
+        function populateSortiment() {
+            const artOptionsHtml = sortimentList.map((item, idx) => 
+                `<option value="${idx}">${item.artNr}</option>`
+            ).join('');
+
+            const bezOptionsHtml = sortimentList.map((item, idx) => 
+                `<option value="${idx}">${item.bez}</option>`
+            ).join('');
+
+            if (s2Art) s2Art.innerHTML = artOptionsHtml;
+            if (sortimentArtNrSelect) sortimentArtNrSelect.innerHTML = artOptionsHtml;
+
+            if (s2Name) s2Name.innerHTML = bezOptionsHtml;
+            if (sortimentBezSelect) sortimentBezSelect.innerHTML = bezOptionsHtml;
+
+            // Select default item if available
+            if (sortimentList.length > 0) {
+                setSortimentByIndex(0);
+            }
+        }
+
+        function setSortimentByIndex(idx) {
+            const index = parseInt(idx, 10);
+            if (!isNaN(index) && sortimentList[index]) {
+                selectedSortimentItem = sortimentList[index];
+                if (s2Art) s2Art.value = index;
+                if (s2Name) s2Name.value = index;
+                if (sortimentArtNrSelect) sortimentArtNrSelect.value = index;
+                if (sortimentBezSelect) sortimentBezSelect.value = index;
+                updateSingleLabelCard();
+                renderSheet(currentSku);
+            }
+        }
+
+        function setLocationByIndex(idx) {
+            const index = parseInt(idx, 10);
+            selectedLocationItem = (!isNaN(index) && locationsList[index]) ? locationsList[index] : null;
+            if (headerLocationSelect && !isNaN(index)) headerLocationSelect.value = index;
+            if (locationSelect) locationSelect.value = isNaN(index) ? "" : index;
+            updateSingleLabelCard();
+            renderSheet(currentSku);
+        }
+
+        function applyZoom(value) {
+            if (zoomVal) zoomVal.textContent = value + '%';
+            const factor = parseFloat(value) / 100;
+            const container = previewArea;
+            const element = document.getElementById('pageContainer');
+            if (!container || !element) return;
+
+            const scaleX = (container.clientWidth - 40) / 794;
+            const scaleY = (container.clientHeight - 40) / 1123;
+            const baseScale = Math.min(scaleX, scaleY, 1);
+            const finalScale = Math.min(baseScale * factor, 2);
+
+            element.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
+        }
+
+        function renderSheet(sku) {
+            const config = allTemplates.find(t => t.sku === sku) || FALLBACK_TEMPLATES[0];
+            currentSku = sku;
+            const maxLabels = (config.cols || 3) * (config.rows || 8);
+
+            if (!sheetContainer) return;
+            sheetContainer.innerHTML = '';
+            sheetContainer.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
+            sheetContainer.style.gridTemplateRows = `repeat(${config.rows}, 1fr)`;
+
+            const topText = selectedLocationItem ? `${selectedLocationItem.siteCode} • ${selectedLocationItem.name}` : 'LAVU OÖ';
+            const artNr = selectedSortimentItem ? selectedSortimentItem.artNr : '4040';
+            const suffix = selectedSortimentItem ? selectedSortimentItem.geb : 'AB';
+            const bez = selectedSortimentItem ? selectedSortimentItem.bez : 'Elektro-Kleingeräte';
+
+            for (let i = 1; i <= maxLabels; i++) {
+                const label = document.createElement('div');
+                label.className = `lb marked ${config.round ? 'round' : ''}`;
+                label.dataset.index = i;
+                label.innerHTML = `
+                    <div class="lbt">${topText}</div>
+                    <div class="lbm">
+                        <div class="lba">${artNr}</div>
+                        <div class="lbs">${suffix}</div>
+                    </div>
+                    <div class="lbb">${bez}</div>
+                    <div class="lbf">https://lavu-ooe.github.io</div>
+                `;
+                sheetContainer.appendChild(label);
+            }
+            if (zoomSlider) applyZoom(zoomSlider.value);
+        }
+
+        async function init() {
+            // Load templates with error fallback
+            try {
+                const data = await fetchJsonSafe('herma_templates.json');
+                allTemplates = data.templates || FALLBACK_TEMPLATES;
+            } catch (err) {
+                console.warn('[Data] Falling back to default templates:', err.message);
+                allTemplates = FALLBACK_TEMPLATES;
+            }
+
+            // Load sortiment with fallback
+            try {
+                sortimentList = await fetchJsonSafe('sortiment.json');
+            } catch (err) {
+                console.warn('[Data] Falling back to default sortiment:', err.message);
+                sortimentList = FALLBACK_SORTIMENT;
+            }
+
+            // Load locations with fallback
+            try {
+                locationsList = await fetchJsonSafe('locations.json');
+            } catch (err) {
+                console.warn('[Data] Falling back to default locations:', err.message);
+                locationsList = FALLBACK_LOCATIONS;
+            }
+
+            // Populate Dropdowns
+            [templateSelect, templateSelectMain].forEach(sel => {
+                if (!sel) return;
+                sel.innerHTML = allTemplates.map(t => 
+                    `<option value="${t.sku}">${t.sku} – ${t.width_mm}×${t.height_mm}mm (${t.category})</option>`
+                ).join('');
+            });
+
+            populateLocations();
+            populateSortiment();
+
+            // Event Listeners for Sortiment & Locations
+            if (s2Art) s2Art.addEventListener('change', (e) => setSortimentByIndex(e.target.value));
+            if (s2Name) s2Name.addEventListener('change', (e) => setSortimentByIndex(e.target.value));
+            if (sortimentArtNrSelect) sortimentArtNrSelect.addEventListener('change', (e) => setSortimentByIndex(e.target.value));
+            if (sortimentBezSelect) sortimentBezSelect.addEventListener('change', (e) => setSortimentByIndex(e.target.value));
+
+            if (headerLocationSelect) headerLocationSelect.addEventListener('change', (e) => setLocationByIndex(e.target.value));
+            if (locationSelect) locationSelect.addEventListener('change', (e) => setLocationByIndex(e.target.value));
+
+            // Template selection handlers
+            [templateSelect, templateSelectMain].forEach(sel => {
+                if (!sel) return;
+                sel.addEventListener('change', (e) => {
+                    const sku = e.target.value;
+                    if (templateSelect) templateSelect.value = sku;
+                    if (templateSelectMain) templateSelectMain.value = sku;
+                    renderSheet(sku);
+                });
+            });
+
+            renderSheet(currentSku);
+
+            // Open Modal Explicitly on Button Click
+            const btnPrintNow = document.getElementById('btn-print-now');
+            if (btnPrintNow) {
+                btnPrintNow.addEventListener('click', () => {
+                    if (modal) {
+                        modal.style.display = 'flex';
+                        applyZoom(zoomSlider ? zoomSlider.value : 100);
+                    }
+                });
+            }
+
+            const btnOptions = document.getElementById('btn-options');
+            if (btnOptions) {
+                btnOptions.addEventListener('click', () => {
+                    if (optionsModal) optionsModal.style.display = 'flex';
+                });
+            }
+
+            const modal1Close = document.getElementById('modal1CloseBtn');
+            if (modal1Close) modal1Close.addEventListener('click', () => optionsModal.style.display = 'none');
+
+            const btnDone = document.getElementById('btn-done');
+            if (btnDone) btnDone.addEventListener('click', () => optionsModal.style.display = 'none');
+
+            if (closeBtn) closeBtn.addEventListener('click', () => modal.style.display = 'none');
+            if (printBtn) printBtn.addEventListener('click', () => window.print());
+
+            if (zoomSlider) {
+                zoomSlider.addEventListener('input', function() { applyZoom(this.value); });
+            }
+
+            if (zoomToggleBtn && zoomContainer) {
+                zoomToggleBtn.addEventListener('click', () => zoomContainer.classList.toggle('visible'));
+            }
+        }
+
+        // Global uncaught errors
+        window.addEventListener('error', (e) => console.error('[Runtime Error]:', e.message));
+        window.addEventListener('unhandledrejection', (e) => console.error('[Unhandled Rejection]:', e.reason));
+
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(r => console.log('[SW] Registered:', r.scope))
+                    .catch(e => console.warn('[SW] Registration failed:', e));
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

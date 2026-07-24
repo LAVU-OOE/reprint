@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HERMA Template Viewer – skaliert & ausgerichtet</title>
+    <base href="" />
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 0;
+            color: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .mb {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 34, 43, 0.55);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+        .mc {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 580px;
+            box-shadow: 0 20px 40px rgba(15, 34, 43, 0.2);
+            position: relative;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+        .mpc {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            border-radius: 0 !important;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 30px;
+            overflow: hidden;
+            background: white;
+        }
+        .mh {
+            font-size: 1.35rem;
+            font-weight: bold;
+            color: #1a4b60;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .mh-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .mh-title span { font-size: 1.2rem; }
+        .sel-modal-hdr {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1a4b60;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 4px 24px 4px 8px;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231a4b60' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: calc(100% - 8px) center;
+            width: auto;
+            max-width: 280px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .sel-modal-hdr:focus {
+            border-color: #6cb4db;
+            box-shadow: 0 0 0 2px rgba(108, 180, 219, 0.15);
+        }
+        .memory-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .memory-toggle input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #1a4b60;
+            cursor: pointer;
+        }
+        .bx {
+            background: transparent;
+            font-size: 1.8rem;
+            color: #94a3b8;
+            padding: 0;
+            cursor: pointer;
+            line-height: 1;
+            border: none;
+        }
+        .bx:hover { color: #ef4444; }
+        .mbs {
+            position: relative;
+            overflow: auto;
+            flex: 1;
+            padding: 25px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+            container-type: inline-size;
+            min-height: 300px;
+        }
+        .zoom-toggle-btn {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(26,75,96,0.15);
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #1a4b60;
+            transition: all 0.2s ease;
+            z-index: 20;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .zoom-toggle-btn:hover {
+            background: rgba(255,255,255,0.9);
+            border-color: #1a4b60;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .zoom-toggle-btn svg { stroke: #1a4b60; width: 18px; height: 18px; }
+        .zoom-container {
+            display: none;
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.85);
+            padding: 12px 8px;
+            border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+            width: 42px;
+        }
+        .zoom-container.visible { display: flex; }
+        .zoom-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #1a4b60;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .zoom-slider-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            height: 140px;
+        }
+        .zoom-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #cbd5e1;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+            writing-mode: vertical-lr;
+            direction: rtl;
+            width: 6px;
+            height: 100%;
+            padding: 0;
+        }
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #1a4b60;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .zoom-slider::-webkit-slider-thumb:hover { background: #27ae60; }
+        .zoom-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border: none;
+            border-radius: 50%;
+            background: #1a4b60;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .zoom-slider::-moz-range-thumb:hover { background: #27ae60; }
+
+        .pc {
+            background: #ffffff;
+            width: 210mm;
+            height: 297mm;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.12);
+            box-sizing: border-box;
+            flex-shrink: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+        }
+        .psh {
+            width: 210mm;
+            height: 297mm;
+            box-sizing: border-box;
+            padding: 5mm 2mm 5mm 2mm;
+            display: grid;
+            gap: 0;
+            background: white;
+        }
+
+        /* Etiketten – dünne Ränder & abgerundete Ecken */
+        .lb {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            border: 0.3px dashed #cbd5e1;
+            border-radius: 2px;
+            position: relative;
+            background: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+        .lb:hover {
+            background-color: #e8f8f5;
+            border-color: #27ae60;
+        }
+        .lb.e {
+            border: 0.3px dashed #e2e8f0;
+            background: #fafafa;
+        }
+        .lb.e * { display: none !important; }
+        .lb.e:hover {
+            background-color: #f1f5f9;
+            border-color: #1a4b60;
+        }
+        .lb.marked {
+            border: 0.8px solid #2563eb;
+            background-color: #eff6ff;
+            border-radius: 2px;
+        }
+        /* Runde Etiketten behalten ihre Rundung */
+        .lb.round {
+            border-radius: 50% !important;
+        }
+        .lb.round.marked {
+            border-radius: 50% !important;
+        }
+
+        .lbt {
+            font-weight: bold;
+            color: #4a5568;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border-bottom: 0.8px solid #cbd5e1;
+            padding-bottom: 1mm;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lbm {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2mm;
+            flex: 1;
+            padding: 1mm 0;
+            overflow: hidden;
+        }
+        .lba {
+            font-weight: 900;
+            color: #000000;
+            font-family: 'Arial Black', Impact, sans-serif;
+            line-height: 1;
+            letter-spacing: -0.5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lbs {
+            font-weight: bold;
+            color: #4a5568;
+            border: 1.5px solid #000;
+            padding: 0.4mm 1.5mm;
+            border-radius: 3px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transform: rotate(-2deg);
+            box-shadow: 1px 1px 0px #000;
+            background: #fff;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lbb {
+            font-weight: 800;
+            color: #000000;
+            line-height: 1.2;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            flex: 1;
+            min-height: 1.6em;
+            text-transform: uppercase;
+            text-align: center;
+        }
+        .lbf {
+            opacity: 0.4;
+            color: #000;
+            text-align: right;
+            padding-top: 1mm;
+            border-top: 0.5px solid rgba(0,0,0,0.08);
+            margin-top: auto;
+            letter-spacing: 0.3px;
+            font-weight: 300;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mf {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 20px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 15px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .bp {
+            background-color: #27ae60;
+            color: white;
+            flex: 2;
+            box-shadow: 0 4px 12px rgba(39,174,96,0.2);
+        }
+        .bp:hover {
+            background-color: #219653;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(39,174,96,0.25);
+        }
+        .bcn {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+        .bcn:hover { background-color: #e2e8f0; }
+
+        @keyframes fdin {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === DRUCK-OPTIMIERUNG: exakte A4-Seite ohne Überlauf === */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                width: 100% !important;
+                height: 100% !important;
+                overflow: hidden !important;
+            }
+            .mb {
+                position: static !important;
+                background: none !important;
+                backdrop-filter: none !important;
+                padding: 0 !important;
+                display: block !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+            .mpc {
+                padding: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                overflow: hidden !important;
+                border-radius: 0 !important;
+            }
+            .mh, .mf, .zoom-toggle-btn, .zoom-container {
+                display: none !important;
+            }
+            .mbs {
+                padding: 0 !important;
+                background: white !important;
+                box-shadow: none !important;
+                overflow: hidden !important;
+                container-type: unset !important;
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 0 !important;
+            }
+            .pc {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                transform: none !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+            }
+            .psh {
+                width: 100% !important;
+                height: 100% !important;
+                padding: 5mm 2mm 5mm 2mm !important;
+                box-sizing: border-box !important;
+                display: grid !important;
+                gap: 0 !important;
+                background: white !important;
+            }
+            /* Druck: dünne Ränder & abgerundete Ecken */
+            .lb {
+                border: 0.3px solid #ccc !important;
+                border-radius: 2px !important;
+                background: white !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .lb.e {
+                background: #fafafa !important;
+            }
+            .lb.marked {
+                border: 0.8px solid #000 !important;
+                border-radius: 2px !important;
+                background: white !important;
+            }
+            .lb.round {
+                border-radius: 50% !important;
+            }
+            .lb.round.marked {
+                border-radius: 50% !important;
+            }
+            .lb.e * { display: none !important; }
+            .lb * { display: flex !important; }
+            .lbt, .lbm, .lba, .lbs, .lbb, .lbf { display: flex !important; }
+            .calibration-header { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="mb" id="modalContainer">
+    <div class="mc mpc">
+        <!-- Header mit Titel, Dropdown, Memory-Checkbox und rotem X -->
+        <div class="mh">
+            <div class="mh-title">
+                <span>🏷️ HERMA Vorlagenansicht</span>
+                <select id="templateSelect" class="sel-modal-hdr"></select>
+                <label class="memory-toggle" title="Auswahl (Start & Anzahl) für jede Vorlage speichern">
+                    <input type="checkbox" id="memoryCheckbox" checked />
+                    Merken
+                </label>
+            </div>
+            <button class="bx" id="closeBtn" aria-label="Schließen" style="color:#ef4444; font-size:2rem; line-height:1;">✕</button>
+        </div>
+
+        <!-- Hauptbereich mit A4-Seite -->
+        <div class="mbs" id="previewArea">
+            <button id="zoomToggleBtn" class="zoom-toggle-btn" aria-label="Zoom ein-/ausblenden">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+            </button>
+
+            <div class="zoom-container" id="zoomContainer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a4b60" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+                <div class="zoom-slider-wrapper">
+                    <input type="range" id="zoomSlider" class="zoom-slider" min="50" max="300" value="100" />
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a4b60" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="11" y1="8" x2="11" y2="14" />
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+                <div class="zoom-label">
+                    <span id="zoomVal">100%</span>
+                </div>
+            </div>
+
+            <div class="pc" id="pageContainer">
+                <div class="psh" id="sheetContainer"></div>
+            </div>
+        </div>
+
+        <!-- Footer: nur Drucken-Button -->
+        <div class="mf">
+            <button class="bp" id="printBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="6 9 6 2 18 2 18 9" />
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                    <rect x="6" y="14" width="12" height="8" />
+                </svg>
+                Drucken
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ================================================================
+    // 1. setLabelRange – zentrale Bereichslogik
+    // ================================================================
+    function setLabelRange(start, count, format, onUpdate, onSave) {
+        const maxLabels = format.cols * format.rows;
+        start = Math.max(1, Math.min(maxLabels, start));
+        count = Math.max(0, Math.min(maxLabels - start + 1, count));
+        if (onUpdate) onUpdate(start, count);
+        if (onSave) onSave(start, count);
+    }
+
+    // ================================================================
+    // 2. Anwendung
+    // ================================================================
+    let allTemplates = [];
+    let currentConfig = null;
+    let currentStart = 1;
+    let currentCount = 0;
+    let currentSku = '4473';
+
+    const sheetContainer = document.getElementById('sheetContainer');
+    const templateSelect = document.getElementById('templateSelect');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomVal = document.getElementById('zoomVal');
+    const zoomToggleBtn = document.getElementById('zoomToggleBtn');
+    const zoomContainer = document.getElementById('zoomContainer');
+    const previewArea = document.getElementById('previewArea');
+    const printBtn = document.getElementById('printBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    const modal = document.getElementById('modalContainer');
+    const memoryCheckbox = document.getElementById('memoryCheckbox');
+
+    // --- Memory-Funktionen ---
+    function isMemoryEnabled() {
+        return memoryCheckbox.checked;
+    }
+
+    function saveSettings(sku, start, count) {
+        if (isMemoryEnabled()) {
+            localStorage.setItem(`herma_range_${sku}`, JSON.stringify({ sku, start, count }));
+        } else {
+            localStorage.removeItem(`herma_range_${sku}`);
+        }
+    }
+
+    function loadSettings(sku) {
+        if (!isMemoryEnabled()) return null;
+        const saved = localStorage.getItem(`herma_range_${sku}`);
+        if (saved) {
+            try { return JSON.parse(saved); } catch(e) {}
+        }
+        return null;
+    }
+
+    // --- UI-Hilfen ---
+    function updateMarking(labels, start, count) {
+        labels.forEach((el, idx) => {
+            const index = idx + 1;
+            if (index >= start && index < start + count) {
+                el.classList.add('marked');
+                el.classList.remove('e');
+            } else {
+                el.classList.remove('marked');
+                el.classList.add('e');
+            }
+        });
+    }
+
+    function populateDropdown(templates) {
+        templateSelect.innerHTML = '';
+        templates.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.sku;
+            opt.textContent = `${t.sku} – ${t.width_mm}×${t.height_mm}mm (${t.category})`;
+            templateSelect.appendChild(opt);
+        });
+    }
+
+    function applyZoom(value) {
+        zoomVal.textContent = value + '%';
+        const factor = parseFloat(value) / 100;
+        const container = previewArea;
+        const element = document.getElementById('pageContainer');
+        if (!container || !element) return;
+        const containerWidth = container.clientWidth - 80;
+        const containerHeight = container.clientHeight - 40;
+        const elementWidth = element.scrollWidth || 794;
+        const elementHeight = element.scrollHeight || 1123;
+        const scaleX = containerWidth / elementWidth;
+        const scaleY = containerHeight / elementHeight;
+        const baseScale = Math.min(scaleX, scaleY, 1);
+        const finalScale = Math.min(baseScale * factor, 2);
+        element.style.position = 'absolute';
+        element.style.top = '50%';
+        element.style.left = '50%';
+        element.style.transformOrigin = 'center center';
+        element.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
+    }
+
+    function renderSheet(sku) {
+        const config = allTemplates.find(t => t.sku === sku);
+        if (!config) {
+            sheetContainer.innerHTML = `<div style="padding:20px;color:red;">SKU "${sku}" nicht gefunden.</div>`;
+            return;
+        }
+        currentConfig = config;
+        currentSku = sku;
+        const maxLabels = config.cols * config.rows;
+
+        let start = 1;
+        let count = maxLabels;
+        const saved = loadSettings(sku);
+        if (saved) {
+            start = saved.start;
+            count = saved.count;
+        }
+        start = Math.max(1, Math.min(maxLabels, start));
+        count = Math.max(0, Math.min(maxLabels - start + 1, count));
+        currentStart = start;
+        currentCount = count;
+
+        const scaleFactor = Math.min(config.width_mm / 70, config.height_mm / 36);
+
+        const styleId = `style-${config.sku}`;
+        let styleTag = document.getElementById(styleId);
+        if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = styleId;
+            document.head.appendChild(styleTag);
+        }
+        styleTag.textContent = `
+            .sheet-${config.sku} {
+                --top: ${config.top_margin_mm}mm;
+                --left: ${config.left_margin_mm}mm;
+                --w: ${config.width_mm}mm;
+                --h: ${config.height_mm}mm;
+                --gx: ${config.gap_x_mm}mm;
+                --gy: ${config.gap_y_mm}mm;
+                --scale: ${scaleFactor};
+            }
+        `;
+
+        sheetContainer.innerHTML = '';
+        sheetContainer.className = `psh sheet-${config.sku}`;
+        sheetContainer.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
+        sheetContainer.style.gridTemplateRows = `repeat(${config.rows}, 1fr)`;
+
+        const labels = [];
+        const foot = 'https://lavu-ooe.github.com';
+
+        for (let r = 0; r < config.rows; r++) {
+            for (let c = 0; c < config.cols; c++) {
+                const index = r * config.cols + c + 1;
+                const label = document.createElement('div');
+                label.className = `lb ${config.round ? 'round' : ''}`;
+                label.style.padding = `calc(2.5mm * var(--scale)) calc(3.5mm * var(--scale))`;
+                label.dataset.index = index;
+
+                const topText = config.sku;
+                const artNr = config.width_mm + '×' + config.height_mm;
+                const suffix = config.category;
+                const bez = 'HERMA ' + config.sku;
+
+                label.innerHTML = `
+                    <div class="lbt" style="font-size: calc(7pt * var(--scale)); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${topText}</div>
+                    <div class="lbm">
+                        <div class="lba" style="font-size: calc(20pt * var(--scale)); text-align: center; line-height: 1; overflow: hidden; text-overflow: ellipsis;">${artNr}</div>
+                        ${suffix ? `<div class="lbs" style="font-size: calc(10pt * var(--scale)); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${suffix}</div>` : ''}
+                    </div>
+                    <div class="lbt" style="border-bottom:none; font-size:1px; height:1px; line-height:1px;"></div>
+                    <div class="lbb" style="font-size: calc(9pt * var(--scale)); text-align: center;">${bez}</div>
+                    <div class="lbf" style="font-size: calc(5pt * var(--scale)); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${foot}</div>
+                `;
+
+                sheetContainer.appendChild(label);
+                labels.push(label);
+            }
+        }
+
+        updateMarking(labels, start, count);
+
+        labels.forEach(el => {
+            el.addEventListener('click', function() {
+                const clickedIndex = parseInt(this.dataset.index);
+                const max = currentConfig.cols * currentConfig.rows;
+                let start = currentStart;
+                let count = currentCount;
+
+                if (count === 0) {
+                    start = clickedIndex;
+                    count = 1;
+                } else {
+                    const end = start + count - 1;
+                    if (clickedIndex < start) {
+                        count = end - clickedIndex + 1;
+                        start = clickedIndex;
+                    } else if (clickedIndex > end) {
+                        count = clickedIndex - start + 1;
+                    } else {
+                        start = clickedIndex;
+                        count = 1;
+                    }
+                }
+
+                setLabelRange(start, count, currentConfig, (newStart, newCount) => {
+                    currentStart = newStart;
+                    currentCount = newCount;
+                    updateMarking(labels, newStart, newCount);
+                    if (isMemoryEnabled()) {
+                        saveSettings(currentSku, newStart, newCount);
+                    }
+                    applyZoom(zoomSlider.value);
+                });
+            });
+        });
+
+        if (isMemoryEnabled()) {
+            saveSettings(sku, start, count);
+        }
+
+        setTimeout(() => applyZoom(zoomSlider.value), 50);
+    }
+
+    // ================================================================
+    // 3. Initialisierung & Events
+    // ================================================================
+    async function init() {
+        try {
+            const res = await fetch('herma_templates.json');
+            if (!res.ok) throw new Error('Netzwerkfehler');
+            const data = await res.json();
+            allTemplates = data.templates || [];
+        } catch (e) {
+            sheetContainer.innerHTML = `<div style="padding:20px;color:red;">Fehler beim Laden der Vorlagen: ${e.message}</div>`;
+            return;
+        }
+
+        if (allTemplates.length === 0) {
+            sheetContainer.innerHTML = `<div style="padding:20px;color:red;">Keine Vorlagen gefunden.</div>`;
+            return;
+        }
+
+        populateDropdown(allTemplates);
+
+        const memoryState = localStorage.getItem('herma_memory_enabled');
+        if (memoryState !== null) {
+            memoryCheckbox.checked = memoryState === 'true';
+        } else {
+            memoryCheckbox.checked = true;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        let sku = params.get('sku') || '4473';
+        if (!allTemplates.some(t => t.sku === sku)) {
+            sku = allTemplates[0].sku;
+        }
+        templateSelect.value = sku;
+
+        renderSheet(sku);
+
+        templateSelect.addEventListener('change', function() {
+            const newSku = this.value;
+            const url = new URL(window.location);
+            url.searchParams.set('sku', newSku);
+            window.history.replaceState({}, '', url);
+            renderSheet(newSku);
+        });
+
+        zoomSlider.addEventListener('input', function() {
+            applyZoom(this.value);
+        });
+
+        zoomToggleBtn.addEventListener('click', function() {
+            zoomContainer.classList.toggle('visible');
+        });
+
+        printBtn.addEventListener('click', () => window.print());
+
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        memoryCheckbox.addEventListener('change', function() {
+            const enabled = this.checked;
+            localStorage.setItem('herma_memory_enabled', enabled);
+            if (!enabled) {
+                for (let key in localStorage) {
+                    if (key.startsWith('herma_range_')) {
+                        localStorage.removeItem(key);
+                    }
+                }
+                renderSheet(currentSku);
+            } else {
+                renderSheet(currentSku);
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            if (modal.style.display !== 'none') {
+                applyZoom(zoomSlider.value);
+            }
+        });
+    }
+
+    init();
+    document.addEventListener('DOMContentLoaded', () => {
+        modal.style.display = 'flex';
+    });
+</script>
+</body>
+</html>
