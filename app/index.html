@@ -27,7 +27,7 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 16px;
         }
 
         /* =========================================================
@@ -39,10 +39,10 @@
             box-shadow: 0 10px 30px rgba(15, 34, 43, 0.1);
             width: 100%;
             max-width: 600px;
-            padding: 24px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 18px;
         }
 
         .hdr {
@@ -50,30 +50,32 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid #f1f5f9;
-            padding-bottom: 16px;
+            padding-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .hdr-l {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .lg {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             object-fit: contain;
         }
 
         .hdr-ttl {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 800;
             color: #1a4b60;
             line-height: 1.2;
         }
 
         .hdr-sub {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: #64748b;
             font-weight: 600;
         }
@@ -81,25 +83,26 @@
         .hdr-r {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .sel-hdr, .sel-modal-hdr {
-            font-size: 0.82rem;
+            font-size: 0.75rem;
             font-weight: 600;
             color: #1a4b60;
             background-color: #f1f5f9;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
-            padding: 6px 24px 6px 10px;
+            padding: 4px 22px 4px 8px;
             cursor: pointer;
             outline: none;
             appearance: none;
             -webkit-appearance: none;
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231a4b60' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
             background-repeat: no-repeat;
-            background-position: calc(100% - 8px) center;
-            max-width: 160px;
+            background-position: calc(100% - 6px) center;
+            max-width: 140px;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
@@ -108,43 +111,44 @@
             background: #e2e8f0;
             color: #1a4b60;
             border: none;
-            padding: 6px 10px;
+            padding: 4px 10px;
             border-radius: 6px;
             font-weight: bold;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             cursor: pointer;
         }
 
         .fps select {
             width: 100%;
-            padding: 8px 10px;
+            padding: 6px 8px;
             border-radius: 6px;
             border: 1px solid #cbd5e1;
             background: #f8fafc;
             font-weight: 600;
             color: #1a4b60;
+            font-size: 0.8rem;
         }
 
         .sb {
             background: #ffffff;
             border: 2px dashed #cbd5e1;
             border-radius: 8px;
-            padding: 16px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            min-height: 120px;
+            gap: 6px;
+            min-height: 100px;
             justify-content: space-between;
         }
 
         .ab {
             display: flex;
-            gap: 12px;
+            gap: 10px;
         }
 
         button {
-            padding: 12px 20px;
-            font-size: 0.95rem;
+            padding: 10px 16px;
+            font-size: 0.85rem;
             font-weight: 700;
             border: none;
             border-radius: 8px;
@@ -153,7 +157,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .bp {
@@ -178,8 +182,8 @@
         }
 
         .ftr {
-            margin-top: 16px;
-            font-size: 0.8rem;
+            margin-top: 12px;
+            font-size: 0.7rem;
             color: #94a3b8;
         }
 
@@ -189,11 +193,11 @@
             background: #fee2e2;
             color: #991b1b;
             border: 1px solid #f87171;
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-radius: 8px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .toast-banner.show {
@@ -215,7 +219,7 @@
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            padding: 15px;
+            padding: 8px;
         }
 
         .mc {
@@ -225,9 +229,9 @@
             max-width: 580px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             position: relative;
-            max-height: 90vh;
+            max-height: 95vh;
             overflow-y: auto;
-            padding: 20px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
         }
@@ -238,54 +242,57 @@
             max-width: 100% !important;
             max-height: 100% !important;
             border-radius: 0 !important;
-            padding: 20px 30px;
+            padding: 10px 12px !important;
             overflow: hidden;
             background: #e2e8f0;
         }
 
         .mh {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
             color: #1a4b60;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             border-bottom: 2px solid #f1f5f9;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex-shrink: 0;
+            flex-wrap: wrap;
         }
 
         .bx {
             background: transparent;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             color: #ef4444;
             border: none;
             cursor: pointer;
             line-height: 1;
+            padding: 0 4px;
         }
 
         .mbs {
             position: relative;
             overflow: auto;
             flex: 1;
-            padding: 20px;
+            padding: 12px;
             background: #cbd5e1;
             border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            min-height: 300px;
+            min-height: 280px;
+            container-type: inline-size;   /* WICHTIG für Zoom */
         }
 
         .mf {
             display: flex;
             justify-content: flex-end;
-            gap: 12px;
-            margin-top: 16px;
+            gap: 10px;
+            margin-top: 12px;
             border-top: 1px solid #f1f5f9;
-            padding-top: 12px;
+            padding-top: 10px;
             flex-shrink: 0;
         }
 
@@ -362,7 +369,7 @@
             color: #4a5568;
             text-transform: uppercase;
             border-bottom: 0.8px solid #cbd5e1;
-            padding-bottom: 1mm;
+            padding-bottom: 0.5mm;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -374,7 +381,7 @@
             justify-content: space-between;
             gap: 2mm;
             flex: 1;
-            padding: 1mm 0;
+            padding: 0.5mm 0;
             overflow: hidden;
         }
 
@@ -416,7 +423,7 @@
             opacity: 0.5;
             color: #000;
             text-align: right;
-            padding-top: 1mm;
+            padding-top: 0.5mm;
             border-top: 0.5px solid rgba(0,0,0,0.08);
             margin-top: auto;
             white-space: nowrap;
@@ -426,41 +433,42 @@
 
         .zoom-toggle-btn {
             position: absolute;
-            left: 10px;
+            left: 6px;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.85);
             border: 1px solid rgba(26,75,96,0.2);
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
+            width: 34px;
+            height: 34px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             z-index: 20;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
 
         .zoom-container {
             display: none;
             position: absolute;
-            left: 12px;
+            left: 8px;
             top: 50%;
             transform: translateY(-50%);
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             background: rgba(255,255,255,0.95);
-            padding: 12px 8px;
+            padding: 10px 6px;
             border-radius: 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
             z-index: 10;
         }
 
         .zoom-container.visible { display: flex; }
 
         .zoom-slider-wrapper {
-            height: 140px;
+            height: 120px;
             display: flex;
             align-items: center;
         }
@@ -468,19 +476,51 @@
         .zoom-slider {
             writing-mode: vertical-lr;
             direction: rtl;
-            width: 6px;
+            width: 5px;
             height: 100%;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #1a4b60;
             cursor: pointer;
         }
 
         .zoom-label {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             font-weight: bold;
             color: #1a4b60;
         }
 
         /* =========================================================
-           5. ACCURATE PRINT CSS (@media print)
+           5. MOBILE FIRST – Anpassungen für kleine Bildschirme
+           ========================================================= */
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            .crd { padding: 14px; gap: 12px; }
+            .hdr-ttl { font-size: 1rem; }
+            .sel-hdr, .sel-modal-hdr { font-size: 0.7rem; max-width: 100px; }
+            .mpc { padding: 6px 8px !important; }
+            .mbs { padding: 8px; min-height: 200px; }
+            .lb { padding: 1.5mm 2mm; }
+            .lba { font-size: 14pt; }
+            .lbs { font-size: 7pt; }
+            .lbb { font-size: 7pt; }
+            .lbt { font-size: 6pt; }
+            .lbf { font-size: 4pt; }
+            button { font-size: 0.75rem; padding: 8px 12px; }
+            .zoom-toggle-btn { width: 28px; height: 28px; left: 4px; }
+            .zoom-slider-wrapper { height: 90px; }
+        }
+
+        /* =========================================================
+           6. ACCURATE PRINT CSS (@media print)
            ========================================================= */
         @media print {
             @page {
@@ -531,6 +571,7 @@
                 overflow: hidden !important;
                 width: 210mm !important;
                 height: 297mm !important;
+                container-type: unset !important;
             }
 
             .pc, #pageContainer {
@@ -602,17 +643,17 @@
         </div>
 
         <div class="fps">
-            <div style="margin-bottom: 12px;">
-                <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">HERMA Vorlage</label>
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">HERMA Vorlage</label>
                 <select id="templateSelectMain"></select>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; width: 100%;">
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; width: 100%;">
                 <div>
-                    <span id="txt-art-nr" style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Art.Nr.</span>
+                    <span id="txt-art-nr" style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">Art.Nr.</span>
                     <select id="s2_art"></select>
                 </div>
                 <div>
-                    <span id="txt-bezeichnung" style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Bezeichnung</span>
+                    <span id="txt-bezeichnung" style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">Bezeichnung</span>
                     <select id="s2_name"></select>
                 </div>
             </div>
@@ -625,12 +666,12 @@
                 <div class="lbs" id="d3">-</div>
             </div>
             <div class="lbb" id="d1">-</div>
-            <div style="font-size: 0.75rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 6px; text-transform: uppercase; font-weight: bold;" id="d4">-</div>
+            <div style="font-size: 0.7rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 4px; text-transform: uppercase; font-weight: bold;" id="d4">-</div>
         </div>
 
         <div class="ab">
             <button class="bp" id="btn-print-now">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polyline points="6 9 6 2 18 2 18 9" />
                     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                     <rect x="6" y="14" width="12" height="8" />
@@ -638,7 +679,7 @@
                 Jetzt Drucken
             </button>
             <button class="bs" id="btn-options">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <circle cx="12" cy="12" r="3" />
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
@@ -653,18 +694,18 @@
                 <span>Druck- & Standorteinstellungen</span>
                 <button class="bx" id="modal1CloseBtn">&times;</button>
             </div>
-            <div style="padding: 10px 0;">
-                <div style="margin-bottom: 15px;">
-                    <label style="font-weight: bold; font-size: 0.85rem;">Sortiment-Worker:</label>
-                    <div style="display: flex; gap: 8px; margin-top: 5px;">
-                        <input type="text" id="i4" placeholder="https://..." style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;" />
+            <div style="padding: 8px 0;">
+                <div style="margin-bottom: 12px;">
+                    <label style="font-weight: bold; font-size: 0.8rem;">Sortiment-Worker:</label>
+                    <div style="display: flex; gap: 6px; margin-top: 4px;">
+                        <input type="text" id="i4" placeholder="https://..." style="flex: 1; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.8rem;" />
                         <button class="bsd" id="btn-update">Aktualisieren</button>
                     </div>
                 </div>
-                <div style="margin-bottom: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
-                    <label style="font-weight: bold; font-size: 0.85rem;">Locations-Worker:</label>
-                    <div style="display: flex; gap: 8px; margin-top: 5px;">
-                        <input type="text" id="i8" placeholder="https://..." style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;" />
+                <div style="margin-bottom: 12px; border-top: 1px dashed #cbd5e1; padding-top: 12px;">
+                    <label style="font-weight: bold; font-size: 0.8rem;">Locations-Worker:</label>
+                    <div style="display: flex; gap: 6px; margin-top: 4px;">
+                        <input type="text" id="i8" placeholder="https://..." style="flex: 1; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.8rem;" />
                         <button class="bsd" id="btn-update-locations">Aktualisieren</button>
                     </div>
                 </div>
@@ -678,13 +719,13 @@
     <div class="mb" id="modalContainer" style="display:none;">
         <div class="mc mpc">
             <div class="mh">
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                     <span>🏷️ HERMA</span>
                     <select id="templateSelect" class="sel-modal-hdr"></select>
                     <select id="sortimentArtNrSelect" class="sel-modal-hdr"></select>
                     <select id="sortimentBezSelect" class="sel-modal-hdr"></select>
                     <select id="locationSelect" class="sel-modal-hdr"></select>
-                    <label style="font-size: 0.75rem; font-weight: 600; cursor: pointer;">
+                    <label style="font-size: 0.7rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 3px;">
                         <input type="checkbox" id="memoryCheckbox" checked /> Merken
                     </label>
                 </div>
@@ -693,7 +734,7 @@
 
             <div class="mbs" id="previewArea">
                 <button id="zoomToggleBtn" class="zoom-toggle-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8" />
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                         <line x1="8" y1="11" x2="14" y2="11" />
@@ -702,7 +743,7 @@
 
                 <div class="zoom-container" id="zoomContainer">
                     <div class="zoom-slider-wrapper">
-                        <input type="range" id="zoomSlider" class="zoom-slider" min="50" max="300" value="100" />
+                        <input type="range" id="zoomSlider" class="zoom-slider" min="30" max="300" value="100" />
                     </div>
                     <div class="zoom-label"><span id="zoomVal">100%</span></div>
                 </div>
@@ -714,7 +755,7 @@
 
             <div class="mf">
                 <button class="bp" id="printBtn">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <polyline points="6 9 6 2 18 2 18 9" />
                         <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                         <rect x="6" y="14" width="12" height="8" />
@@ -867,7 +908,6 @@
             if (s2Name) s2Name.innerHTML = bezOptionsHtml;
             if (sortimentBezSelect) sortimentBezSelect.innerHTML = bezOptionsHtml;
 
-            // Select default item if available
             if (sortimentList.length > 0) {
                 setSortimentByIndex(0);
             }
@@ -895,6 +935,9 @@
             renderSheet(currentSku);
         }
 
+        // ============================================================
+        // VERBESSERTE ZOOM-FUNKTION
+        // ============================================================
         function applyZoom(value) {
             if (zoomVal) zoomVal.textContent = value + '%';
             const factor = parseFloat(value) / 100;
@@ -902,14 +945,35 @@
             const element = document.getElementById('pageContainer');
             if (!container || !element) return;
 
-            const scaleX = (container.clientWidth - 40) / 794;
-            const scaleY = (container.clientHeight - 40) / 1123;
-            const baseScale = Math.min(scaleX, scaleY, 1);
-            const finalScale = Math.min(baseScale * factor, 2);
+            // Tatsächliche nutzbare Fläche (Container abzüglich Padding)
+            const style = getComputedStyle(container);
+            const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+            const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+            const availW = container.clientWidth - padX - 8;
+            const availH = container.clientHeight - padY - 8;
 
+            // Referenzgröße der A4-Seite (in Pixeln, bei 96 DPI)
+            const refW = 794;
+            const refH = 1123;
+
+            const scaleX = availW / refW;
+            const scaleY = availH / refH;
+            // Basis: immer so, dass die Seite komplett sichtbar ist, aber auch vergrößert werden kann
+            let baseScale = Math.min(scaleX, scaleY);
+            // Erlaubte Spanne: 0.3 (sehr klein) bis 2.5 (stark vergrößert)
+            baseScale = Math.max(0.3, Math.min(2.5, baseScale));
+            const finalScale = Math.min(baseScale * factor, 2.5);
+
+            element.style.position = 'absolute';
+            element.style.top = '50%';
+            element.style.left = '50%';
+            element.style.transformOrigin = 'center center';
             element.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
         }
 
+        // ============================================================
+        // RENDER SHEET
+        // ============================================================
         function renderSheet(sku) {
             const config = allTemplates.find(t => t.sku === sku) || FALLBACK_TEMPLATES[0];
             currentSku = sku;
@@ -943,6 +1007,9 @@
             if (zoomSlider) applyZoom(zoomSlider.value);
         }
 
+        // ============================================================
+        // INITIALISIERUNG
+        // ============================================================
         async function init() {
             // Load templates with error fallback
             try {
@@ -1008,7 +1075,7 @@
                 btnPrintNow.addEventListener('click', () => {
                     if (modal) {
                         modal.style.display = 'flex';
-                        applyZoom(zoomSlider ? zoomSlider.value : 100);
+                        setTimeout(() => applyZoom(zoomSlider ? zoomSlider.value : 100), 50);
                     }
                 });
             }
@@ -1036,6 +1103,13 @@
             if (zoomToggleBtn && zoomContainer) {
                 zoomToggleBtn.addEventListener('click', () => zoomContainer.classList.toggle('visible'));
             }
+
+            // Fenster-Resize: Zoom neu berechnen
+            window.addEventListener('resize', () => {
+                if (modal && modal.style.display !== 'none') {
+                    applyZoom(zoomSlider ? zoomSlider.value : 100);
+                }
+            });
         }
 
         // Global uncaught errors
