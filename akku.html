@@ -3,267 +3,157 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Batterie-Scann & Sortierhilfe</title>
-  
-  <!-- TensorFlow.js und MobileNet für die Bilderkennung im Browser -->
+  <title>ASZ Batterie-Sortierhilfe</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
-
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #181818; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 15px; }
+    h1 { color: #8bc34a; font-size: 1.3rem; margin-bottom: 4px; text-align: center; }
+    p.sub { font-size: 0.8rem; color: #aaa; margin-bottom: 12px; text-align: center; }
+    
+    .cam-box { position: relative; width: 100%; max-width: 440px; aspect-ratio: 4/3; background: #000; border-radius: 10px; overflow: hidden; }
+    video { width: 100%; height: 100%; object-fit: cover; }
+    
+    .options-box { width: 100%; max-width: 440px; margin-top: 10px; background: #262626; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .options-box label { font-size: 0.85rem; color: #ff9800; font-weight: bold; }
 
-    body {
-      background-color: #121212;
-      color: #ffffff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 15px;
-    }
+    .btn-scan { width: 100%; max-width: 440px; margin-top: 10px; padding: 12px; border: none; border-radius: 8px; background: #8bc34a; color: #000; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    .btn-scan:disabled { background: #444; color: #888; }
 
-    header {
-      text-align: center;
-      margin-bottom: 15px;
-    }
+    .card { width: 100%; max-width: 440px; margin-top: 12px; padding: 14px; border-radius: 10px; background: #222; border-left: 6px solid #888; display: none; }
+    .card.active { display: block; }
+    .art-nr { font-size: 0.75rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.2); float: right; }
+    
+    .title { font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; }
+    .info { font-size: 0.85rem; line-height: 1.4; color: #ddd; }
+    .warn { font-size: 0.8rem; margin-top: 8px; padding: 6px; background: rgba(255,0,0,0.15); border-radius: 4px; color: #ff8a80; }
 
-    h1 {
-      font-size: 1.4rem;
-      color: #4caf50;
-    }
-
-    .camera-container {
-      position: relative;
-      width: 100%;
-      max-width: 480px;
-      aspect-ratio: 4 / 3;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .controls {
-      margin-top: 15px;
-      width: 100%;
-      max-width: 480px;
-      display: flex;
-      gap: 10px;
-    }
-
-    button {
-      flex: 1;
-      padding: 14px;
-      border: none;
-      border-radius: 8px;
-      background: #4caf50;
-      color: white;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    button:active {
-      background: #388e3c;
-    }
-
-    button:disabled {
-      background: #444;
-      color: #888;
-      cursor: not-allowed;
-    }
-
-    .result-card {
-      margin-top: 15px;
-      width: 100%;
-      max-width: 480px;
-      background: #1e1e1e;
-      border-radius: 12px;
-      padding: 15px;
-      border-left: 6px solid #888;
-      display: none;
-    }
-
-    .result-card.active {
-      display: block;
-    }
-
-    .bin-title {
-      font-size: 1.2rem;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    .detected-tag {
-      font-size: 0.85rem;
-      color: #aaa;
-      margin-bottom: 10px;
-    }
-
-    .instructions {
-      font-size: 0.95rem;
-      line-height: 1.4;
-      color: #ddd;
-    }
-
-    /* Farb-Markierungen für die Behälter */
-    .bin-lipo { border-color: #ff3d00; }
-    .bin-lipo .bin-title { color: #ff5722; }
-
-    .bin-alkali { border-color: #ffc107; }
-    .bin-alkali .bin-title { color: #ffca28; }
-
-    .bin-lead { border-color: #2196f3; }
-    .bin-lead .bin-title { color: #42a5f5; }
-
-    .bin-unknown { border-color: #9e9e9e; }
-
-    #loading-overlay {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #fff;
-      font-size: 1rem;
-    }
+    /* ASZ Farbcodes */
+    .geraete { border-color: #4caf50; } .geraete .title { color: #81c784; }
+    .li-ok { border-color: #2196f3; } .li-ok .title { color: #64b5f6; }
+    .li-dmg { border-color: #f44336; } .li-dmg .title { color: #e57373; }
+    .starter { border-color: #ff9800; } .starter .title { color: #ffb74d; }
+    .none { border-color: #9e9e9e; }
+    
+    #loading { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; font-size: 0.9rem; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Batterie-Sortierhilfe</h1>
-    <p style="font-size: 0.8rem; color: #888;">Kameraauswertung & Behälter-Zuordnung</p>
-  </header>
+  <h1>ASZ Batterie-Sortierer</h1>
+  <p class="sub">Zuordnung nach LAVU OÖ Richtlinien</p>
 
-  <div class="camera-container">
+  <div class="cam-box">
     <video id="webcam" autoplay playsinline muted></video>
-    <div id="loading-overlay">Lade KI-Modell...</div>
+    <div id="loading">Lade Erkennung...</div>
   </div>
 
-  <div class="controls">
-    <button id="scan-btn" disabled>Scan ausführen</button>
+  <div class="options-box">
+    <label for="damaged-chk">⚠️ Batterie beschädigt / aufgebläht?</label>
+    <input type="checkbox" id="damaged-chk" style="width: 18px; height: 18px;">
   </div>
 
-  <!-- Ergebnis-Karte -->
-  <div id="result" class="result-card">
-    <div id="bin-title" class="bin-title">Behälteranalyse</div>
-    <div id="detected-tag" class="detected-tag">Erkannt als: -</div>
-    <div id="instructions" class="instructions">-</div>
+  <button class="btn-scan" id="scan-btn" disabled>Scan ausführen</button>
+
+  <div id="result" class="card">
+    <span id="art-nr" class="art-nr"></span>
+    <div id="target-title" class="title"></div>
+    <div id="target-info" class="info"></div>
+    <div id="target-warn" class="warn"></div>
   </div>
 
   <script>
     const video = document.getElementById('webcam');
     const scanBtn = document.getElementById('scan-btn');
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const resultCard = document.getElementById('result');
-    const binTitle = document.getElementById('bin-title');
-    const detectedTag = document.getElementById('detected-tag');
-    const instructions = document.getElementById('instructions');
+    const loading = document.getElementById('loading');
+    const damagedChk = document.getElementById('damaged-chk');
+    
+    const result = document.getElementById('result');
+    const artNr = document.getElementById('art-nr');
+    const targetTitle = document.getElementById('target-title');
+    const targetInfo = document.getElementById('target-info');
+    const targetWarn = document.getElementById('target-warn');
 
     let model = null;
 
-    // 1. Zuordnungs-Logik für Entsorgungsbehälter
-    const binRules = {
-      lipo: {
-        title: "BEHÄLTER: Li-Ion / LiPo (Gefahrgut)",
-        className: "bin-lipo",
-        text: "🚨 **Hohe Brandgefahr!**<br>• Pole mit Klebeband isolieren.<br>• In die feuerfeste Spezialbox (Sandschüttung/Vermiculite) legen.<br>• Nicht stauchen oder beschädigen."
+    const aszRules = {
+      geraete: {
+        title: "Gerätebatterien",
+        art: "Art.Nr. 4110",
+        css: "geraete",
+        info: "• Konsumbatterien (Alkali, Zink-Kohle)<br>• NiCd / NiMH Werkzeugakkus<br>• Knopfzellen & Weidezaunbatterien",
+        warn: "💡 Hinweis: Kontaktfläche/Pole bei Knopfzellen mit Klebeband isolieren."
       },
-      alkali: {
-        title: "BEHÄLTER: Trockenzellen / Haushalt",
-        className: "bin-alkali",
-        text: "⚡ Standard-Haushaltsbatterie (Alkali-Mangan / NiMH).<br>• In die grüne/gelbe Standard-Sammelbox einwerfen.<br>• Pole müssen nicht zwingend abgeklebt werden."
+      li_unbeschaedigt: {
+        title: "Lithium-Batterien unbeschädigt",
+        art: "Art.Nr. 4112",
+        css: "li-ok",
+        info: "• Intakte Li-Ion Akkus bis 5 kg<br>• Entnehmbare Akkus aus Handys, Laptops, Werkzeugen & Gartengeräten",
+        warn: "🔒 Sicherheit: Pole und freistehende Drähte zwingend abkleben!"
       },
-      lead: {
-        title: "BEHÄLTER: Blei-Akkus / KFZ",
-        className: "bin-lead",
-        text: "⚖️ **Schwere Blei-Batterie (Säure)!**<br>• In den säurefesten Kunststoff-Sammelbehälter stellen.<br>• Aufrechte Position halten, um Säureaustritt zu vermeiden."
+      li_beschaedigt: {
+        title: "Lithium-Batterien beschädigt",
+        art: "Art.Nr. 4111",
+        css: "li-dmg",
+        info: "• Verformte, erhitzte oder beschädigte LiPo/Li-Ion Akkus<br>• Akkus aus E-Bikes / E-Scootern bis 25 kg",
+        warn: "🚨 Sicherheit: In Kunststoffbeutel einpacken & Pole abkleben!"
       },
-      unknown: {
-        title: "BEHÄLTER: Manuelle Prüfung",
-        className: "bin-unknown",
-        text: "❓ Batterie/Objekt nicht eindeutig zugeordnet.<br>• Auf Beschriftung achten (Li-Ion, LiPo, Pb, NiCd).<br>• Im Zweifel wie Lithium-Akku behandeln (Pole abkleben)."
+      starter: {
+        title: "Starterbatterien",
+        art: "Art.Nr. 4100",
+        css: "starter",
+        info: "• Bleiakkumulatoren mit Säurefüllung<br>• Auto-, Moped-, Traktor- & LKW-Batterien",
+        warn: "⚖️ Sicherheit: Säurefest lagern, + Pole in der obersten Reihe abkleben."
+      },
+      keine_annahme: {
+        title: "Keine Annahme im ASZ!",
+        art: "Rückgabe Handel",
+        css: "none",
+        info: "• Industrie-Lithium-Akkus (PV-Speicher, E-Boote)<br>• Fest eingebaute E-Roller/E-Moped Akkus",
+        warn: "⛔ Bitte direkt an den Fahrzeughandel / Hersteller zurückgeben."
       }
     };
 
-    // 2. Kamera initialisieren
     async function setupCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' },
-          audio: false
-        });
-        video.srcObject = stream;
-        return new Promise((resolve) => {
-          video.onloadedmetadata = () => resolve(video);
-        });
-      } catch (err) {
-        alert("Kamera-Zugriff verweigert oder nicht verfügbar.");
-        console.error(err);
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      video.srcObject = stream;
+      return new Promise(res => video.onloadedmetadata = () => res());
     }
 
-    // 3. Modell laden
     async function init() {
       await setupCamera();
-      // Lade MobileNet Lightweight Modell
       model = await mobilenet.load();
-      loadingOverlay.style.display = 'none';
+      loading.style.display = 'none';
       scanBtn.disabled = false;
     }
 
-    // 4. KI-Analyse & Behälter-Zuordnung
-    async function scanObject() {
+    scanBtn.addEventListener('click', async () => {
       scanBtn.disabled = true;
-      scanBtn.innerText = "Analysiere...";
-
-      // Erkennung durchführen
       const predictions = await model.classify(video);
       scanBtn.disabled = false;
-      scanBtn.innerText = "Scan ausführen";
 
-      if (predictions.length > 0) {
-        const topPrediction = predictions[0].className.toLowerCase();
-        const probability = Math.round(predictions[0].probability * 100);
-        
-        detectedTag.innerText = `Erkannt: "${predictions[0].className}" (${probability}% Sicherheiten)`;
-        
-        // Einfache Textmuster-Erkennung (Kann durch spezifischeres Modell erweitert werden)
-        let matchedRule = binRules.unknown;
+      if (!predictions.length) return;
+      const top = predictions[0].className.toLowerCase();
+      const isDamaged = damagedChk.checked;
 
-        if (topPrediction.includes('battery') || topPrediction.includes('power bank') || topPrediction.includes('ipod') || topPrediction.includes('cellular phone')) {
-          // Meist Lithium-basierte Geräte/Akkus
-          matchedRule = binRules.lipo;
-        } else if (topPrediction.includes('car battery') || topPrediction.includes('accumulator')) {
-          matchedRule = binRules.lead;
-        } else if (topPrediction.includes('cassette') || topPrediction.includes('remote control')) {
-          matchedRule = binRules.alkali;
-        }
+      let rule = aszRules.geraete;
 
-        // Ergebnis im UI anzeigen
-        resultCard.className = `result-card active ${matchedRule.className}`;
-        binTitle.innerHTML = matchedRule.title;
-        instructions.innerHTML = matchedRule.text;
+      if (isDamaged) {
+        rule = aszRules.li_beschaedigt;
+      } else if (top.includes('car battery') || top.includes('accumulator')) {
+        rule = aszRules.starter;
+      } else if (top.includes('power bank') || top.includes('cellular phone') || top.includes('ipod') || top.includes('laptop')) {
+        rule = aszRules.li_unbeschaedigt;
       }
-    }
 
-    scanBtn.addEventListener('click', scanObject);
+      result.className = `card active ${rule.css}`;
+      artNr.innerText = rule.art;
+      targetTitle.innerText = rule.title;
+      targetInfo.innerHTML = rule.info;
+      targetWarn.innerHTML = rule.warn;
+    });
 
-    // Anwendung starten
     init();
   </script>
 </body>
